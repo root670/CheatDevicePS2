@@ -6,6 +6,7 @@
 #include <sbv_patches.h>
 #include <libcdvd.h>
 #include <erl.h>
+#include <libpad.h>
 
 #include "storage.h"
 #include "menus.h"
@@ -45,9 +46,32 @@ typedef struct {
 extern u8	_bootstrap_elf_start[];
 extern int _bootstrap_elf_size;
 
-void startgameDraw()
+static void discPrompt()
 {
-	graphicsDrawText(30, 200, "Press X to start game with cheats enabled.", WHITE);
+	struct padButtonStatus padStat;
+	static u32 old_pad = PAD_CROSS;
+	static u32 pad_pressed = 0;
+	int state;
+	
+	graphicsDrawBackground();
+	graphicsDrawText(30, 200, "Insert disc and press X to start the game.", WHITE);
+	graphicsRenderNow();
+	
+	while(!(pad_pressed & PAD_CROSS))
+	{		
+		state = padGetState(0, 0);
+		while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+			state = padGetState(0, 0);
+	
+		padRead(0, 0, &padStat);
+	
+		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+		old_pad = 0xFFFF ^ padStat.btns;
+	}
+	
+	graphicsDrawBackground();
+	graphicsDrawText(30, 200, "Starting game...", WHITE);
+	graphicsRenderNow();
 }
 
 #define ELF_PT_LOAD 1
@@ -66,12 +90,10 @@ void startgameExecute(char *path)
 	killCheatMan();
 	killSettingsMan();
 	killStorageMan();
-
-	padPortClose(0, 0);
-	padReset();
 	
 	if(strcmp(path, "==Disc==") == 0)
 	{
+		discPrompt();
 		// wait for disc to be ready
 		while(sceCdGetDiskType() == 1);
 		sceCdDiskReady(0);
@@ -131,6 +153,9 @@ void startgameExecute(char *path)
 		if (eph[i].memsz > eph[i].filesz)
 			memset(eph[i].vaddr + eph[i].filesz, 0, eph[i].memsz - eph[i].filesz);
 	}
+	
+	padPortClose(0, 0);
+	padReset();
 	
 	fioExit();
 	SifInitRpc(0);

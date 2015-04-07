@@ -3,7 +3,6 @@
 
 #include <tamtypes.h>
 
-void startgameDraw();
 void startgameExecute(char *path);
 
 #endif

@@ -348,9 +348,6 @@ void cheatsInstallCodesForEngine()
 		
 		SetupERL();
 		
-		graphicsDrawText(20, 76, "Please wait...", WHITE);
-		graphicsRenderNow();
-
 		cheatsCheat_t *cheat = activeGame->cheats;
 
 		while(cheat)
