@@ -59,7 +59,8 @@ modules:
 	bin2o resources/cogs.png cogs_png.o _cogs_png
 	
 	# Engine
-	bin2o resources/engine.erl engine_erl.o _engine_erl
+	cd engine && $(MAKE)
+	bin2o engine/engine.erl engine_erl.o _engine_erl
 
 	# Bootstrap
 	cd bootstrap && $(MAKE)
@@ -74,6 +75,7 @@ clean:
 	rm -f *.o *.elf
 	rm -f libraries/*.o
 	rm -f bootstrap/*.elf
+	cd engine && make clean
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
