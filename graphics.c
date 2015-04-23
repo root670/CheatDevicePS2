@@ -206,6 +206,7 @@ void graphicsDrawMainMenu(int activeItem)
 	};
 	struct menuIcon icons[] = {{"Start Game", &gamepad, 213, 192},
 							   {"Game List", &cube, 288, 192},
+							   {"Save Manager", &cube, 288, 300},
 							   {"Settings", &cogs, 363, 192}};
 
 	const u64 unselected = GS_SETREG_RGBAQ(0xA0, 0xA0, 0xA0, 0x20, 0x80);
@@ -214,7 +215,7 @@ void graphicsDrawMainMenu(int activeItem)
 	graphicsDrawPromptBox(350, 150);
 
 	int i;
-	for(i = 0; i < 3; i++)
+	for(i = 0; i < 4; i++)
 	{
 		gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 		gsKit_prim_sprite_texture(gsGlobal, icons[i].tex,

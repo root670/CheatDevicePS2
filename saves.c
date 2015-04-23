@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <libmc.h>
 #include "saves.h"
 
 typedef struct saveDevice {
@@ -15,6 +16,7 @@ int initSaveMan()
 {
 	if(!initialized)
 	{
+		printf("\n ** Initializing Save Manager **\n");
 		int i;
 		for(i = 0; i < NUM_SAVE_DEVICES; i++)
 		{
@@ -34,6 +36,7 @@ int killSaveMan()
 {
 	if(initialized)
 	{
+		printf("\n ** Killing Save Manager **\n");
 		int i;
 		for(i = 0; i < NUM_SAVE_DEVICES; i++)
 		{
@@ -53,7 +56,37 @@ int killSaveMan()
 }
 
 gameSave_t *savesGetSaves(device_t dev);
-int savesGetAvailibleSlots();
+int savesGetAvailibleDevices()
+{
+	if(initialized)
+	{
+		int mcType, mcFree, mcFormat, ret;
+		int available = 0;
+		
+		// Memory card slot 1
+		mcGetInfo(0, 0, &mcType, &mcFree, &mcFormat);
+		mcSync(0, NULL, &ret);
+		if(ret == 0 || ret == -1)
+		{
+			available |= MC_SLOT_1;
+			printf("mem card slot 1 available\n");
+		}
+
+		// Memory card slot 2
+		mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
+		mcSync(0, NULL, &ret);
+		if(ret == 0 || ret == -1)
+		{
+			available |= MC_SLOT_2;
+			printf("mem card slot 2 available\n");
+		}
+		
+		printf("available = %d\n", available);
+		return available;
+	}
+	
+	return 0;
+}
 
 savesCreatePSU(gameSave_t *save);
 savesExtractPSU(gameSave_t *save);

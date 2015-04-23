@@ -88,15 +88,22 @@ void handlePad()
 		time_held = 0;
 
 	menuID_t currentMenu = menuGetActive();
-
-	if(currentMenu == GAMEMENU)
+	
+	if(currentMenu == GAMEMENU ||
+	   currentMenu == CHEATMENU ||
+	   currentMenu == CODEMENU ||
+	   currentMenu == BOOTMENU ||
+	   currentMenu == SAVEMENU)
 	{
 		if(pad_rapid & PAD_UP)
 			menuUp();
 
 		else if(pad_rapid & PAD_DOWN)
 			menuDown();
-			
+	}
+
+	if(currentMenu == GAMEMENU)
+	{
 		if(pad_pressed & PAD_CROSS)
 			menuSetActive(CHEATMENU);
 
@@ -133,12 +140,6 @@ void handlePad()
 
 	else if(currentMenu == CHEATMENU)
 	{
-		if(pad_rapid & PAD_UP)
-			menuUp();
-
-		else if(pad_rapid & PAD_DOWN)
-			menuDown();
-			
 		if(pad_pressed & PAD_CROSS)
 			menuToggleItem();
 
@@ -174,11 +175,6 @@ void handlePad()
 		else if(pad_pressed & PAD_TRIANGLE);
 		// delete a code line. ask the user for confirmation.
 
-		else if(pad_rapid & PAD_UP)
-			menuUp();
-
-		else if(pad_rapid & PAD_DOWN)
-			menuDown();
 		// TODO: goto code edit menu (show keyboard etc), open mini menu
 	}
 
@@ -197,6 +193,8 @@ void handlePad()
 				menuSetActive(BOOTMENU);
 			if(selected == 1) // game menu
 				menuSetActive(GAMEMENU);
+			if(selected == 2) // save menu
+				menuSetActive(SAVEMENU);
 		}
 
 		else if(pad_pressed & PAD_CIRCLE)
@@ -204,7 +202,7 @@ void handlePad()
 
 		else if(pad_pressed & PAD_RIGHT)
 		{
-			if(selected >= 2)
+			if(selected >= 3)
 				selected = 0;
 			else
 				++selected;
@@ -213,7 +211,7 @@ void handlePad()
 		else if(pad_pressed & PAD_LEFT)
 		{
 			if (selected == 0)
-				selected = 2;
+				selected = 3;
 			else
 				--selected;
 		}
@@ -221,11 +219,6 @@ void handlePad()
 	
 	else if(currentMenu == BOOTMENU)
 	{
-		if(pad_rapid & PAD_UP)
-			menuUp();
-
-		else if(pad_rapid & PAD_DOWN)
-			menuDown();
 		if(pad_pressed & PAD_CROSS)
 		{
 			cheatsInstallCodesForEngine();
@@ -236,6 +229,16 @@ void handlePad()
 		{
 			menuRemoveAllItems();
 			menuSetActive(MAINMENU);
+		}
+	}
+	
+	else if(currentMenu == SAVEMENU)
+	{
+		if(pad_pressed & PAD_CIRCLE)
+		{
+			menuRemoveAllItems();
+			menuSetActive(MAINMENU);
+			killSaveMan();
 		}
 	}
 }
