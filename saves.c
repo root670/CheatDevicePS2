@@ -20,10 +20,13 @@ int initSaveMan()
 		int i;
 		for(i = 0; i < NUM_SAVE_DEVICES; i++)
 		{
-			devices[i].identifier = (device_t)i;
 			devices[i].rootPath = devicePaths[i];
 			devices[i].saves = NULL;
 		}
+		
+		devices[0].identifier = FLASH_DRIVE;
+		devices[1].identifier = MC_SLOT_1;
+		devices[2].identifier = MC_SLOT_2;
 		
 		initialized = 1;
 		return 1;

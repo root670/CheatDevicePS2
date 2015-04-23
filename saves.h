@@ -6,8 +6,14 @@
 
 #ifndef SAVES
 #define SAVES
+#include <tamtypes.h>
 
-typedef enum {FLASH_DRIVE, MC_SLOT_1, MC_SLOT_2, NUM_SAVE_DEVICES} device_t;
+#define NUM_SAVE_DEVICES	3
+#define FLASH_DRIVE			(1 << 0)
+#define MC_SLOT_1			(1 << 1)
+#define MC_SLOT_2			(1 << 2)
+
+typedef u8 device_t;
 
 typedef struct gameSave {
 	char name[100];
