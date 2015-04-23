@@ -29,9 +29,8 @@ int storageCloseFile(const char* path);
 // Get file size of file opened by storage manager.
 int storageGetFileSize(const char* path);
 
-// Get the contents of a file opened by storage manager. Must pass an allocated
-// buffer at least as large as the file. IMPORTANT: buffer must be freed by
-// caller!
-int storageGetFileContents(const char* path, u8 *buff);
+// Get the contents of a file opened by storage manager.
+// IMPORTANT: buffer must be freed by caller!
+u8 *storageGetFileContents(const char* path, int *len);
 
 #endif

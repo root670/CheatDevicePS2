@@ -100,11 +100,12 @@ int dbOpenDatabase(const char *path)
 	if(storageOpenFile(dbPath, "rb"))
 	{
 		dbIsOpen = 1;
-		u8 *compressed = malloc(storageGetFileSize(dbPath));
-		compressedSize = storageGetFileContents(dbPath, compressed);
+		u8 *compressed, *decompressed;
+		
+		compressed = storageGetFileContents(dbPath, &compressedSize);
 		storageCloseFile(dbPath);
 
-		u8 *decompressed = malloc(5 * 1024 * 1024); // 5MB
+		decompressed = malloc(5 * 1024 * 1024); // 5MB
 		decompressedSize = tinfl_decompress_mem_to_mem(decompressed, 5*1024*1024, compressed, compressedSize, TINFL_FLAG_PARSE_ZLIB_HEADER);
 		realloc(decompressed, decompressedSize);
 		free(compressed);

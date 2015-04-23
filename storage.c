@@ -153,15 +153,17 @@ int storageGetFileSize(const char* path)
 		return 0;
 }
 
-int storageGetFileContents(const char* path, u8 *buff)
+u8 *storageGetFileContents(const char* path, int *len)
 {
 	int bytesRead = 0;
+	u8 *buff;
 
 	if(initialized)
 	{
 		fileSlot_t *slot = getSlot(path);
 		if(slot)
 		{
+			buff = malloc(slot->len);
 			if(buff)
 			{
 				bytesRead = (int)fread(buff, 1, slot->len, slot->fileP);
@@ -175,6 +177,8 @@ int storageGetFileContents(const char* path, u8 *buff)
 		else
 			printf("slot was not found!\n");
 	}
+	
+	*len = bytesRead;
 
-	return bytesRead;
+	return buff;
 }
