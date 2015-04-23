@@ -101,7 +101,7 @@ int dbOpenDatabase(const char *path)
 	{
 		dbIsOpen = 1;
 		u8 *compressed = malloc(storageGetFileSize(dbPath));
-		compressedSize = storageGetBinaryFileContents(dbPath, compressed);
+		compressedSize = storageGetFileContents(dbPath, compressed);
 		storageCloseFile(dbPath);
 
 		u8 *decompressed = malloc(5 * 1024 * 1024); // 5MB

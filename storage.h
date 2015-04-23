@@ -2,7 +2,7 @@
  * Storage Manager
  * Simple storage abstraction supporting mc, disc, and mass. Up to 128 files can
  * be opened at a time. Files must be opened using storageOpenFile() before
- * calling storageGetFileSize() or storageGetBinaryFileContents().
+ * calling storageGetFileSize() or storageGetFileContents().
  */
 
 #ifndef STORAGE_H
@@ -32,7 +32,6 @@ int storageGetFileSize(const char* path);
 // Get the contents of a file opened by storage manager. Must pass an allocated
 // buffer at least as large as the file. IMPORTANT: buffer must be freed by
 // caller!
-int storageGetBinaryFileContents(const char* path, u8 *buff);
-int storageGetTextFileContents(const char* path, char *buff);
+int storageGetFileContents(const char* path, u8 *buff);
 
 #endif

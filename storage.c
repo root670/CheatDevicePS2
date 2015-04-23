@@ -153,7 +153,7 @@ int storageGetFileSize(const char* path)
 		return 0;
 }
 
-int storageGetBinaryFileContents(const char* path, u8 *buff)
+int storageGetFileContents(const char* path, u8 *buff)
 {
 	int bytesRead = 0;
 
@@ -177,9 +177,4 @@ int storageGetBinaryFileContents(const char* path, u8 *buff)
 	}
 
 	return bytesRead;
-}
-
-int storageGetTextFileContents(const char* path, char *buff)
-{
-	return storageGetBinaryFileContents(path, buff);
 }
