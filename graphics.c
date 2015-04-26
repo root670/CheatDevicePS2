@@ -17,6 +17,9 @@ static GSTEXTURE font;
 static GSTEXTURE gamepad;
 static GSTEXTURE cube;
 static GSTEXTURE cogs;
+static GSTEXTURE flashdrive;
+static GSTEXTURE memorycard1;
+static GSTEXTURE memorycard2;
 static stb_fontchar fontdata[STB_SOMEFONT_NUM_CHARS];
 static int initialized = 0;
 
@@ -30,6 +33,12 @@ extern u8  _cube_png_start[];
 extern int _cube_png_size;
 extern u8  _cogs_png_start[];
 extern int _cogs_png_size;
+extern u8  _flashdrive_png_start[];
+extern int _flashdrive_png_size;
+extern u8  _memorycard1_png_start[];
+extern int _memorycard1_png_size;
+extern u8  _memorycard2_png_start[];
+extern int _memorycard2_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
@@ -91,6 +100,9 @@ int initGraphicsMan()
 		graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 0);
 		graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 0);
 		graphicsLoadPNG(&cogs, _cogs_png_start, _cogs_png_size, 0);
+		graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 0);
+		graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 0);
+		graphicsLoadPNG(&memorycard2, _memorycard2_png_start, _memorycard2_png_size, 0);
 
 		return 1;
 	}

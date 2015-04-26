@@ -27,6 +27,9 @@ OBJS += check_png.o
 OBJS += gamepad_png.o
 OBJS += cube_png.o
 OBJS += cogs_png.o
+OBJS += flashdrive_png.o
+OBJS += memorycard1_png.o
+OBJS += memorycard2_png.o
 
 # Engine
 OBJS += engine_erl.o
@@ -58,6 +61,9 @@ modules:
 	bin2o resources/gamepad.png gamepad_png.o _gamepad_png
 	bin2o resources/cube.png cube_png.o _cube_png
 	bin2o resources/cogs.png cogs_png.o _cogs_png
+	bin2o resources/flashdrive.png flashdrive_png.o _flashdrive_png
+	bin2o resources/memorycard1.png memorycard1_png.o _memorycard1_png
+	bin2o resources/memorycard2.png memorycard2_png.o _memorycard2_png
 	
 	# Engine
 	cd engine && $(MAKE)
