@@ -5,6 +5,11 @@
 #include <graph.h>
 #include <stdio.h>
 
+static struct menuIcon {
+		char *label;
+		GSTEXTURE *tex;
+};
+
 static GSGLOBAL *gsGlobal;
 static GSTEXTURE bg;
 static GSTEXTURE check;
@@ -196,35 +201,27 @@ void graphicsDrawPromptBox(int width, int height)
 	gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawMainMenu(int activeItem)
+static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
 {
-	struct menuIcon {
-		char *label;
-		GSTEXTURE *tex;
-		int x;
-		int y;
-	};
-	struct menuIcon icons[] = {{"Start Game", &gamepad, 213, 192},
-							   {"Game List", &cube, 288, 192},
-							   {"Save Manager", &cube, 288, 300},
-							   {"Settings", &cogs, 363, 192}};
-
 	const u64 unselected = GS_SETREG_RGBAQ(0xA0, 0xA0, 0xA0, 0x20, 0x80);
 	const u64 selected = GS_SETREG_RGBAQ(0x50, 0x50, 0x50, 0x80, 0x80);
 	
 	graphicsDrawPromptBox(350, 150);
-
+	
+	int **dimensions = malloc(numIcons * 3 * sizeof(int));
+	
 	int i;
-	for(i = 0; i < 4; i++)
+	for(i = 0; i < numIcons; i++)
 	{
+		int x = (gsGlobal->Width / 2) - ((75 * numIcons) / 2) + (75 * i);
 		gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 		gsKit_prim_sprite_texture(gsGlobal, icons[i].tex,
-											icons[i].x,
-											icons[i].y,
+											x,
+											192,
 											0,
 											0,
-											icons[i].x + (icons[i].tex)->Width,
-											icons[i].y + (icons[i].tex)->Height,
+											x + (icons[i].tex)->Width,
+											192 + (icons[i].tex)->Height,
 											(icons[i].tex)->Width,
 											(icons[i].tex)->Height,
 											1,
@@ -232,6 +229,15 @@ void graphicsDrawMainMenu(int activeItem)
 		if (activeItem == i) graphicsDrawText(200, 250, icons[i].label, WHITE);
 		gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 	}
+}
+
+void graphicsDrawMainMenu(int activeItem)
+{
+	struct menuIcon icons[] = {{"Start Game", &gamepad},
+							   {"Game List", &cube},
+							   {"Settings", &cogs}};
+	
+	drawMenu(icons, 3, activeItem);
 }
 
 void graphicsClearScreen(int r, int g, int b)
