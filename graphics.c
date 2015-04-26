@@ -17,6 +17,7 @@ static GSTEXTURE font;
 static GSTEXTURE gamepad;
 static GSTEXTURE cube;
 static GSTEXTURE cogs;
+static GSTEXTURE savemanager;
 static GSTEXTURE flashdrive;
 static GSTEXTURE memorycard1;
 static GSTEXTURE memorycard2;
@@ -33,6 +34,8 @@ extern u8  _cube_png_start[];
 extern int _cube_png_size;
 extern u8  _cogs_png_start[];
 extern int _cogs_png_size;
+extern u8  _savemanager_png_start[];
+extern int _savemanager_png_size;
 extern u8  _flashdrive_png_start[];
 extern int _flashdrive_png_size;
 extern u8  _memorycard1_png_start[];
@@ -100,6 +103,7 @@ int initGraphicsMan()
 		graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 0);
 		graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 0);
 		graphicsLoadPNG(&cogs, _cogs_png_start, _cogs_png_size, 0);
+		graphicsLoadPNG(&savemanager, _savemanager_png_start, _savemanager_png_size, 0);
 		graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 0);
 		graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 0);
 		graphicsLoadPNG(&memorycard2, _memorycard2_png_start, _memorycard2_png_size, 0);
@@ -247,9 +251,10 @@ void graphicsDrawMainMenu(int activeItem)
 {
 	struct menuIcon icons[] = {{"Start Game", &gamepad},
 							   {"Game List", &cube},
+							   {"Save Manager", &savemanager},
 							   {"Settings", &cogs}};
 	
-	drawMenu(icons, 3, activeItem);
+	drawMenu(icons, 4, activeItem);
 }
 
 void graphicsClearScreen(int r, int g, int b)
