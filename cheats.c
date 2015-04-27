@@ -147,7 +147,7 @@ cheatsGame_t* cheatsLoadCheatMenu(const char* title)
 					item->text = calloc(1, strlen(cheat->title) + 1);
 					strcpy(item->text, cheat->title);
 					
-					item->cheat = cheat;
+					item->extra = (void *)cheat;
 
 					menuAppendItem(item);
 					cheat = cheat->next;
