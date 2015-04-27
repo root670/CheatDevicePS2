@@ -226,10 +226,10 @@ int menuDownAlpha()
 
 void menuToggleItem()
 {
-	if(activeMenu->identifier == CHEATMENU && activeMenu->current->cheat->type != CHEATHEADER)
+	if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) activeMenu->current->extra)->type != CHEATHEADER)
 	{
 		cheatsSetActiveGame(activeMenu->game);
-		cheatsToggleCheat(activeMenu->current->cheat);
+		cheatsToggleCheat((cheatsCheat_t *) activeMenu->current->extra);
 	}
 	
 	if(activeMenu->identifier == BOOTMENU)
@@ -278,7 +278,7 @@ int menuRender()
 		{
 			if(item->type == NORMAL)
 			{
-				if(item->cheat && item->cheat->enabled)
+				if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
 					graphicsDrawText(50, y, item->text, YELLOW);
 				else
 					graphicsDrawText(50, y, item->text, WHITE);
