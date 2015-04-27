@@ -161,27 +161,6 @@ int menuSetActive(menuID_t id)
 	{
 		initSaveMan();
 		activeMenu->text = strdup("Save Manager");
-		int available = savesGetAvailibleDevices();
-		
-		if(available & MC_SLOT_1)
-		{
-			menuItem_t *mcSlot1 = calloc(1, sizeof(menuItem_t));
-			mcSlot1->type = HEADER;
-			mcSlot1->text = strdup("Memory Card Slot 1");
-			menuAppendItem(mcSlot1);
-			
-			// append save entries
-		}
-		
-		if( available & MC_SLOT_2)
-		{
-			menuItem_t *mcSlot2 = calloc(1, sizeof(menuItem_t));
-			mcSlot2->type = HEADER;
-			mcSlot2->text = strdup("Memory Card Slot 2");
-			menuAppendItem(mcSlot2);
-			
-			// append save entries
-		}
 	}
 
 	return 1;

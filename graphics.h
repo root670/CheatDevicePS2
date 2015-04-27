@@ -23,6 +23,8 @@ void graphicsDrawMiniMenuBox(int xsize, int ysize);
 void graphicsDrawLoadingBar(int x, int y, float progress);
 // Draw main menu graphics with activeItem being highlighted
 void graphicsDrawMainMenu(int activeItem);
+// Draw device menu with activeItem being highlighted
+void graphicsDrawDeviceMenu(int activeItem);
 // Draw about/credits screen
 void graphicsDrawAboutPage();
 // Draw selection pointer at (x,y)

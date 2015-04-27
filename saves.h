@@ -25,10 +25,12 @@ typedef struct gameSave {
 int initSaveMan();
 int killSaveMan();
 
+// Create a menu with save titles.
+void savesLoadSaveMenu(device_t dev);
 // Get list of saves on a memory card or PSU files on a flash drive.
 gameSave_t *savesGetSaves(device_t dev);
 // Check which devices are present.
-int savesGetAvailibleDevices();
+int savesGetAvailableDevices();
 
 // Create PSU file and save it to a flash drive.
 int savesCreatePSU(gameSave_t *save);

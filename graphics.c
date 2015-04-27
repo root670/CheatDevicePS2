@@ -257,6 +257,15 @@ void graphicsDrawMainMenu(int activeItem)
 	drawMenu(icons, 4, activeItem);
 }
 
+void graphicsDrawDeviceMenu(int activeItem)
+{
+	struct menuIcon icons[] = {{"Memory Card (Slot 1)", &memorycard1},
+							   {"Memory Card (Slot 2)", &memorycard2},
+							   {"Flash Drive", &flashdrive}};
+	
+	drawMenu(icons, 3, activeItem);
+}
+
 void graphicsClearScreen(int r, int g, int b)
 {
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(r, g, b,0x00,0x00));

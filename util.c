@@ -2,6 +2,7 @@
 #include "menus.h"
 #include "graphics.h"
 #include "startgame.h"
+#include "saves.h"
 #include <stdio.h>
 #include <loadfile.h>
 #include <tamtypes.h>
@@ -67,6 +68,7 @@ void handlePad()
 	int state;
 	static u32 time_held = 0;
 	static int selected = 0;
+	static int selectedDevice = 0;
 
 	state = padGetState(0, 0);
 	while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
@@ -193,8 +195,8 @@ void handlePad()
 				menuSetActive(BOOTMENU);
 			if(selected == 1) // game menu
 				menuSetActive(GAMEMENU);
-			if(selected == 2) // save menu
-				menuSetActive(SAVEMENU);
+			if(selected == 2) // save manager (device menu)
+				menuSetActive(SAVEDEVICEMENU);
 		}
 
 		else if(pad_pressed & PAD_CIRCLE)
@@ -232,13 +234,49 @@ void handlePad()
 		}
 	}
 	
+	else if(currentMenu == SAVEDEVICEMENU)
+	{
+		graphicsDrawDeviceMenu(selectedDevice);
+		if(pad_pressed & PAD_CROSS)
+		{
+			menuSetActive(SAVEMENU);
+			if(selectedDevice == 0)
+				savesLoadSaveMenu(MC_SLOT_1);
+			if(selectedDevice == 1)
+				savesLoadSaveMenu(MC_SLOT_2);
+			if(selectedDevice == 2)
+				savesLoadSaveMenu(FLASH_DRIVE);
+		}
+		
+		if(pad_pressed & PAD_CIRCLE)
+		{
+			menuSetActive(MAINMENU);
+			killSaveMan();
+		}
+		
+		else if(pad_pressed & PAD_RIGHT)
+		{
+			if(selectedDevice >= 2)
+				selectedDevice = 0;
+			else
+				++selectedDevice;
+		}
+
+		else if(pad_pressed & PAD_LEFT)
+		{
+			if (selectedDevice == 0)
+				selectedDevice = 2;
+			else
+				--selectedDevice;
+		}
+	}
+	
 	else if(currentMenu == SAVEMENU)
 	{
 		if(pad_pressed & PAD_CIRCLE)
 		{
 			menuRemoveAllItems();
-			menuSetActive(MAINMENU);
-			killSaveMan();
+			menuSetActive(SAVEDEVICEMENU);
 		}
 	}
 }
