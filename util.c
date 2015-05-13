@@ -273,12 +273,79 @@ void handlePad()
 	
 	else if(currentMenu == SAVEMENU)
 	{
-		if(pad_pressed & PAD_CIRCLE)
+		if(pad_pressed & PAD_CROSS)
+		{
+			// choose destination device
+			menuToggleItem();
+			// if user backs out of device menu, they'll be holding circle.
+			old_pad |= PAD_CIRCLE;
+		}
+		else if(pad_pressed & PAD_CIRCLE)
 		{
 			menuRemoveAllItems();
 			menuSetActive(SAVEDEVICEMENU);
 		}
 	}
+}
+
+int displayPromptMenu(char **items, int numItems, char *header)
+{
+	struct padButtonStatus padStat;
+	u32 old_pad = PAD_CROSS;
+	u32 pad_pressed = 0;
+	int state, i, y;
+	int selectedItem = 0;
+	
+	if(!items || numItems <= 0 || !header)
+		return 0;
+	
+	do
+	{
+		state = padGetState(0, 0);
+		while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+			state = padGetState(0, 0);
+	
+		padRead(0, 0, &padStat);
+	
+		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+		old_pad = 0xFFFF ^ padStat.btns;
+		
+		//graphicsDrawBackground();
+		graphicsDrawPromptBoxBlack(500, 44 + (numItems * 22));
+		graphicsDrawTextCentered(224 - numItems*11 - 22, header, WHITE);
+		y = 224 - numItems*11 + 11;
+		for(i = 0; i < numItems; i++)
+		{
+			graphicsDrawTextCentered(y, items[i], i == selectedItem ? YELLOW : WHITE);
+			y += 22;
+		}
+		graphicsRender();
+		/*
+		if(pad_pressed & PAD_CROSS)
+		{
+			//doCopy(currentDevice, 1 << selectedDevice, save);
+			return 1;
+		}
+		*/
+		
+		if(pad_pressed & PAD_UP)
+		{
+			if(selectedItem == 0)
+				selectedItem = numItems - 1;
+			else
+				--selectedItem;
+		}
+
+		else if(pad_pressed & PAD_DOWN)
+		{
+			if (selectedItem == numItems - 1)
+				selectedItem = 0;
+			else
+				++selectedItem;
+		}
+	} while(!(pad_pressed & PAD_CROSS));
+	
+	return selectedItem;
 }
 
 unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)

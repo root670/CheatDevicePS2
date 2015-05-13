@@ -174,6 +174,31 @@ void graphicsDrawText(int x, int y, const char *txt, graphicsColor_t color)
 	graphicsPrintText(x, y, txt, graphicsColorTable[color]);
 }
 
+void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
+{
+	char const *cptr = txt;
+	char const *start = txt;
+	double lineWidth = 0;
+	
+	while(*cptr)
+	{
+		if(*cptr == '\n')
+		{
+			cptr++;
+			graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]);
+			lineWidth = 0;
+			start = cptr;
+			y += 22;
+			continue;
+		}
+		int char_codepoint = *cptr++;
+		stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
+		lineWidth += cdata->advance_int;
+	}
+	
+	graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]); // last line
+}
+
 void graphicsDrawLoadingBar(int x, int y, float progress)
 {
 	int height = 10;
@@ -199,13 +224,12 @@ void graphicsDrawLoadingBar(int x, int y, float progress)
 							  x + (progress * width), y+height, 1, color);
 }
 
-void graphicsDrawPromptBox(int width, int height)
+static void drawPromptBox(int width, int height, u64 color)
 {
 	const int x0 = (gsGlobal->Width/2) - (width/2);
 	const int x1 = (gsGlobal->Width/2) + (width/2);
 	const int y0 = (gsGlobal->Height/2) - (height/2);
 	const int y1 = (gsGlobal->Height/2) + (height/2);
-	const u64 color = GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x25, 0x00);
 
 	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
@@ -215,6 +239,16 @@ void graphicsDrawPromptBox(int width, int height)
 							  x1, y1, 1, color);
 
 	gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
+void graphicsDrawPromptBox(int width, int height)
+{
+	drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x25, 0x00));
+}
+
+void graphicsDrawPromptBoxBlack(int width, int height)
+{
+	drawPromptBox(width, height, graphicsColorTable[BLACK]);
 }
 
 static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
@@ -229,7 +263,7 @@ static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
 	int i;
 	for(i = 0; i < numIcons; i++)
 	{
-		int x = (gsGlobal->Width / 2) - ((75 * numIcons) / 2) + (75 * i);
+		int x = (gsGlobal->Width / 2) - ((64 * numIcons) / 2.0) + (64 * i);
 		gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 		gsKit_prim_sprite_texture(gsGlobal, icons[i].tex,
 											x,
@@ -242,7 +276,7 @@ static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
 											(icons[i].tex)->Height,
 											1,
 											(activeItem == i) ? selected : unselected);
-		if (activeItem == i) graphicsDrawText(200, 250, icons[i].label, WHITE);
+		if (activeItem == i) graphicsDrawTextCentered(265, icons[i].label, WHITE);
 		gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 	}
 }

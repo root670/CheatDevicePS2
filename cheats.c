@@ -109,6 +109,7 @@ int cheatsLoadGameMenu()
 			item->type = NORMAL;
 			item->text = calloc(1, strlen(node->title) + 1);
 			strcpy(item->text, node->title);
+			item->extra = node;
 
 			menuAppendItem(item);
 			node = node->next;

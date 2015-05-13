@@ -236,6 +236,11 @@ void menuToggleItem()
 	{
 		startgameExecute(activeMenu->current->text);
 	}
+	
+	if(activeMenu->identifier == SAVEMENU)
+	{
+		savesCopySavePrompt((gameSave_t *) activeMenu->current->extra);
+	}
 }
 
 int menuRender()

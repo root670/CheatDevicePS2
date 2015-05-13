@@ -17,6 +17,8 @@ int initGraphicsMan();
 
 // Draw text at (x,y) with a color
 void graphicsDrawText(int x, int y, const char *txt, graphicsColor_t color);
+// Draw centered text at y with a color
+void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
 // Draw transparent box to go behind text for use in a popup menu (not used)
 void graphicsDrawMiniMenuBox(int xsize, int ysize);
 // Draw loading bar at (x,y). Progress must be within range [0.0, 1.0].
@@ -29,6 +31,10 @@ void graphicsDrawDeviceMenu(int activeItem);
 void graphicsDrawAboutPage();
 // Draw selection pointer at (x,y)
 void graphicsDrawPointer(int x, int y);
+// Draw blue translucent rectangular box
+void graphicsDrawPromptBox(int width, int height)
+// Draw solid black rectangular box
+void graphicsDrawPromptBoxBlack(int width, int height)
 
 // Cover the entire screen with black
 void graphicsClearScreen(int r, int g, int b);
