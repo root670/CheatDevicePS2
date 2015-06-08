@@ -373,7 +373,7 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	
 	if(src & MC_SLOT_1|MC_SLOT_2 && dst == FLASH_DRIVE)
 		savesCreatePSU(save, src);
-	else
+	else if(src == FLASH_DRIVE && dst & MC_SLOT_1|MC_SLOT_2)
 		savesExtractPSU(save, dst);
 }
 
