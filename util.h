@@ -14,6 +14,9 @@ void handlePad();
 // Draw a simple text menu, handle gamepad input, then return the index of the chosen menu item.
 int displayPromptMenu(char **items, int numItems, char *header);
 
+// Replace illegal (reserved) characters in str with replacement. valid must point to a char array as large as str.
+void replaceIllegalChars(const char *str, char* valid, char replacement);
+
 unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen);
 
 #endif

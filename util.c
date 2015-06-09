@@ -348,6 +348,31 @@ int displayPromptMenu(char **items, int numItems, char *header)
 	return selectedItem;
 }
 
+void replaceIllegalChars(const char *str, char* valid, char replacement)
+{
+	char invalid[] = {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+	const char *c = str;
+	char *cvalid = valid;
+	int i;
+	if(!str || !valid)
+		return;
+	
+	while(*c)
+	{
+		for(i = 0; i < sizeof(invalid); i++)
+		{
+			if(*c == invalid[i])
+				*cvalid = replacement;
+			else
+				*cvalid = *c;
+		}
+		c++;
+		cvalid++;
+	}
+	
+	*cvalid = '/0';
+}
+
 unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
 	/*----------------------------------------------------------------------------*\

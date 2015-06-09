@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <dirent.h>
+#include <fileio.h>
 #include <libmc.h>
 #include <libpad.h>
 #include <sys/stat.h>
@@ -98,13 +99,12 @@ static char *getDevicePath(char *str, device_t dev)
 
 gameSave_t *savesGetSaves(device_t dev)
 {
-	int ret;
-	mcIcon iconSys;
-	char iconSysPath[64];
-	int fd;
 	mcTable mcDir[64] __attribute__((aligned(64)));
 	gameSave_t *saves;
 	gameSave_t *save;
+	mcIcon iconSys;
+	int ret, fd;
+	char iconSysPath[64];
 	int first = 1;
 	
 	saves = calloc(1, sizeof(gameSave_t));
@@ -349,7 +349,7 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	{
 		graphicsDrawTextCentered(320, "Can't copy to the same device", YELLOW);
 		graphicsRenderNow();
-		sleep(3);
+		sleep(2);
 		return;
 	}
 	
@@ -359,7 +359,7 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	{
 		graphicsDrawTextCentered(320, "Source device is not connected", YELLOW);
 		graphicsRenderNow();
-		sleep(3);
+		sleep(2);
 		return;
 	}
 	
@@ -367,7 +367,7 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	{
 		graphicsDrawTextCentered(320, "Destination device is not connected", YELLOW);
 		graphicsRenderNow();
-		sleep(3);
+		sleep(2);
 		return;
 	}
 	
@@ -430,73 +430,78 @@ int savesCopySavePrompt(gameSave_t *save)
 // Create PSU file and save it to a flash drive.
 int savesCreatePSU(gameSave_t *save, device_t src)
 {
-	FILE *psuFile;
+	FILE *psuFile, *mcFile;
 	mcTable mcDir[64] __attribute__((aligned(64)));
+	dirEntry_t dir, file;
+	fio_stat_t stat;
 	char mcPath[100];
-	int ret;
 	char psuPath[100];
-	dirEntry_t dir[2], file;
+	char filePath[150];
+	char validName[32];
+	char *data;
 	int numFiles = 0;
+	int i, j, len, padding;
+	int ret;
+	float progress = 0.0;
 	
 	if(!save || !(src & MC_SLOT_1|MC_SLOT_2))
 		return 0;
 	
-	snprintf(psuPath, 100, "mass:%s.psu", save->name);
-	printf("Saving \"%s\" to %s\n", save->path, psuPath);
+	memset(&dir, 0, sizeof(dirEntry_t));
+	memset(&file, 0, sizeof(dirEntry_t));
+	
+	replaceIllegalChars(save->name, validName, '-');
+	snprintf(psuPath, 100, "mass:%s.psu", validName);
+	
+	if(fioGetstat(psuPath, &stat) == 0)
+	{
+		char *items[] = {"Yes", "No"};
+		int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
+		
+		if(choice == 1)
+			return 0;
+	}
 	
 	psuFile = fopen(psuPath, "wb");
+	if(!psuFile)
+		return 0;
 	
 	snprintf(mcPath, 100, "%s/*", strstr(save->path, ":") + 1);
 	
 	mcGetDir((src == MC_SLOT_1) ? 0 : 1, 0, mcPath, 0, 54, mcDir);
 	mcSync(0, NULL, &ret);
 	
-	int i;
+	// Leave space for 3 directory entries (root, '.', and '..').
+	for(i = 0; i < 512*3; i++)
+		fputc(0, psuFile);
+	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsRenderNow();
+	
 	for(i = 0; i < ret; i++)
 	{
 		if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
 		{
-			dirEntry_t *foundDir;
-			if(strncmp(mcDir[i].name, ".\0", 2) == 0)
-			{
-				foundDir = &dir[0];
-			}
-			else if(strncmp(mcDir[i].name, "..", 2) == 0)
-			{
-				foundDir = &dir[1];
-			}
-			
-			
-			printf("ROOT DIRECTORY:\n\tname %s\n\tsize %d\n", mcDir[i].name, mcDir[i].fileSizeByte);
-			printf("\tattr %X\n", mcDir[i].attrFile);
-			printf("\tcreated  %d/%d/%d\n", mcDir[i]._create.month, mcDir[i]._create.day, mcDir[i]._create.year);
-			printf("\tmodified %d/%d/%d\n", mcDir[i]._modify.month, mcDir[i]._modify.day, mcDir[i]._modify.year);
-			
-			foundDir->mode = mcDir[i].attrFile;
-			foundDir->_create.year = mcDir[i]._create.year;
-			foundDir->_create.month = mcDir[i]._create.month;
-			foundDir->_create.day = mcDir[i]._create.day;
-			foundDir->_create.hour = mcDir[i]._create.hour;
-			foundDir->_create.min = mcDir[i]._create.min;
-			foundDir->_create.sec = mcDir[i]._create.sec;
-			foundDir->_modify.year = mcDir[i]._modify.year;
-			foundDir->_modify.month = mcDir[i]._modify.month;
-			foundDir->_modify.day = mcDir[i]._modify.day;
-			foundDir->_modify.hour = mcDir[i]._modify.hour;
-			foundDir->_modify.min = mcDir[i]._modify.min;
-			foundDir->_modify.sec = mcDir[i]._modify.sec;
-			strncpy(foundDir->name, mcDir[i].name, 32);
-			
-			printf("dir[0] @ %08X\n", foundDir);
+			dir.mode = 0x8427;
+			dir._create.year = mcDir[i]._create.year;
+			dir._create.month = mcDir[i]._create.month;
+			dir._create.day = mcDir[i]._create.day;
+			dir._create.hour = mcDir[i]._create.hour;
+			dir._create.min = mcDir[i]._create.min;
+			dir._create.sec = mcDir[i]._create.sec;
+			dir._modify.year = mcDir[i]._modify.year;
+			dir._modify.month = mcDir[i]._modify.month;
+			dir._modify.day = mcDir[i]._modify.day;
+			dir._modify.hour = mcDir[i]._modify.hour;
+			dir._modify.min = mcDir[i]._modify.min;
+			dir._modify.sec = mcDir[i]._modify.sec;
 		}
 		
 		else if(mcDir[i].attrFile & MC_ATTR_FILE)
 		{
-			// fseek 512*3, fwrite header, file data, padding to 1024 boundary
-			fseek(psuFile, 512*3, SEEK_SET);
-			printf("FILE:\n\tname %s\n\tsize %d\n", mcDir[i].name, mcDir[i].fileSizeByte);
-			printf("\tcreated  %d/%d/%d\n", mcDir[i]._create.month, mcDir[i]._create.day, mcDir[i]._create.year);
-			printf("\tmodified %d/%d/%d\n", mcDir[i]._modify.month, mcDir[i]._modify.day, mcDir[i]._modify.year);
+			progress += (float)1/(ret-2);
+			graphicsDrawLoadingBar(50, 350, progress);
+			graphicsRenderNow();
 			
 			file.mode = mcDir[i].attrFile;
 			file.length = mcDir[i].fileSizeByte;
@@ -512,21 +517,37 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 			file._modify.hour = mcDir[i]._modify.hour;
 			file._modify.min = mcDir[i]._modify.min;
 			file._modify.sec = mcDir[i]._modify.sec;
-			strncpy(file.name, mcDir[i].name, 32);
+			strncpy(file.name, mcDir[i].name, 32);			
+			
+			snprintf(filePath, 100, "%s/%s", save->path, file.name);
+			mcFile = fopen(filePath, "rb");
+			data = malloc(file.length);
+			fread(data, 1, file.length, mcFile);
+			fclose(mcFile);
 			
 			fwrite(&file, 1, 512, psuFile);
-			
+			fwrite(data, 1, file.length, psuFile);
+			free(data);
 			numFiles++;
+			
+			padding = 1024 - (file.length % 1024);
+			if(padding < 1024)
+			{
+				for(j = 0; j < padding; j++)
+					fputc(0, psuFile);
+			}
 		}
 	}
 	
-	dir[0].length = dir[1].length = numFiles + 2;
-	fseek(psuFile, 512, SEEK_SET);
-	fwrite(&dir[0], 0, 512, psuFile); // .
-	fwrite(&dir[1], 0, 512, psuFile); // ..
 	fseek(psuFile, 0, SEEK_SET);
-	strncpy(&dir[0].name, strstr(save->path, ":") + 1, 32);
-	fwrite(&dir[0], 0, 512, psuFile); // root directory
+	dir.length = numFiles + 2;
+	strncpy(dir.name, strstr(save->path, ":") + 1, 32);
+	fwrite(&dir, 1, 512, psuFile); // root directory
+	dir.length = 0;
+	strncpy(dir.name, ".", 32);
+	fwrite(&dir, 1, 512, psuFile); // .
+	strncpy(dir.name, "..", 32);
+	fwrite(&dir, 1, 512, psuFile); // ..
 	fclose(psuFile);
 }
 
@@ -534,15 +555,12 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 int savesExtractPSU(gameSave_t *save, device_t dst)
 {
 	FILE *psuFile, *dstFile;
-	int numFiles;
-	int next;
+	int numFiles, next, i;
 	char *dirName;
 	char dstName[100];
 	u8 *data;
 	dirEntry_t entry;
 	float progress = 0.0;
-	
-	printf("Extracting \"%s\" to device %d\n", save->path, dst);
 	
 	if(!save || !(dst & MC_SLOT_1|MC_SLOT_2))
 		return 0;
@@ -553,13 +571,10 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	
 	// Read main directory entry
 	fread(&entry, 1, 512, psuFile);
-	printf("MAIN DIRECTORY: name %s, length %X, dirEntry %X\n", entry.name, entry.length, entry.dirEntry);
 	numFiles = entry.length - 2;
 	
 	dirName = getDevicePath(entry.name, dst);
-	printf("Destination directory: %s\n", dirName);
 	int ret = fioMkdir(dirName);
-	printf("mkdir returned %d\n", ret);
 	
 	// Prompt user to overwrite save if it already exists
 	if(ret == -4)
@@ -569,6 +584,7 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 		if(choise == 1)
 		{
 			fclose(psuFile);
+			free(dirName);
 			return 0;
 		}
 	}
@@ -576,8 +592,10 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	// Skip "." and ".."
 	fseek(psuFile, 1024, SEEK_CUR);
 	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsRenderNow();
+	
 	// Copy each file entry
-	int i;
 	for(i = 0; i < numFiles; i++)
 	{
 		progress += (float)1/numFiles;
@@ -585,19 +603,26 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 		graphicsRenderNow();
 		
 		fread(&entry, 1, 512, psuFile);
-		printf("FILE %d: name %s, length %X, dirEntry %X, cluster %d\n", i+1, entry.name, entry.length, entry.dirEntry, entry.cluster);
 		
 		data = malloc(entry.length);
 		fread(data, 1, entry.length, psuFile);
 		
 		snprintf(dstName, 100, "%s/%s", dirName, entry.name);
 		dstFile = fopen(dstName, "wb");
+		if(!dstFile)
+		{
+			fclose(psuFile);
+			free(dirName);
+			free(data);
+			return 0;
+		}
 		fwrite(data, 1, entry.length, dstFile);
 		fclose(dstFile);
 		free(data);
 		
 		next = 1024 - (entry.length % 1024);
-		fseek(psuFile, next, SEEK_CUR);
+		if(next < 1024)
+			fseek(psuFile, next, SEEK_CUR);
 	}
 
 	free(dirName);

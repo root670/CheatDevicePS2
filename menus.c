@@ -237,7 +237,7 @@ void menuToggleItem()
 		startgameExecute(activeMenu->current->text);
 	}
 	
-	if(activeMenu->identifier == SAVEMENU)
+	if(activeMenu->identifier == SAVEMENU && activeMenu->current->type != HEADER)
 	{
 		savesCopySavePrompt((gameSave_t *) activeMenu->current->extra);
 	}
