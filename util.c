@@ -354,7 +354,10 @@ void replaceIllegalChars(const char *str, char* valid, char replacement)
 		for(i = 0; i < sizeof(invalid); i++)
 		{
 			if(*c == invalid[i])
+			{
 				*cvalid = replacement;
+				break;
+			}
 			else
 				*cvalid = *c;
 		}
@@ -362,7 +365,7 @@ void replaceIllegalChars(const char *str, char* valid, char replacement)
 		cvalid++;
 	}
 	
-	*cvalid = '/0';
+	*cvalid = '\0';
 }
 
 unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)
