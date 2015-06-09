@@ -97,6 +97,9 @@ int initGraphicsMan()
 
 		STB_SOMEFONT_CREATE(fontdata, font.Mem, STB_SOMEFONT_BITMAP_HEIGHT);
 		gsKit_texture_upload(gsGlobal, &font);
+			
+		graphicsDrawText(450, 400, "Please wait...", WHITE);
+		graphicsRenderNow();
 
 		graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
 		graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);

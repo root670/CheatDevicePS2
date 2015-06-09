@@ -19,10 +19,6 @@ int main(int argc, char *argv[])
 {
 	loadModules();
 	initGraphicsMan();
-	
-	graphicsDrawText(450, 400, "Please wait...", WHITE);
-	graphicsRenderNow();
-	
 	initStorageMan();
 	initSettingsMan();
 	initCheatMan();
