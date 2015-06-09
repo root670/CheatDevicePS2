@@ -310,7 +310,6 @@ int displayPromptMenu(char **items, int numItems, char *header)
 		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
 		old_pad = 0xFFFF ^ padStat.btns;
 		
-		//graphicsDrawBackground();
 		graphicsDrawPromptBoxBlack(500, 44 + (numItems * 22));
 		graphicsDrawTextCentered(224 - numItems*11 - 22, header, WHITE);
 		y = 224 - numItems*11 + 11;
@@ -320,13 +319,6 @@ int displayPromptMenu(char **items, int numItems, char *header)
 			y += 22;
 		}
 		graphicsRender();
-		/*
-		if(pad_pressed & PAD_CROSS)
-		{
-			//doCopy(currentDevice, 1 << selectedDevice, save);
-			return 1;
-		}
-		*/
 		
 		if(pad_pressed & PAD_UP)
 		{

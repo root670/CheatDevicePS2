@@ -263,7 +263,7 @@ static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
 	int i;
 	for(i = 0; i < numIcons; i++)
 	{
-		int x = (gsGlobal->Width / 2) - ((64 * numIcons) / 2.0) + (64 * i);
+		int x = (gsGlobal->Width / 2) - ((75 * numIcons) / 2.0) + (75 * i);
 		gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 		gsKit_prim_sprite_texture(gsGlobal, icons[i].tex,
 											x,
