@@ -347,8 +347,7 @@ void cheatsInstallCodesForEngine()
 {
 	if(activeGame != NULL)
 	{
-		void *codeLine;
-		int i, j = 0;
+		int i;
 		u32 addr, val;
 		int nextCodeCanBeHook = 1;
 		

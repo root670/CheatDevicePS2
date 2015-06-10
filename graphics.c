@@ -5,10 +5,10 @@
 #include <graph.h>
 #include <stdio.h>
 
-static struct menuIcon {
+typedef struct menuIcon {
 		char *label;
 		GSTEXTURE *tex;
-};
+} menuIcon_t;
 
 static GSGLOBAL *gsGlobal;
 static GSTEXTURE bg;
@@ -95,7 +95,7 @@ int initGraphicsMan()
 			font.Clut[i] = i | (i << 8) | (i << 16) | (alpha << 24);
 		}
 
-		STB_SOMEFONT_CREATE(fontdata, font.Mem, STB_SOMEFONT_BITMAP_HEIGHT);
+		STB_SOMEFONT_CREATE(fontdata, (unsigned char(*)[])font.Mem, STB_SOMEFONT_BITMAP_HEIGHT);
 		gsKit_texture_upload(gsGlobal, &font);
 			
 		graphicsDrawText(450, 400, "Please wait...", WHITE);
@@ -254,16 +254,14 @@ void graphicsDrawPromptBoxBlack(int width, int height)
 	drawPromptBox(width, height, graphicsColorTable[BLACK]);
 }
 
-static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
+static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
 {
+	int i;
 	const u64 unselected = GS_SETREG_RGBAQ(0xA0, 0xA0, 0xA0, 0x20, 0x80);
 	const u64 selected = GS_SETREG_RGBAQ(0x50, 0x50, 0x50, 0x80, 0x80);
 	
 	graphicsDrawPromptBox(350, 150);
 	
-	int **dimensions = malloc(numIcons * 3 * sizeof(int));
-	
-	int i;
 	for(i = 0; i < numIcons; i++)
 	{
 		int x = (gsGlobal->Width / 2) - ((75 * numIcons) / 2.0) + (75 * i);
@@ -286,7 +284,7 @@ static void drawMenu(struct menuIcon icons[], int numIcons, int activeItem)
 
 void graphicsDrawMainMenu(int activeItem)
 {
-	struct menuIcon icons[] = {{"Start Game", &gamepad},
+	menuIcon_t icons[] = {{"Start Game", &gamepad},
 							   {"Game List", &cube},
 							   {"Save Manager", &savemanager},
 							   {"Settings", &cogs}};
@@ -296,7 +294,7 @@ void graphicsDrawMainMenu(int activeItem)
 
 void graphicsDrawDeviceMenu(int activeItem)
 {
-	struct menuIcon icons[] = {{"Memory Card (Slot 1)", &memorycard1},
+	menuIcon_t icons[] = {{"Memory Card (Slot 1)", &memorycard1},
 							   {"Memory Card (Slot 2)", &memorycard2},
 							   {"Flash Drive", &flashdrive}};
 	

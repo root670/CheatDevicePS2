@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <unistd.h>
 #include <dirent.h>
 #include <fileio.h>
 #include <libmc.h>
@@ -7,6 +8,7 @@
 #include "saves.h"
 #include "menus.h"
 #include "graphics.h"
+#include "util.h"
 
 static int initialized = 0;
 static device_t currentDevice;
@@ -98,6 +100,8 @@ static char *getDevicePath(char *str, device_t dev)
 		mountPath = "mc1";
 	else if(dev == FLASH_DRIVE)
 		mountPath = "mass";
+	else
+		mountPath = "unk";
 	
 	len = strlen(str) + 10;
 	ret = malloc(len);
@@ -352,100 +356,6 @@ void savesLoadSaveMenu(device_t dev)
 	currentDevice = dev;
 }
 
-static void doCopy(device_t src, device_t dst, gameSave_t *save)
-{
-	int available;
-	
-	if(src == dst)
-	{
-		graphicsDrawTextCentered(320, "Can't copy to the same device", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
-	}
-	
-	if((src|dst) == (MC_SLOT_1|MC_SLOT_2))
-	{
-		graphicsDrawTextCentered(320, "Can't copy between memory cards", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
-	}
-	
-	available = savesGetAvailableDevices();
-	
-	if(!(available & src))
-	{
-		graphicsDrawTextCentered(320, "Source device is not connected", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
-	}
-	
-	if(!(available & dst))
-	{
-		graphicsDrawTextCentered(320, "Destination device is not connected", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
-	}
-	
-	if(src & MC_SLOT_1|MC_SLOT_2 && dst == FLASH_DRIVE)
-		savesCreatePSU(save, src);
-	else if(src == FLASH_DRIVE && dst & MC_SLOT_1|MC_SLOT_2)
-		savesExtractPSU(save, dst);
-}
-
-int savesCopySavePrompt(gameSave_t *save)
-{
-	struct padButtonStatus padStat;
-	u32 old_pad = PAD_CROSS;
-	u32 pad_pressed = 0;
-	int state;
-	int selectedDevice = 0;
-	
-	do
-	{
-		state = padGetState(0, 0);
-		while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-			state = padGetState(0, 0);
-	
-		padRead(0, 0, &padStat);
-	
-		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-		old_pad = 0xFFFF ^ padStat.btns;
-		
-		graphicsDrawBackground();
-		graphicsDrawDeviceMenu(selectedDevice);
-		graphicsDrawTextCentered(150, "Select device to copy save to", WHITE);
-		graphicsRender();
-		
-		if(pad_pressed & PAD_CROSS)
-		{
-			doCopy(currentDevice, 1 << selectedDevice, save);
-			return 1;
-		}
-		
-		else if(pad_pressed & PAD_RIGHT)
-		{
-			if(selectedDevice >= 2)
-				selectedDevice = 0;
-			else
-				++selectedDevice;
-		}
-
-		else if(pad_pressed & PAD_LEFT)
-		{
-			if (selectedDevice == 0)
-				selectedDevice = 2;
-			else
-				--selectedDevice;
-		}
-	} while(!(pad_pressed & PAD_CIRCLE));
-	
-	return 1;
-}
-
 // Create PSU file and save it to a flash drive.
 int savesCreatePSU(gameSave_t *save, device_t src)
 {
@@ -459,11 +369,11 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 	char validName[32];
 	char *data;
 	int numFiles = 0;
-	int i, j, len, padding;
+	int i, j, padding;
 	int ret;
 	float progress = 0.0;
 	
-	if(!save || !(src & MC_SLOT_1|MC_SLOT_2))
+	if(!save || !(src & (MC_SLOT_1|MC_SLOT_2)))
 		return 0;
 	
 	memset(&dir, 0, sizeof(dirEntry_t));
@@ -569,6 +479,8 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 	strncpy(dir.name, "..", 32);
 	fwrite(&dir, 1, 512, psuFile); // ..
 	fclose(psuFile);
+	
+	return 1;
 }
 
 // Extract PSU file from a flash drive to a memory card.
@@ -582,7 +494,7 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	dirEntry_t entry;
 	float progress = 0.0;
 	
-	if(!save || !(dst & MC_SLOT_1|MC_SLOT_2))
+	if(!save || !(dst & (MC_SLOT_1|MC_SLOT_2)))
 		return 0;
 	
 	psuFile = fopen(save->path, "rb");
@@ -648,4 +560,100 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 
 	free(dirName);
 	fclose(psuFile);
+	
+	return 1;
+}
+
+static void doCopy(device_t src, device_t dst, gameSave_t *save)
+{
+	int available;
+	
+	if(src == dst)
+	{
+		graphicsDrawTextCentered(320, "Can't copy to the same device", YELLOW);
+		graphicsRenderNow();
+		sleep(2);
+		return;
+	}
+	
+	if((src|dst) == (MC_SLOT_1|MC_SLOT_2))
+	{
+		graphicsDrawTextCentered(320, "Can't copy between memory cards", YELLOW);
+		graphicsRenderNow();
+		sleep(2);
+		return;
+	}
+	
+	available = savesGetAvailableDevices();
+	
+	if(!(available & src))
+	{
+		graphicsDrawTextCentered(320, "Source device is not connected", YELLOW);
+		graphicsRenderNow();
+		sleep(2);
+		return;
+	}
+	
+	if(!(available & dst))
+	{
+		graphicsDrawTextCentered(320, "Destination device is not connected", YELLOW);
+		graphicsRenderNow();
+		sleep(2);
+		return;
+	}
+	
+	if((src & (MC_SLOT_1|MC_SLOT_2)) && (dst == FLASH_DRIVE))
+		savesCreatePSU(save, src);
+	else if((src == FLASH_DRIVE) && (dst & (MC_SLOT_1|MC_SLOT_2)))
+		savesExtractPSU(save, dst);
+}
+
+int savesCopySavePrompt(gameSave_t *save)
+{
+	struct padButtonStatus padStat;
+	u32 old_pad = PAD_CROSS;
+	u32 pad_pressed = 0;
+	int state;
+	int selectedDevice = 0;
+	
+	do
+	{
+		state = padGetState(0, 0);
+		while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+			state = padGetState(0, 0);
+	
+		padRead(0, 0, &padStat);
+	
+		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+		old_pad = 0xFFFF ^ padStat.btns;
+		
+		graphicsDrawBackground();
+		graphicsDrawDeviceMenu(selectedDevice);
+		graphicsDrawTextCentered(150, "Select device to copy save to", WHITE);
+		graphicsRender();
+		
+		if(pad_pressed & PAD_CROSS)
+		{
+			doCopy(currentDevice, 1 << selectedDevice, save);
+			return 1;
+		}
+		
+		else if(pad_pressed & PAD_RIGHT)
+		{
+			if(selectedDevice >= 2)
+				selectedDevice = 0;
+			else
+				++selectedDevice;
+		}
+
+		else if(pad_pressed & PAD_LEFT)
+		{
+			if (selectedDevice == 0)
+				selectedDevice = 2;
+			else
+				--selectedDevice;
+		}
+	} while(!(pad_pressed & PAD_CIRCLE));
+	
+	return 1;
 }

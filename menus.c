@@ -3,6 +3,7 @@
 #include "cheats.h"
 #include "settings.h"
 #include "saves.h"
+#include "startgame.h"
 #include <stdio.h>
 #include <malloc.h>
 
@@ -36,12 +37,20 @@ int initMenuMan()
 int killMenuMan()
 {
 	int i;
-	for(i = 0; i < NUMMENUS; i++)
+	
+	if(initialized)
 	{
-		activeMenu = &menues[i];
-		menuRemoveAllItems();
+		for(i = 0; i < NUMMENUS; i++)
+		{
+			activeMenu = &menues[i];
+			menuRemoveAllItems();
+		}
+		
+		initialized = 0;
+		return 1;
 	}
-	initialized = 0;
+	
+	return 0;
 }
 
 int menuAppendItem(menuItem_t *item)
@@ -144,7 +153,7 @@ int menuSetActive(menuID_t id)
 	
 	else if(id == BOOTMENU)
 	{
-		char **paths;
+		const char **paths;
 		int numPaths;
 		
 		activeMenu->text = strdup("Boot paths");
@@ -170,6 +179,11 @@ int menuSetActive(menuID_t id)
 	else if(id == SAVEMENU)
 	{
 		initSaveMan();
+		activeMenu->text = strdup("Save Manager");
+	}
+	
+	else if (id == SAVEDEVICEMENU)
+	{
 		activeMenu->text = strdup("Save Manager");
 	}
 
@@ -264,6 +278,7 @@ int menuRender()
 	{
 		case SAVEMENU:
 			savesDrawTicker();
+		case SAVEDEVICEMENU:
 		case CHEATMENU:
 		case CODEMENU:
 		case BOOTMENU:
@@ -280,6 +295,7 @@ int menuRender()
 		case CHEATMINIMENU:
 		case CODEMINIMENU:
 		case SETTINGSMENU:
+		case NUMMENUS:
 			break;
 	};
 

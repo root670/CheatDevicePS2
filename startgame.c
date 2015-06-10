@@ -164,7 +164,7 @@ void startgameExecute(char *path)
 	FlushCache(0); // data cache
 	FlushCache(2); // instruction cache
 	
-	void *argv[2] = {boot2, "\0"};
+	char *argv[2] = {boot2, "\0"};
 
 	ExecPS2((void *)eh->entry, 0, 2, argv);
 };

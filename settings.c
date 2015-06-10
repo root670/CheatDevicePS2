@@ -123,7 +123,7 @@ const char **settingsGetBootPaths(int *numPaths)
 	if(initialized)
 	{
 		*numPaths = 5;
-		return settings.bootPaths;
+		return (const char**) settings.bootPaths;
 	}
 	return NULL;
 }

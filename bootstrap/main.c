@@ -4,6 +4,8 @@
 #include <ee_regs.h>
 #include <ps2lib_err.h>
 #include <ps2_reg_defs.h>
+#include <iopcontrol.h>
+#include <iopheap.h>
 #include <loadfile.h>
 #include <sifrpc.h>
 #include <string.h>
@@ -29,7 +31,6 @@ int black = 0x101010;
 int g_argc;
 char *g_argv[16];
 #define GS_BGCOLOUR	*((vu32*)0x120000e0)
-static char ElfPath[0x30];
 
 struct _lf_elf_load_arg {
 	union
@@ -92,13 +93,12 @@ void MyLoadElf(char *elfpath)
 
 	char *args[1];
 	t_ExecData sifelf;
-	int r;
 
 	memset(&sifelf, 0, sizeof(t_ExecData));	
 
 	elf_header_t boot_header;
 	elf_pheader_t boot_pheader;
-	int size = 0, fd = 0;
+	int fd = 0;
 	fioInit();
 	GS_BGCOLOUR = red; /* RED: Opening elf */
 	fd = fioOpen(elfpath, O_RDONLY); //Open the elf

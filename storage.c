@@ -156,7 +156,7 @@ int storageGetFileSize(const char* path)
 u8 *storageGetFileContents(const char* path, int *len)
 {
 	int bytesRead = 0;
-	u8 *buff;
+	u8 *buff = 0;
 
 	if(initialized)
 	{
