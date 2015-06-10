@@ -273,6 +273,11 @@ void cheatsDrawStats()
 	}
 }
 
+int cheatsIsActiveGame(const cheatsGame_t *game)
+{
+	return game == activeGame;
+}
+
 int cheatsSetActiveGame(cheatsGame_t *game)
 {
 	/* Disable all active cheats if a new game was selected */

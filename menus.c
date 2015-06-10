@@ -295,6 +295,8 @@ int menuRender()
 			{
 				if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
 					graphicsDrawText(50, y, item->text, YELLOW);
+				else if(activeMenu->identifier == GAMEMENU && cheatsIsActiveGame((cheatsGame_t *) item->extra))
+					graphicsDrawText(50, y, item->text, YELLOW);
 				else
 					graphicsDrawText(50, y, item->text, WHITE);
 			}
