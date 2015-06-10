@@ -380,6 +380,7 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 	memset(&file, 0, sizeof(dirEntry_t));
 	
 	replaceIllegalChars(save->name, validName, '-');
+	rtrim(validName);
 	snprintf(psuPath, 100, "mass:%s.psu", validName);
 	
 	if(fioGetstat(psuPath, &stat) == 0)

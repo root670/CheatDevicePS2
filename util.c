@@ -4,6 +4,7 @@
 #include "startgame.h"
 #include "saves.h"
 #include <stdio.h>
+#include <ctype.h>
 #include <loadfile.h>
 #include <tamtypes.h>
 #include <iopcontrol.h>
@@ -367,6 +368,17 @@ void replaceIllegalChars(const char *str, char* valid, char replacement)
 	}
 	
 	*cvalid = '\0';
+}
+
+char *rtrim(char *str)
+{
+	char *end;
+	
+	end = str + strlen(str) - 1;
+	while(end > str && isspace(*end)) end--;
+	*(end+1) = '\0';
+	
+	return str;
 }
 
 unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)
