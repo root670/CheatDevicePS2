@@ -230,7 +230,7 @@ void cheatsDrawStats()
 				snprintf(active_cheats, 32, "%i active cheat", numEnabledCheats);
 			else
 				snprintf(active_cheats, 32, "%i active cheats", numEnabledCheats);
-			graphicsDrawText(480, 46, active_cheats, WHITE);
+			graphicsDrawText(482, 25, active_cheats, WHITE);
 		}
 	}
 	

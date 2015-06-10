@@ -266,7 +266,7 @@ int menuRender()
 		case CHEATMENU:
 		case CODEMENU:
 		case BOOTMENU:
-			graphicsDrawText(50, 46, activeMenu->text, WHITE);
+			graphicsDrawTextCentered(47, activeMenu->text, WHITE);
 			break;
 		case ABOUTMENU:
 			graphicsDrawAboutPage();
