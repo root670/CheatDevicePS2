@@ -482,7 +482,7 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 	}
 	
 	graphicsDrawLoadingBar(50, 350, 0.0);
-	graphicsDrawTextCentered(320, "Copying save...\nDon't remove the memory card or flash drive.", YELLOW);
+	graphicsDrawTextCentered(310, "Copying save...", YELLOW);
 	graphicsRenderNow();
 	
 	psuFile = fopen(psuPath, "wb");
@@ -610,7 +610,7 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	}
 	
 	graphicsDrawLoadingBar(50, 350, 0.0);
-	graphicsDrawTextCentered(320, "Copying save...\nDon't remove the memory card or flash drive.", YELLOW);
+	graphicsDrawTextCentered(310, "Copying save...", YELLOW);
 	graphicsRenderNow();
 	
 	// Skip "." and ".."
