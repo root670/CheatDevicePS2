@@ -80,7 +80,7 @@ int cheatsOpenDatabase(const char* path, cheatDatabaseType_t t)
 
 			case BINARY:
 				numGames = dbOpenDatabase(path);
-				gamesHead = dbGetCheatStruct(0);
+				gamesHead = dbGetCheatStruct();
 				dbCloseDatabase();
 				break;
 

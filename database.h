@@ -22,15 +22,13 @@ typedef struct dbCheat {
 
 // Open and read/decompress the database. Only one database can be open at a time.
 int dbOpenDatabase(const char *path);
-// Converts database to cheat struct, only loading game titles initially.
-// returns number of games in database.
+// Converts database to cheat struct. Returns number of games in database.
 int dbOpenBuffer(unsigned char *buff);
 // Free database from memory.
 int dbCloseDatabase();
 
 // Retrieve data structure from loaded database.
-// If titlesOnly == 1, cheats will not be loaded. They can be loaded later with dbGetCheats().
-cheatsGame_t *dbGetCheatStruct(int titlesOnly);
+cheatsGame_t *dbGetCheatStruct();
 
 // Load a game's cheats. This is needed if dbGetCheatStruct was called with titlesOnly == 1.
 int dbGetCheats(cheatsGame_t *game);

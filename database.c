@@ -21,6 +21,14 @@ static cheatsGame_t *gamesHead = NULL;
 
 int dbOpenBuffer(unsigned char *buff)
 {
+	unsigned short numCheats;
+	unsigned short numCodeLines;
+	unsigned int cheatsOffset;
+	u64 *codeLines = NULL;
+	cheatsCheat_t *cheatsHead = NULL;
+	cheatsCheat_t *cheatsArray = NULL;
+	cheatsCheat_t *cheat = NULL;
+	
 	printf("Loading buffer\n");
 	cheatsGame_t *game;
 	dbBuff = buff;
@@ -57,10 +65,10 @@ int dbOpenBuffer(unsigned char *buff)
 
 	dbTitleBuffer = dbBuff + 16;
 
-	game = calloc(1, sizeof(cheatsGame_t));
+	game = calloc(dbHeader->numTitles, sizeof(cheatsGame_t));
 	gamesHead = game;
 
-	int i;
+	int i, j;
 	for(i = 0; i < dbHeader->numTitles; i++)
 	{
 		int titlelen = *((u8 *)dbTitleBuffer);
@@ -69,12 +77,70 @@ int dbOpenBuffer(unsigned char *buff)
 
 		dbTitleBuffer += 1;
 		strncpy(game->title, dbTitleBuffer, titlelen);
-		dbTitleBuffer += titlelen + 8;
+		dbTitleBuffer += titlelen;
+		
+		// The values might not be aligned properly, so they're read byte-by-byte
+		numCheats = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
+		dbTitleBuffer += sizeof(u16);
 
-		game->cheats = NULL;
+		numCodeLines = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
+		codeLines = calloc(numCodeLines, sizeof(u64));
+		dbTitleBuffer += sizeof(u16);
+		
+		cheatsOffset = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8) | (*(dbTitleBuffer+2) << 16) | (*(dbTitleBuffer+3) << 24);
+		dbCheatsBuffer = dbBuff + cheatsOffset;
+		dbTitleBuffer += sizeof(u32);
+		
+		cheatsArray = calloc(numCheats, sizeof(cheatsCheat_t));
+		cheatsHead = &cheatsArray[0];
+		cheat = cheatsHead;
+		
+		/* Read each cheat */
+		for(j = 0; j < numCheats; j++)
+		{
+			titlelen = *dbCheatsBuffer;
+			if(titlelen>81)
+			{
+				printf("ERROR READING DB: title length is too long!\n");
+				return 0;
+			}
+
+			dbCheatsBuffer++;
+			strncpy(cheat->title, dbCheatsBuffer, titlelen-1);
+
+			dbCheatsBuffer+= titlelen;
+			cheat->numCodeLines = *((u8 *)dbCheatsBuffer);
+			dbCheatsBuffer++;
+
+			if(cheat->numCodeLines > 0)
+			{
+				cheat->type = CHEATNORMAL;
+				cheat->codeLines = codeLines;
+				memcpy(codeLines, dbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
+
+				dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
+			}
+			else
+			{
+				cheat->type = CHEATHEADER;
+				cheat->codeLines = NULL;
+			}
+
+			if(j+1 < numCheats)
+				cheat->next = &cheatsHead[j+1];
+			else
+				cheat->next = NULL;
+
+			codeLines += cheat->numCodeLines;
+			cheat = cheat->next;
+		}
+		
+		game->cheats = cheatsHead;
+		game->numCheats = numCheats;
+		
 		if(i+1 < dbHeader->numTitles)
 		{
-			game->next = calloc(1, sizeof(cheatsGame_t));
+			game->next = game + 1;
 			game = game->next;
 		}
 		else
@@ -138,118 +204,10 @@ int dbCloseDatabase()
 		return 0;
 }
 
-int dbGetCheats(cheatsGame_t *game)
+cheatsGame_t *dbGetCheatStruct()
 {
-	unsigned int i;
-	unsigned char titlelen;
-	unsigned short numCheats;
-	unsigned short numCodeLines;
-	int cheatsOffset;
-	u64 *codeLines = NULL;
-	cheatsCheat_t *cheatsHead = NULL;
-	cheatsCheat_t *cheatsArray = NULL;
-	cheatsCheat_t *cheat = NULL;
-
-	dbTitleBuffer = dbBuff + 16; // skip past initial "CDB" header
-
-	/* Try to find matching game title in DB */
-	for(i = 0; i < dbHeader->numTitles; i++)
-	{
-		titlelen = *((u8 *)dbTitleBuffer);
-		if(titlelen>81)
-			return 0;
-
-		dbTitleBuffer++;
-
-		if(strncmp(game->title, dbTitleBuffer, titlelen) == 0)
-		{
-			/* Found game in database, now read the cheats */
-			dbTitleBuffer += titlelen;
-
-			// The values might not be aligned properly, so they're read byte-by-byte
-			numCheats = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
-			dbTitleBuffer += sizeof(u16);
-
-			numCodeLines = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
-			codeLines = calloc(numCodeLines, sizeof(u64));
-			dbTitleBuffer += sizeof(u16);
-
-			cheatsOffset = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8) | (*(dbTitleBuffer+2) << 16) | (*(dbTitleBuffer+3) << 24);
-			dbCheatsBuffer = dbBuff + cheatsOffset;
-
-			cheatsArray = calloc(numCheats, sizeof(cheatsCheat_t));
-			cheatsHead = &cheatsArray[0];
-			cheat = cheatsHead;
-
-			/* Read each cheat */
-			for(i = 0; i < numCheats; i++)
-			{
-				titlelen = *dbCheatsBuffer;
-				if(titlelen>81)
-				{
-					printf("ERROR READING DB: title length is too long!\n");
-					return 0;
-				}
-
-				dbCheatsBuffer++;
-				strncpy(cheat->title, dbCheatsBuffer, titlelen-1);
-
-				dbCheatsBuffer+= titlelen;
-				cheat->numCodeLines = *((u8 *)dbCheatsBuffer);
-				dbCheatsBuffer++;
-
-				if(cheat->numCodeLines > 0)
-				{
-					cheat->type = CHEATNORMAL;
-					cheat->codeLines = codeLines;
-					memcpy(codeLines, dbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
-
-					dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
-				}
-				else
-				{
-					cheat->type = CHEATHEADER;
-					cheat->codeLines = NULL;
-				}
-
-				if(i+1 < numCheats)
-					cheat->next = &cheatsHead[i+1];
-				else
-					cheat->next = NULL;
-
-				codeLines += cheat->numCodeLines;
-				cheat = cheat->next;
-			}
-
-			game->cheats = cheatsHead;
-			game->numCheats = numCheats;
-			return numCheats;
-		}
-
-		dbTitleBuffer += titlelen + 8; // skip 2 bytes for numCheats, 2 bytes of numCodeLines, 4 bytes for offset
-	}
-
-	return 0;
-}
-
-cheatsGame_t *dbGetCheatStruct(int titlesOnly)
-{
-	cheatsGame_t *game = gamesHead;
-
 	if(dbIsOpen)
-	{
-		if(titlesOnly)
-			return gamesHead;
-		else
-		{
-			while(game)
-			{
-				dbGetCheats(game);
-				game = game->next;
-			}
-			return gamesHead;
-		}
-	}
+		return gamesHead;
 	else
 		return NULL;
 }
