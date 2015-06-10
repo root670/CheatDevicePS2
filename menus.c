@@ -33,7 +33,16 @@ int initMenuMan()
 }
 
 // free all menu items. free all menustates
-int killMenuMan();
+int killMenuMan()
+{
+	int i;
+	for(i = 0; i < NUMMENUS; i++)
+	{
+		activeMenu = &menues[i];
+		menuRemoveAllItems();
+	}
+	initialized = 0;
+}
 
 int menuAppendItem(menuItem_t *item)
 {

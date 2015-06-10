@@ -86,7 +86,7 @@ void startgameExecute(char *path)
 	static char boot2[100];
 	char *line, *substr;
 
-	//killMenuMan();
+	killMenuMan();
 	killCheatMan();
 	killSettingsMan();
 	killStorageMan();
