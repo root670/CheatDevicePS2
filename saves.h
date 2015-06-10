@@ -31,6 +31,8 @@ void savesLoadSaveMenu(device_t dev);
 gameSave_t *savesGetSaves(device_t dev);
 // Check which devices are present.
 int savesGetAvailableDevices();
+// Display help text.
+void savesDrawTicker();
 
 // Prompt user for destination device, then copy the save.
 int savesCopySavePrompt(gameSave_t *save);

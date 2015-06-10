@@ -237,6 +237,7 @@ void handlePad()
 	else if(currentMenu == SAVEDEVICEMENU)
 	{
 		graphicsDrawDeviceMenu(selectedDevice);
+		graphicsDrawTextCentered(150, "Select device to view saves", WHITE);
 		if(pad_pressed & PAD_CROSS)
 		{
 			menuSetActive(SAVEMENU);

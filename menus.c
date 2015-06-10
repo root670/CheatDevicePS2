@@ -252,10 +252,11 @@ int menuRender()
 
 	switch(activeMenu->identifier)
 	{
+		case SAVEMENU:
+			savesDrawTicker();
 		case CHEATMENU:
 		case CODEMENU:
 		case BOOTMENU:
-		case SAVEMENU:
 			graphicsDrawText(50, 46, activeMenu->text, WHITE);
 			break;
 		case ABOUTMENU:

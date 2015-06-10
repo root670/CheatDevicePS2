@@ -70,6 +70,17 @@ int killSaveMan()
 	return 0;
 }
 
+void savesDrawTicker()
+{
+	static int ticker_x = 0;
+	if (ticker_x < 1500)
+		ticker_x+= 2;
+	else
+		ticker_x = 0;
+	
+	graphicsDrawText(640 - ticker_x, 405, "Press X to choose a game save. Press CIRCLE to return to device menu.", WHITE);
+}
+
 static char *getDevicePath(char *str, device_t dev)
 {
 	char *ret, *mountPath;
@@ -353,6 +364,14 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 		return;
 	}
 	
+	if((src|dst) == (MC_SLOT_1|MC_SLOT_2))
+	{
+		graphicsDrawTextCentered(320, "Can't copy between memory cards", YELLOW);
+		graphicsRenderNow();
+		sleep(2);
+		return;
+	}
+	
 	available = savesGetAvailableDevices();
 	
 	if(!(available & src))
@@ -462,6 +481,10 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 			return 0;
 	}
 	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsDrawTextCentered(320, "Copying save...\nDon't remove the memory card or flash drive.", YELLOW);
+	graphicsRenderNow();
+	
 	psuFile = fopen(psuPath, "wb");
 	if(!psuFile)
 		return 0;
@@ -474,9 +497,6 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 	// Leave space for 3 directory entries (root, '.', and '..').
 	for(i = 0; i < 512*3; i++)
 		fputc(0, psuFile);
-	
-	graphicsDrawLoadingBar(50, 350, 0.0);
-	graphicsRenderNow();
 	
 	for(i = 0; i < ret; i++)
 	{
@@ -589,11 +609,12 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 		}
 	}
 	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsDrawTextCentered(320, "Copying save...\nDon't remove the memory card or flash drive.", YELLOW);
+	graphicsRenderNow();
+	
 	// Skip "." and ".."
 	fseek(psuFile, 1024, SEEK_CUR);
-	
-	graphicsDrawLoadingBar(50, 350, 0.0);
-	graphicsRenderNow();
 	
 	// Copy each file entry
 	for(i = 0; i < numFiles; i++)
