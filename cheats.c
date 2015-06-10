@@ -122,17 +122,17 @@ int cheatsLoadGameMenu()
 	return 0;
 }
 
-cheatsGame_t* cheatsLoadCheatMenu(const char* title)
+cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
 {
-	if(initialized && gamesHead!=NULL)
+	if(initialized && gamesHead!=NULL && game)
 	{
 		cheatsGame_t *node = gamesHead;
-		printf("Loading cheat menu for %s\n", title);
+		printf("Loading cheat menu for %s\n", game->title);
 
 		/* Find the game */
 		while(node)
 		{
-			if(strcmp(title, node->title) == 0)
+			if(node == game)
 			{
 				/* Build the menu */
 				cheatsCheat_t *cheat = node->cheats;

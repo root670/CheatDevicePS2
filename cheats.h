@@ -53,7 +53,7 @@ int cheatsLoadGameMenu();
    it's associated cheatsCheat_t object for toggling cheats from the menu.
    Game object is returned so the menu manager can associate the created menu
    with a game. */
-cheatsGame_t* cheatsLoadCheatMenu(const char* title);
+cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game);
 // TODO: Create a menu with a cheat's code lines
 int cheatsLoadCodeMenu(const char* game, const char* cheat);
 

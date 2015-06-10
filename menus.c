@@ -123,7 +123,8 @@ int menuSetActive(menuID_t id)
 	{
 		menuRemoveAllItems();
 		activeMenu->text = menues[GAMEMENU].current->text;
-		activeMenu->game = cheatsLoadCheatMenu(menues[GAMEMENU].current->text);
+		//activeMenu->game = cheatsLoadCheatMenu(menues[GAMEMENU].current->text);
+		activeMenu->game = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].current->extra);
 	}
 
 	else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].current->text) != 0)) // Refresh code menu if a new cheat was chosen
