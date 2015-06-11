@@ -24,6 +24,7 @@ example.
 * Easy to navigate menu system similar to CodeBreaker
 * Supports retail discs and loader ELFs
 * Fast loading of large cheat lists
+* Save manager for backing up and restoring game saves to/from a flash drive
 * Powered by ps2rd's powerful cheat engine
 
 ## Compiling
