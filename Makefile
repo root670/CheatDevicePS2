@@ -86,6 +86,13 @@ main: $(EE_BIN)
 	rm -f libraries/*.o
 	rm -f bootstrap/*.elf bootstrap/*.o
 
+release: all
+	rm -rf release
+	mkdir release
+	ps2-packer cheatdevice.elf cheatdevice-packed.elf
+	cp cheatdevice.elf cheatdevice-packed.elf cb10.cdb CheatDevicePS2.ini LICENSE README.md release
+	cd release && zip -q CheatDevicePS2-$$(git describe).zip *
+
 clean:
 	rm -f *.o *.elf
 	rm -f libraries/*.o
