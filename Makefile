@@ -48,7 +48,7 @@ IRX_OBJS += usbd_irx.o usb_mass_irx.o iomanX_irx.o
 
 EE_OBJS = $(IRX_OBJS) $(OBJS) main.o
 
-all: modules main
+all: modules version main
 
 modules:
 	# IRX Modules
@@ -75,7 +75,13 @@ modules:
 	cd bootstrap && $(MAKE)
 	bin2o bootstrap/bootstrap.elf bootstrap_elf.o _bootstrap_elf
 
+version:
+	echo -n '#define GIT_VERSION "' > version.h
+	git describe | tr -d '\n' >> version.h
+	echo '"' >> version.h
+
 main: $(EE_BIN)
+	rm -f version.h
 	rm -f *.o
 	rm -f libraries/*.o
 	rm -f bootstrap/*.elf bootstrap/*.o

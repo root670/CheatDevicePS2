@@ -1,6 +1,7 @@
 #include "graphics.h"
 #include "stb_font.h"
 #include "libraries/upng.h"
+#include "version.h"
 #include <time.h>
 #include <graph.h>
 #include <stdio.h>
@@ -360,7 +361,7 @@ void graphicsDrawAboutPage()
 	y += v_y;
 	
 	graphicsDrawText(x, y, "Cheat Device\nBy Wesley Castro\nhttp://wescastro.com", WHITE);
-	graphicsDrawText(50, 46, "Compiled " __DATE__ " " __TIME__, WHITE);
+	graphicsDrawText(50, 46, "Version: " GIT_VERSION, WHITE);
 	
 	static int ticker_x = 0;
 	if (ticker_x < 1100)
