@@ -4,7 +4,7 @@ Cheat Device is a game enhancer for PlayStation 2 games, similar to Action
 Replay or CodeBreaker. It supports booting retail, disc based games as well as
 ELF files (such as OpenPS2Loader, ESR, etc.) stored on a flashdrive or memory
 card. Cheat databases are stored in files created with makecdb, which will
-convert cheat lists using a this simple format:
+convert cheat lists using this simple format:
 
 ```
 "Game Name"
@@ -12,7 +12,18 @@ Cheat 1
 27654321 12345678
 Cheat 2
 12345678 98765432
+Cheat Section
+Cheat 3
+11111111 00000000
+// Comment line
 ```
+
+Currently only 9-type enable codes are supported, so games that use an F-type
+enable code will not work. The first cheat for every game must be it's enable
+code (9xxxxxxx yyyyyyyy). Also, all cheats must be in "RAW" format; Cheat
+Device can't decrypt or read any other formats (ARMAX, CB1-6, CB7+, AR2, GS,
+etc.). However, you can use a tool such as OmniConvert to convert any of these
+formats to RAW.
 
 ## Settings File
 Settings are stored in an ini file named "CheatDevicePS2.ini", which needs to
@@ -27,16 +38,17 @@ example.
 * Save manager for backing up and restoring game saves to/from a flash drive
 * Powered by ps2rd's powerful cheat engine
 
+## Planned Features
+* Loading of plain-text cheat lists
+* Saving/opening additional game save formats (*.CBS, *.MAX, etc.)
+* Console-sise cheat manipulation
+* Save list of enabled cheats before starting a game. Re-enable cheats next
+  time Cheat Device runs.
+
 ## Compiling
 Compile Cheat Device
 ```bash
     cd cheatdeviceps2
-	make all
-```
-
-Compile makecdb
-```bash
-	cd cheatdeviceps2/makecdb
 	make all
 ```
 
