@@ -41,7 +41,7 @@ example.
 ## Planned Features
 * Loading of plain-text cheat lists
 * Saving/opening additional game save formats (*.CBS, *.MAX, etc.)
-* Console-sise cheat manipulation
+* Console-side cheat manipulation
 * Save list of enabled cheats before starting a game. Re-enable cheats next
   time Cheat Device runs.
 
