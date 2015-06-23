@@ -1,5 +1,6 @@
 #include "cheats.h"
 #include "database.h"
+#include "textcheats.h"
 #include "menus.h"
 #include "graphics.h"
 #include <debug.h>
@@ -76,6 +77,9 @@ int cheatsOpenDatabase(const char* path, cheatDatabaseType_t t)
 		switch(dbType)
 		{
 			case TEXT:
+				numGames = textCheatsOpenFile(path);
+				gamesHead = textCheatsGetCheatStruct();
+				textCheatsClose();
 				break;
 
 			case BINARY:
@@ -134,10 +138,12 @@ cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
 		{
 			if(node == game)
 			{
+				printf("Found game.\n");
 				/* Build the menu */
 				cheatsCheat_t *cheat = node->cheats;
 				menuItem_t *items = calloc(node->numCheats, sizeof(menuItem_t));
 				menuItem_t *item = items;
+				printf("%d cheats\n", node->numCheats);
 				while(cheat != NULL)
 				{
 					if(cheat->type == CHEATNORMAL)

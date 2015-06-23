@@ -14,6 +14,7 @@ OBJS += libraries/ini.o
 OBJS += util.o
 OBJS += startgame.o
 OBJS += database.o
+OBJS += textcheats.o
 OBJS += cheats.o
 OBJS += graphics.o
 OBJS += storage.o
