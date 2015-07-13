@@ -189,6 +189,7 @@ gameSave_t *savesGetSaves(device_t dev)
 					
 					// Attempt crude Shift-JIS -> ASCII conversion...
 					char ascii[100];
+					char c;
 					int asciiOffset = 0;
 					unsigned char *jp = (unsigned char *)iconSys.title;
 					int j;
@@ -202,53 +203,41 @@ gameSave_t *savesGetSaves(device_t dev)
 						{
 							jp++;
 							if(*jp >= 0x4F && *jp <= 0x58) // 0-9
-								ascii[asciiOffset++] = *jp - 0x1F;
+								c = *jp - 0x1F;
 							else if(*jp >= 0x60 && *jp <= 0x79) // A-Z
-								ascii[asciiOffset++] = *jp - 0x1F;
+								c = *jp - 0x1F;
 							else if(*jp >= 80 && *jp <= 0xA0) // a-z
-								ascii[asciiOffset++] = *jp - 0x20;
+								c = *jp - 0x20;
 							else
-								ascii[asciiOffset++] = '?';
+								c = '?';
 						}
 						else if(*jp == 0x81)
 						{
 							jp++;
-							
 							if(*jp == 0)
 							{
-								ascii[asciiOffset++] = '\0';
+								ascii[asciiOffset] = '\0';
 								break;
 							}
 							
-							switch(*jp)
+							if(*jp >= 0x40 && *jp <= 0xAC)
 							{
-								case 0x40:
-									ascii[asciiOffset++] = ' ';
-									break;
-								case 0x46:
-									ascii[asciiOffset++] = ':';
-									break;
-								case 0x95:
-									ascii[asciiOffset++] = '&';
-									break;
-								case 0x5B:
-								case 0x5C:
-								case 0x5D:
-									ascii[asciiOffset++] = '-';
-									break;
-								case 0x6D:
-									ascii[asciiOffset++] = '[';
-									break;
-								case 0x6E:
-									ascii[asciiOffset++] = ']';
-									break;
-								default:
-									ascii[asciiOffset++] = '?';
+								const char replacements[] = {' ', ',', '.', ',', '.', '.', ':', ';', '?', '!', '"', '*', '\'', '`', '*', '^',
+															 '-', '_', '?', '?', '?', '?', '?', '?', '?', '?', '*', '-', '-', '-', '/', '\\', 
+															 '~', '|', '|', '-', '-', '\'', '\'', '"', '"', '(', ')', '(', ')', '[', ']', '{', 
+															 '}', '<', '>', '<', '>', '[', ']', '[', ']', '[', ']', '+', '-', '+', 'X', '?',
+															 '-', '=', '=', '<', '>', '<', '>', '?', '?', '?', '?', '*', '\'', '"', 'C', 'Y', 
+															 '$', 'c', '&', '%', '#', '&', '*', '@', 'S', '*', '*', '*', '*', '*', '*', '*', 
+															 '*', '*', '*', '*', '*', '*', '*', 'T', '>', '<', '^', '_', '='};
+								c = replacements[*jp - 0x40];
 							}
+							else
+								c = '?';
 						}
 						else
-							ascii[asciiOffset++] = '?';
+							c = '?';
 						
+						ascii[asciiOffset++] = c;
 						jp++;
 						
 						if(*jp == 0)
@@ -258,7 +247,7 @@ gameSave_t *savesGetSaves(device_t dev)
 						}
 					}
 					
-					strncpy(save->name, strdup(ascii), 100);
+					strncpy(save->name, ascii, 100);
 				}
 				else
 					continue; // invalid save
