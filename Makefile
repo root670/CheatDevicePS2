@@ -42,7 +42,7 @@ GSKIT = $(PS2DEV)/gsKit
 
 EE_LIBS += -lpad -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd
 EE_LDFLAGS += -L$(PS2SDK)/ee/lib -L$(GSKIT)/lib -s
-EE_INCS += -I$(GSKITSRC)/ee/gs/include -I$(GSKITSRC)/ee/dma/include -I$(GSKITSRC)/ee/toolkit/include
+EE_INCS += -I$(GSKIT)/include
 
 IRX_OBJS += usbd_irx.o usb_mass_irx.o iomanX_irx.o
 
