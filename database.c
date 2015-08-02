@@ -2,7 +2,7 @@
 #include "cheats.h"
 #include "storage.h"
 #include "graphics.h"
-#include "libraries/miniz.h"
+#include "zlib.h"
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
@@ -156,7 +156,7 @@ int dbOpenBuffer(unsigned char *buff)
 int dbOpenDatabase(const char *path)
 {
 	int compressedSize;
-	int decompressedSize;
+	unsigned long decompressedSize;
 	int numGames;
 
 	if(!path)
@@ -171,8 +171,9 @@ int dbOpenDatabase(const char *path)
 		compressed = storageGetFileContents(dbPath, &compressedSize);
 		storageCloseFile(dbPath);
 
-		decompressed = malloc(5 * 1024 * 1024); // 5MB
-		decompressedSize = tinfl_decompress_mem_to_mem(decompressed, 5*1024*1024, compressed, compressedSize, TINFL_FLAG_PARSE_ZLIB_HEADER);
+		decompressedSize = 5*1024*1024; // 5MB
+		decompressed = malloc(decompressedSize);
+		uncompress(decompressed, &decompressedSize, compressed, compressedSize);
 		realloc(decompressed, decompressedSize);
 		free(compressed);
 		dbBuff = decompressed;

@@ -7,7 +7,6 @@ EE_BIN = cheatdevice.elf
 
 # Helper libraries
 OBJS += libraries/upng.o
-OBJS += libraries/miniz.o
 OBJS += libraries/ini.o
 
 # Main
@@ -40,9 +39,9 @@ OBJS += bootstrap_elf.o
 
 GSKIT = $(PS2DEV)/gsKit
 
-EE_LIBS += -lpad -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd
-EE_LDFLAGS += -L$(PS2SDK)/ee/lib -L$(GSKIT)/lib -s
-EE_INCS += -I$(GSKIT)/include
+EE_LIBS += -lpad -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd -lz
+EE_LDFLAGS += -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -s
+EE_INCS += -I$(GSKIT)/include -I$(PS2SDK)/ports/include
 
 IRX_OBJS += usbd_irx.o usb_mass_irx.o iomanX_irx.o
 

@@ -46,6 +46,7 @@ example.
   time Cheat Device runs.
 
 ## Compiling
+Note: You must have zlib installed from ps2sdk-ports.
 Compile Cheat Device
 ```bash
     cd cheatdeviceps2
