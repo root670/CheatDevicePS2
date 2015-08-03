@@ -15,12 +15,7 @@
 
 typedef u8 device_t;
 
-typedef struct gameSave {
-	char name[100];
-	char path[64];
-	
-	struct gameSave *next;
-} gameSave_t;
+typedef struct gameSave gameSave_t;
 
 int initSaveMan();
 int killSaveMan();

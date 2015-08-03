@@ -63,7 +63,7 @@ static int generatePathHash(const char *path)
 	if(!path)
 		return 0;
 
-	return crc32(0, path, strlen(path));
+	return mycrc32(0, path, strlen(path));
 }
 
 // Return value: pointer to slot, or 0 if slot couldn't be found

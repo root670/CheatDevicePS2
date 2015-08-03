@@ -89,7 +89,9 @@ release: all
 	rm -rf release
 	mkdir release
 	ps2-packer cheatdevice.elf cheatdevice-packed.elf
-	cp cheatdevice.elf cheatdevice-packed.elf cb10.cdb CheatDevicePS2.ini LICENSE README.md release
+	cp cheatdevice-packed.elf cb10.cdb CheatDevicePS2.ini LICENSE README.md release
+	rm cheatdevice-packed.elf
+	mv release/cheatdevice-packed.elf release/cheatdevice.elf
 	cd release && zip -q CheatDevicePS2-$$(git describe).zip *
 
 clean:

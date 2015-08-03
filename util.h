@@ -19,6 +19,6 @@ void replaceIllegalChars(const char *str, char* valid, char replacement);
 // Remove trailing whitespace from str.
 char *rtrim(char *str);
 
-unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen);
+unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen);
 
 #endif

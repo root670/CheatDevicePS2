@@ -381,7 +381,7 @@ char *rtrim(char *str)
 	return str;
 }
 
-unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)
+unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
 	/*----------------------------------------------------------------------------*\
 	 *  CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29.

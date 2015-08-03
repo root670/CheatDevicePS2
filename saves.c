@@ -6,9 +6,11 @@
 #include <libpad.h>
 #include <sys/stat.h>
 #include "saves.h"
+#include "saveutil.h"
 #include "menus.h"
 #include "graphics.h"
 #include "util.h"
+#include "zlib.h"
 
 static int initialized = 0;
 static device_t currentDevice;
@@ -45,6 +47,34 @@ typedef struct dirEntry {
 	char name[32];
 	u8 padding2[0x1A0];
 } dirEntry_t;
+
+typedef struct saveHandler {
+	char name[28]; // save format name
+	char extention[4]; // file extention
+	
+	int (*create)(gameSave_t *, device_t);
+	int (*extract)(gameSave_t *, device_t);
+} saveHandler_t;
+
+static int extractPSU(gameSave_t *save, device_t dst);
+static int createPSU(gameSave_t *save, device_t src);
+static int extractCBS(gameSave_t *save, device_t dst);
+static int createCBS(gameSave_t *save, device_t src);
+static int extractMAX(gameSave_t *save, device_t dst);
+static int createMAX(gameSave_t *save, device_t src);
+
+static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extractPSU};
+static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", createCBS, extractCBS};
+static saveHandler_t MAXHandler = {"Action Replay MAX (.max)", "max", createMAX, extractMAX};
+//static saveHandler_t PSVHandler = {"PS3 Virtual MC (.psv)", "psv", createPSV, extractPSV};
+
+struct gameSave {
+	char name[100];
+	char path[64];
+	saveHandler_t *_handler;
+	
+	struct gameSave *next;
+};
 
 int initSaveMan()
 {
@@ -112,11 +142,57 @@ static char *getDevicePath(char *str, device_t dev)
 	return ret;
 }
 
+// Determine save handler by filename.
+static saveHandler_t *getSaveHandler(const char *path)
+{
+	const char *end;
+	int len;
+	
+	if(!path)
+		return NULL;
+	
+	len = strlen(path);
+	if(len < 5) // x.xxx
+		return NULL;
+	
+	end = path + len - 1;
+	
+	if(strncmp(end - 2, PSUHandler.extention, 3) == 0)
+		return &PSUHandler;
+	if(strncmp(end - 2, CBSHandler.extention, 3) == 0)
+		return &CBSHandler;
+	/*
+	if(strncmp(end - 2, MAXHandler.extention, 3))
+		return &MAXHandler;
+	*/
+	else
+		return NULL;
+}
+
+// Display menu to choose save handler.
+static saveHandler_t *promptSaveHandler()
+{
+	//char *items[] = {PSUHandler.name, CBSHandler.name, MAXHandler.name};
+	char *items[] = {PSUHandler.name, CBSHandler.name};
+	//int choice = displayPromptMenu(items, 3, "Choose save format");
+	int choice = displayPromptMenu(items, 2, "Choose save format");
+	
+	if(choice == 0)
+		return &PSUHandler;
+	else if(choice == 1)
+		return &CBSHandler;
+	//else if(choice == 2)
+		//return &MAXHandler;
+	else
+		return NULL;
+}
+
 gameSave_t *savesGetSaves(device_t dev)
 {
 	mcTable mcDir[64] __attribute__((aligned(64)));
 	gameSave_t *saves;
 	gameSave_t *save;
+	saveHandler_t *handler;
 	mcIcon iconSys;
 	int ret, fd;
 	char iconSysPath[64];
@@ -138,11 +214,8 @@ gameSave_t *savesGetSaves(device_t dev)
 			if(FIO_SO_ISDIR(record.stat.mode))
 				continue;
 			
-			int len = strlen(record.name);
-			if(!(tolower(record.name[len-4]) == '.' &&
-				 tolower(record.name[len-3]) == 'p' &&
-				 tolower(record.name[len-2]) == 's' &&
-				 tolower(record.name[len-1]) == 'u'))
+			handler = getSaveHandler(record.name);
+			if(!handler)
 			{
 				printf("Ignoring file \"%s\"\n", record.name);
 				continue;
@@ -156,6 +229,7 @@ gameSave_t *savesGetSaves(device_t dev)
 				next->next = NULL;
 			}
 			
+			save->_handler = handler;
 			strncpy(save->name, record.name, 100);
 			snprintf(save->path, 64, "mass:%s", record.name);
 			
@@ -346,7 +420,7 @@ void savesLoadSaveMenu(device_t dev)
 }
 
 // Create PSU file and save it to a flash drive.
-int savesCreatePSU(gameSave_t *save, device_t src)
+static int createPSU(gameSave_t *save, device_t src)
 {
 	FILE *psuFile, *mcFile;
 	mcTable mcDir[64] __attribute__((aligned(64)));
@@ -474,7 +548,7 @@ int savesCreatePSU(gameSave_t *save, device_t src)
 }
 
 // Extract PSU file from a flash drive to a memory card.
-int savesExtractPSU(gameSave_t *save, device_t dst)
+static int extractPSU(gameSave_t *save, device_t dst)
 {
 	FILE *psuFile, *dstFile;
 	int numFiles, next, i;
@@ -502,8 +576,8 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	if(ret == -4)
 	{
 		char *items[] = {"Yes", "No"};
-		int choise = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
-		if(choise == 1)
+		int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
+		if(choice == 1)
 		{
 			fclose(psuFile);
 			free(dirName);
@@ -554,6 +628,127 @@ int savesExtractPSU(gameSave_t *save, device_t dst)
 	return 1;
 }
 
+static int extractCBS(gameSave_t *save, device_t dst)
+{
+	FILE *cbsFile, *dstFile;
+	u8 *cbsData;
+	u8 *compressed;
+	u8 *decompressed;
+	u8 *entryData;
+	cbsHeader_t *header;
+	cbsEntry_t entryHeader;
+	unsigned long decompressedSize;
+	int cbsLen, offset = 0;
+	char *dirName;
+	char dstName[100];
+	
+	if(!save || !(dst & (MC_SLOT_1|MC_SLOT_2)))
+		return 0;
+	
+	cbsFile = fopen(save->path, "rb");
+	if(!cbsFile)
+		return 0;
+	
+	fseek(cbsFile, 0, SEEK_END);
+	cbsLen = ftell(cbsFile);
+	fseek(cbsFile, 0, SEEK_SET);
+	cbsData = malloc(cbsLen);
+	fread(cbsData, 1, cbsLen, cbsFile);
+	fclose(cbsFile);
+	
+	header = (cbsHeader_t *)cbsData;
+	
+	dirName = getDevicePath(header->name, dst);
+	
+	int ret = fioMkdir(dirName);
+	
+	// Prompt user to overwrite save if it already exists
+	if(ret == -4)
+	{
+		char *items[] = {"Yes", "No"};
+		int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
+		if(choice == 1)
+		{
+			free(dirName);
+			free(cbsData);
+			return 0;
+		}
+	}
+	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+	graphicsRenderNow();
+	
+	// Get data for file entries
+	compressed = cbsData + 0x128;
+	// Some tools create .CBS saves with an incorrect compressed size in the header.
+	// It can't be trusted!
+	cbsCrypt(compressed, cbsLen - 0x128);
+	decompressedSize = (unsigned long)header->decompressedSize;
+	decompressed = malloc(decompressedSize);
+	int z_ret = uncompress(decompressed, &decompressedSize, compressed, cbsLen - 0x128);
+	
+	if(z_ret != 0)
+	{
+		// Compression failed.
+		free(dirName);
+		free(cbsData);
+		free(decompressed);
+		return 0;
+	}
+	
+	while(offset < (decompressedSize - 64))
+	{
+		graphicsDrawLoadingBar(50, 350, (float)offset/decompressedSize);
+		graphicsRenderNow();
+		
+		/* Entry header can't be read directly because it might not be 32-bit aligned.
+		GCC will likely emit an lw instruction for reading the 32-bit variables in the
+		struct which will halt the processor if it tries to load from an address
+		that's misaligned. */
+		memcpy(&entryHeader, &decompressed[offset], 64);
+		
+		offset += 64;
+		entryData = &decompressed[offset];
+		
+		snprintf(dstName, 100, "%s/%s", dirName, entryHeader.name);
+		
+		dstFile = fopen(dstName, "wb");
+		if(!dstFile)
+		{
+			free(dirName);
+			free(cbsData);
+			free(decompressed);
+			return 0;
+		}
+		
+		fwrite(entryData, 1, entryHeader.length, dstFile);
+		fclose(dstFile);
+		
+		offset += entryHeader.length;
+	}
+	
+	free(dirName);
+	free(decompressed);
+	free(cbsData);
+	return 1;
+}
+
+static int createCBS(gameSave_t *save, device_t src)
+{
+	return 1;
+}
+
+static int extractMAX(gameSave_t *save, device_t dst)
+{
+	return 1;
+}
+
+static int createMAX(gameSave_t *save, device_t src)
+{
+	return 1;
+}
+
 static void doCopy(device_t src, device_t dst, gameSave_t *save)
 {
 	int available;
@@ -593,9 +788,14 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	}
 	
 	if((src & (MC_SLOT_1|MC_SLOT_2)) && (dst == FLASH_DRIVE))
-		savesCreatePSU(save, src);
+	{
+		save->_handler = promptSaveHandler();
+		save->_handler->create(save, src);
+	}
 	else if((src == FLASH_DRIVE) && (dst & (MC_SLOT_1|MC_SLOT_2)))
-		savesExtractPSU(save, dst);
+	{
+		save->_handler->extract(save, dst);
+	}
 }
 
 int savesCopySavePrompt(gameSave_t *save)
