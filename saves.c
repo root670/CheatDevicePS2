@@ -207,7 +207,10 @@ gameSave_t *savesGetSaves(device_t dev)
 		int fs = fioDopen("mass:");
 		
 		if(!fs)
+		{
+			free(saves);
 			return NULL;
+		}
 		
 		while(fioDread(fs, &record) > 0)
 		{
@@ -236,6 +239,13 @@ gameSave_t *savesGetSaves(device_t dev)
 			first = 0;
 		}
 		
+		if(first) // Didn't find any saves
+		{
+			free(saves);
+			fioDclose(fs);
+			return NULL;
+		}
+		
 		fioDclose(fs);
 	}
 	
@@ -243,6 +253,12 @@ gameSave_t *savesGetSaves(device_t dev)
 	{
 		mcGetDir((dev == MC_SLOT_1) ? 0 : 1, 0, "/*", 0, 54, mcDir);
 		mcSync(0, NULL, &ret);
+		
+		if(ret == 0)
+		{
+			free(saves);
+			return NULL;
+		}
 		
 		int i;
 		for(i = 0; i < ret; i++)
@@ -402,7 +418,16 @@ void savesLoadSaveMenu(device_t dev)
 	}
 	
 	saves = savesGetSaves(dev);
-	save = saves;	
+	save = saves;
+
+	if(!save)
+	{
+		menuItem_t *item = calloc(1, sizeof(menuItem_t));
+		item->type = HEADER;
+		item->text = strdup("No saves on this device\n");
+		menuAppendItem(item);
+		return;
+	}
 	
 	while(save)
 	{
