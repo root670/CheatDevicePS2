@@ -65,9 +65,9 @@ typedef struct cbsHeader {
 		u16 year;    // Entry creation date/time (year)
 	} modify;
 	
-	char unk2[8];
+	u32 unk2;
 	u32 mode;
-	char unk3[12];
+	char unk3[16];
 	char title[72];
 	char description[132];
 } cbsHeader_t;

@@ -780,6 +780,150 @@ static int extractCBS(gameSave_t *save, device_t dst)
 
 static int createCBS(gameSave_t *save, device_t src)
 {
+	FILE *cbsFile, *mcFile;
+	mcTable mcDir[64] __attribute__((aligned(64)));
+	cbsHeader_t header;
+	cbsEntry_t entryHeader;
+	fio_stat_t stat;
+	u8 *dataBuff;
+	u8 *dataCompressed;
+	unsigned long compressedSize;
+	int dataOffset = 0;
+	char mcPath[100];
+	char cbsPath[100];
+	char filePath[150];
+	char validName[32];
+	int i;
+	int ret;
+	float progress = 0.0;
+	
+	if(!save || !(src & (MC_SLOT_1|MC_SLOT_2)))
+		return 0;
+	
+	memset(&header, 0, sizeof(cbsHeader_t));
+	memset(&entryHeader, 0, sizeof(cbsEntry_t));
+	
+	replaceIllegalChars(save->name, validName, '-');
+	rtrim(validName);
+	snprintf(cbsPath, 100, "mass:%s.cbs", validName);
+	
+	if(fioGetstat(cbsPath, &stat) == 0)
+	{
+		char *items[] = {"Yes", "No"};
+		int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
+		
+		if(choice == 1)
+			return 0;
+	}
+	
+	graphicsDrawLoadingBar(50, 350, 0.0);
+	graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+	graphicsRenderNow();
+	
+	cbsFile = fopen(cbsPath, "wb");
+	if(!cbsFile)
+		return 0;
+	
+	snprintf(mcPath, 100, "%s/*", strstr(save->path, ":") + 1);
+	
+	mcGetDir((src == MC_SLOT_1) ? 0 : 1, 0, mcPath, 0, 54, mcDir);
+	mcSync(0, NULL, &ret);
+	
+	for(i = 0; i < ret; i++)
+	{
+		if(mcDir[i].attrFile & MC_ATTR_FILE)
+			header.decompressedSize += mcDir[i].fileSizeByte + sizeof(cbsEntry_t);
+	}
+	
+	dataBuff = malloc(header.decompressedSize);
+	
+	for(i = 0; i < ret; i++)
+	{
+		if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+		{
+			strncpy(header.magic, "CFU\0", 4);
+			header.unk1 = 0x1F40;
+			header.dataOffset = 0x128;
+			strncpy(header.name, strstr(save->path, ":") + 1, 32);
+			header.create.year = mcDir[i]._create.year;
+			header.create.month = mcDir[i]._create.month;
+			header.create.day = mcDir[i]._create.day;
+			header.create.hour = mcDir[i]._create.hour;
+			header.create.min = mcDir[i]._create.min;
+			header.create.sec = mcDir[i]._create.sec;
+			header.modify.year = mcDir[i]._modify.year;
+			header.modify.month = mcDir[i]._modify.month;
+			header.modify.day = mcDir[i]._modify.day;
+			header.modify.hour = mcDir[i]._modify.hour;
+			header.modify.min = mcDir[i]._modify.min;
+			header.modify.sec = mcDir[i]._modify.sec;
+			header.mode = 0x8427;
+			strncpy(header.title, save->name, 32);
+		}
+		
+		else if(mcDir[i].attrFile & MC_ATTR_FILE)
+		{
+			progress += (float)1/(ret-2);
+			graphicsDrawLoadingBar(50, 350, progress);
+			graphicsRenderNow();
+			
+			entryHeader.create.year = mcDir[i]._create.year;
+			entryHeader.create.month = mcDir[i]._create.month;
+			entryHeader.create.day = mcDir[i]._create.day;
+			entryHeader.create.hour = mcDir[i]._create.hour;
+			entryHeader.create.min = mcDir[i]._create.min;
+			entryHeader.create.sec = mcDir[i]._create.sec;
+			entryHeader.modify.year = mcDir[i]._modify.year;
+			entryHeader.modify.month = mcDir[i]._modify.month;
+			entryHeader.modify.day = mcDir[i]._modify.day;
+			entryHeader.modify.hour = mcDir[i]._modify.hour;
+			entryHeader.modify.min = mcDir[i]._modify.min;
+			entryHeader.modify.sec = mcDir[i]._modify.sec;
+			entryHeader.length = mcDir[i].fileSizeByte;
+			entryHeader.mode = mcDir[i].attrFile;
+			strncpy(entryHeader.name, mcDir[i].name, 32);
+			
+			memcpy(&dataBuff[dataOffset], &entryHeader, sizeof(cbsEntry_t));
+			dataOffset += sizeof(cbsEntry_t);
+			
+			snprintf(filePath, 100, "%s/%s", save->path, entryHeader.name);
+			mcFile = fopen(filePath, "rb");
+			fread(&dataBuff[dataOffset], 1, entryHeader.length, mcFile);
+			fclose(mcFile);
+			
+			dataOffset += entryHeader.length;
+		}
+	}
+	
+	compressedSize = compressBound(header.decompressedSize);
+	dataCompressed = malloc(compressedSize);
+	if(!dataCompressed)
+	{
+		printf("malloc failed\n");
+		free(dataBuff);
+		fclose(cbsFile);
+		return 0;
+	}
+	
+	ret = compress2(dataCompressed, &compressedSize, dataBuff, header.decompressedSize, Z_BEST_COMPRESSION);
+	if(ret != Z_OK)
+	{
+		printf("compress2 failed\n");
+		free(dataBuff);
+		free(dataCompressed);
+		fclose(cbsFile);
+		return 0;
+	}
+	
+	header.compressedSize = compressedSize + 0x128;
+	fwrite(&header, 1, sizeof(cbsHeader_t), cbsFile);
+	cbsCrypt(dataCompressed, compressedSize);
+	fwrite(dataCompressed, 1, compressedSize, cbsFile);
+	fclose(cbsFile);
+	
+	free(dataBuff);
+	free(dataCompressed);
+	
 	return 1;
 }
 
