@@ -657,6 +657,11 @@ static int extractCBS(gameSave_t *save, device_t dst)
 	fclose(cbsFile);
 	
 	header = (cbsHeader_t *)cbsData;
+	if(strncmp(header->magic, "CFU", 3) != 0)
+	{
+		free(cbsData);
+		return 0;
+	}
 	
 	dirName = getDevicePath(header->name, dst);
 	
