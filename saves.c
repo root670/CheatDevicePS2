@@ -105,7 +105,7 @@ int killSaveMan()
 void savesDrawTicker()
 {
 	char *deviceName;
-	printf("current device %d\n", currentDevice);
+	
 	switch(currentDevice)
 	{
 		case MC_SLOT_1:
@@ -405,7 +405,6 @@ int savesGetAvailableDevices()
 			fioDclose(f);
 		}
 		
-		printf("available = %d\n", available);
 		return available;
 	}
 	
