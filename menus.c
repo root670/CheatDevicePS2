@@ -278,6 +278,7 @@ int menuRender()
 	{
 		case SAVEMENU:
 			savesDrawTicker();
+			break;
 		case SAVEDEVICEMENU:
 		case CHEATMENU:
 		case CODEMENU:

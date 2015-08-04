@@ -104,6 +104,21 @@ int killSaveMan()
 
 void savesDrawTicker()
 {
+	char *deviceName;
+	printf("current device %d\n", currentDevice);
+	switch(currentDevice)
+	{
+		case MC_SLOT_1:
+			deviceName = "Memory Card (Slot 1)";
+			break;
+		case MC_SLOT_2:
+			deviceName = "Memory Card (Slot 2)";
+			break;
+		case FLASH_DRIVE:
+			deviceName = "Flash Drive";
+	}
+	graphicsDrawTextCentered(47, deviceName, WHITE);
+	
 	static int ticker_x = 0;
 	if (ticker_x < 1500)
 		ticker_x+= 2;
@@ -403,6 +418,8 @@ void savesLoadSaveMenu(device_t dev)
 	gameSave_t *saves;
 	gameSave_t *save;
 	
+	currentDevice = dev;
+	
 	graphicsDrawText(450, 400, "Please wait...", WHITE);
 	graphicsRenderNow();
 	
@@ -440,8 +457,6 @@ void savesLoadSaveMenu(device_t dev)
 		gameSave_t *next = save->next;
 		save = next;
 	}
-	
-	currentDevice = dev;
 }
 
 // Create PSU file and save it to a flash drive.
@@ -848,6 +863,7 @@ int savesCopySavePrompt(gameSave_t *save)
 		old_pad = 0xFFFF ^ padStat.btns;
 		
 		graphicsDrawBackground();
+		graphicsDrawTextCentered(47, save->name, WHITE);
 		graphicsDrawDeviceMenu(selectedDevice);
 		graphicsDrawTextCentered(150, "Select device to copy save to", WHITE);
 		graphicsRender();

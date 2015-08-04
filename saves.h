@@ -14,7 +14,6 @@
 #define FLASH_DRIVE			(1 << 2)
 
 typedef u8 device_t;
-
 typedef struct gameSave gameSave_t;
 
 int initSaveMan();
