@@ -14,6 +14,7 @@
 
 static int initialized = 0;
 static device_t currentDevice;
+static int mc1Free, mc2Free;
 
 typedef struct dirEntry {
 	u32 mode;
@@ -105,19 +106,27 @@ int killSaveMan()
 void savesDrawTicker()
 {
 	char *deviceName;
+	char free[20];
+	int freeSpace; // in cluster size. 1 cluster = 1024 bytes.
 	
 	switch(currentDevice)
 	{
 		case MC_SLOT_1:
 			deviceName = "Memory Card (Slot 1)";
+			freeSpace = mc1Free;
 			break;
 		case MC_SLOT_2:
 			deviceName = "Memory Card (Slot 2)";
+			freeSpace = mc2Free;
 			break;
 		case FLASH_DRIVE:
 			deviceName = "Flash Drive";
+			freeSpace = 0; // TODO: Get free space from flash drive.
 	}
+	
 	graphicsDrawTextCentered(47, deviceName, WHITE);
+	snprintf(free, 20, "%d KB free", freeSpace);
+	graphicsDrawText(30, 47, free, WHITE);
 	
 	static int ticker_x = 0;
 	if (ticker_x < 1500)
@@ -387,6 +396,7 @@ int savesGetAvailableDevices()
 			available |= MC_SLOT_1;
 			printf("mem card slot 1 available\n");
 		}
+		mc1Free = mcFree;
 
 		// Memory card slot 2
 		mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
@@ -396,6 +406,7 @@ int savesGetAvailableDevices()
 			available |= MC_SLOT_2;
 			printf("mem card slot 2 available\n");
 		}
+		mc2Free = mcFree;
 		
 		// Flash drive
 		int f = fioDopen("mass:");
