@@ -5,6 +5,7 @@
 #include <time.h>
 #include <graph.h>
 #include <stdio.h>
+#include <kernel.h>
 
 typedef struct menuIcon {
 		char *label;
@@ -24,6 +25,7 @@ static GSTEXTURE memorycard1;
 static GSTEXTURE memorycard2;
 static stb_fontchar fontdata[STB_SOMEFONT_NUM_CHARS];
 static int initialized = 0;
+static int callbackId;
 
 extern u8  _background_png_start[];
 extern int _background_png_size;
@@ -53,6 +55,14 @@ static u64 graphicsColorTable[] = { GS_SETREG_RGBAQ(0x00,0x00,0x00,0xFF,0xFF), /
 									GS_SETREG_RGBAQ(0x00,0x00,0xF0,0xFF,0xFF), // BLUE
 									GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0xFF,0x80) }; // YELLOW
 
+static int vsync_callback()
+{
+	gsKit_display_buffer(gsGlobal);
+	gsKit_unlock_buffer(gsGlobal);
+	ExitHandler();
+	return 0;
+}
+
 int initGraphicsMan()
 {
 	if(!initialized)
@@ -70,6 +80,7 @@ int initGraphicsMan()
 		gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
 		gsGlobal->DoubleBuffering = GS_SETTING_OFF;
 		gsGlobal->PSM = GS_PSM_CT32;
+		callbackId = gsKit_add_vsync_handler(&vsync_callback);
 		gsKit_init_screen( gsGlobal );
 		gsKit_mode_switch( gsGlobal, GS_ONESHOT );
 
@@ -325,7 +336,6 @@ void graphicsDrawBackground()
 
 void graphicsDrawPointer(int x, int y)
 {
-	gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 	gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 	gsKit_prim_sprite_texture(gsGlobal, &check,
 										x,
@@ -373,20 +383,13 @@ void graphicsDrawAboutPage()
 
 void graphicsRenderNow()
 {
-	gsKit_sync_flip( gsGlobal );
+	//gsKit_sync_flip( gsGlobal );
 	gsKit_queue_exec( gsGlobal );
 }
 
 void graphicsRender()
 {
-	static clock_t c = 0;
-
-	if(clock() <= (c + 9600)) // (c + CLOCKS_PER_SEC/60)
-		c = clock();
-
-	else
-	{
-		gsKit_sync_flip( gsGlobal );
-		gsKit_queue_exec( gsGlobal );
-	}
+	gsKit_queue_exec( gsGlobal );
+	gsKit_lock_buffer(gsGlobal);
+	gsKit_vsync_wait();
 }

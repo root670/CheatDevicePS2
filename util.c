@@ -13,14 +13,21 @@
 #include <iopheap.h>
 #include <kernel.h>
 #include <sbv_patches.h>
+#include <libmc.h>
 
-extern unsigned char _poweroff_irx_start[];
-extern unsigned char _poweroff_irx_end[];
-extern int _poweroff_irx_size;
+extern u8  _iomanX_irx_start[];
+extern int _iomanX_irx_size;
+extern u8  _ps2kbd_irx_start[];
+extern int _ps2kbd_irx_size;
+extern u8  _usbd_irx_start[];
+extern int _usbd_irx_size;
+extern u8  _usb_mass_irx_start[];
+extern int _usb_mass_irx_size;
 static char padBuff[256] __attribute__ ((aligned(64)));
 
 void loadModules()
 {
+	int ret;
 	printf("\n ** Loading main modules **\n");
 
 	/* IOP reset routine taken from ps2rd */
@@ -54,6 +61,13 @@ void loadModules()
 
 	SifLoadModule("rom0:SIO2MAN", 0, NULL);
 	SifLoadModule("rom0:PADMAN", 0, NULL);
+	SifLoadModule("rom0:MCMAN", 0, NULL);
+	SifLoadModule("rom0:MCSERV", 0, NULL);
+	SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
+	SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
+	SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
+
+	mcInit(MC_TYPE_MC);
 
 	padInit(0);
 	padPortOpen(0, 0, padBuff);
