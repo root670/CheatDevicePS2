@@ -575,6 +575,95 @@ BootCodeHandler:
 	.end	BootCodeHandler
 #endif
 
+/**
+ * AutoHooker - Create hook for code engine when no hook codes are available
+ *
+ * This function searches for the first call to sceSifSendCmd and replaces it
+ * with a call to the code engine.
+ * Reference: http://web.archive.org/web/20140304104515/http://www.codemasters-project.net/guides/showentry.php?e=902&epage=3
+ * TODO: Provide feedback when the patterns are found, but the JAL
+ * instruction couldn't be found.
+ **/
+
+hookskips:
+	.word	1
+
+	.ent	AutoHooker
+AutoHooker:
+	/* save registers to the stack */
+	addiu	$sp, -0x28
+	sd	$t1, 0($sp)
+	sd	$t2, 8($sp)
+	sd	$t3, 16($sp)
+	sd	$v0, 24($sp)
+	sd	$v1, 32($sp)
+	
+	/*
+	* Don't autohook until the 2nd SetupThread call. This prevents hooking
+	* the bootstrap.
+	*/
+	lw	$t2, hookskips
+	nop
+	addiu $t2, $t2, -1
+	sw	$t2, hookskips
+	bgez	$t2, AutoHooker_done
+	
+	li	$t1, 0x00100000 // starting address
+
+AutoHooker_loop:
+	/* branch if all addresses in the range have been checked */
+	li	$t2, 0x018FFFF0
+	bge	$t1, $t2, AutoHooker_done
+	nop
+	
+	/* check first part of pattern, branch if it isn't found */
+	lw	$t3, 0($t1)
+	li	$t2, 0x0060402d // daddu t0, v1, zero
+	bne	$t2, $t3, AutoHooker_loop
+	addiu	$t1, 4
+	
+	/* check second part of pattern, branch if it isn't found */
+	lw	$t3, 0($t1)
+	li	$t2, 0x0160482d // daddu t1, t3, zero
+	bne	$t2, $t3, AutoHooker_loop
+	nop
+	
+	/* pattern has been found! look for the next jal and install the hook.
+	 * only check the next 3 instructions.
+	 */
+	li	$v0, 3
+AutoHooker_findjal:
+	beqz	$v0, AutoHooker_done // didn't find a jal!
+	addiu	$t1, 4
+	lw	$t3, 0($t1)
+	srl	$t3, $t3, 24
+	xori	$v1, $t3, 0x0c
+	bnez	$v1, AutoHooker_findjal
+	addiu	$v0, -1
+
+	/* back up opcodes */
+	lw	$t3, 0($t1)
+	la	$t2, eh_backup
+	sw	$t3, 0($t2) // original instruction
+	lw	$v1, 4($t1)
+	sw	$v1, 4($t2) // delay slot
+	
+	/* inject jal to engine handler */
+	lw	$v1, jal_EngineHandler
+	sw	$v1, 0($t1)
+	sw	$zero, 4($t1)
+	
+AutoHooker_done:
+	ld	$t1, 0($sp)
+	ld	$t2, 8($sp)
+	ld	$t3, 16($sp)
+	ld	$v0, 24($sp)
+	ld	$v1, 32($sp)
+	nop
+	jr	$ra
+	addiu	$sp, 0x28
+	.end AutoHooker
+
 /*******************************************************************************
  *
  * HookSetupThread - Pre-call hook function for syscall SetupThread().
@@ -607,11 +696,16 @@ HookSetupThread:
 	 * $v0 - hook address
 	 */
 	lw	$t1, numhooks
-	beqz	$t1, 3f
 	nop
-	la	$t3, hooklist
+	bgtz	$t1, 1f
+	nop
+	
+	/* find a place to hook */
+	jal	AutoHooker
+	nop
 1:
 	/* hook only if opcodes are equal */
+	la	$t3, hooklist
 	lw	$v0, 0($t3)
 	beqz	$v0, 2f
 	lw	$v1, 4($t3)
