@@ -307,7 +307,7 @@ void handlePad()
 	}
 }
 
-int displayPromptMenu(char **items, int numItems, char *header)
+int displayPromptMenu(char **items, int numItems, const char *header)
 {
 	struct padButtonStatus padStat;
 	u32 old_pad = PAD_CROSS;
@@ -361,7 +361,7 @@ int displayPromptMenu(char **items, int numItems, char *header)
 
 int displayError(const char *error)
 {
-	const char *items[] = {"OK"};
+	char *items[] = {"OK"};
 	return displayPromptMenu(items, 1, error);
 }
 

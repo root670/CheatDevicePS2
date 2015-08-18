@@ -2,6 +2,7 @@
 #include "database.h"
 #include "menus.h"
 #include "graphics.h"
+#include "util.h"
 #include <debug.h>
 #include <kernel.h>
 #include <stdio.h>

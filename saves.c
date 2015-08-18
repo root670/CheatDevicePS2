@@ -61,12 +61,12 @@ static int extractPSU(gameSave_t *save, device_t dst);
 static int createPSU(gameSave_t *save, device_t src);
 static int extractCBS(gameSave_t *save, device_t dst);
 static int createCBS(gameSave_t *save, device_t src);
-static int extractMAX(gameSave_t *save, device_t dst);
-static int createMAX(gameSave_t *save, device_t src);
+//static int extractMAX(gameSave_t *save, device_t dst);
+//static int createMAX(gameSave_t *save, device_t src);
 
 static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extractPSU};
 static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", createCBS, extractCBS};
-static saveHandler_t MAXHandler = {"Action Replay MAX (.max)", "max", createMAX, extractMAX};
+//static saveHandler_t MAXHandler = {"Action Replay MAX (.max)", "max", createMAX, extractMAX};
 //static saveHandler_t PSVHandler = {"PS3 Virtual MC (.psv)", "psv", createPSV, extractPSV};
 
 struct gameSave {
@@ -122,6 +122,9 @@ void savesDrawTicker()
 		case FLASH_DRIVE:
 			deviceName = "Flash Drive";
 			freeSpace = 0; // TODO: Get free space from flash drive.
+		default:
+			deviceName = "";
+			freeSpace = 0;
 	}
 	
 	graphicsDrawTextCentered(47, deviceName, WHITE);
@@ -938,6 +941,7 @@ static int createCBS(gameSave_t *save, device_t src)
 	return 1;
 }
 
+/*
 static int extractMAX(gameSave_t *save, device_t dst)
 {
 	return 1;
@@ -947,6 +951,7 @@ static int createMAX(gameSave_t *save, device_t src)
 {
 	return 1;
 }
+*/
 
 static int doCopy(device_t src, device_t dst, gameSave_t *save)
 {

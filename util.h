@@ -12,7 +12,7 @@ void loadModules();
 void handlePad();
 
 // Draw a simple text menu, handle gamepad input, then return the index of the chosen menu item.
-int displayPromptMenu(char **items, int numItems, char *header);
+int displayPromptMenu(char **items, int numItems, const char *header);
 // Draw an error message in a promp box.
 int displayError(const char *error);
 
