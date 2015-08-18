@@ -48,12 +48,12 @@ extern int _memorycard2_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
-static u64 graphicsColorTable[] = { GS_SETREG_RGBAQ(0x00,0x00,0x00,0xFF,0xFF), // BLACK
-									GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0xFF,0x00), // WHITE
-									GS_SETREG_RGBAQ(0xF0,0x00,0x00,0xFF,0xFF), // RED
-									GS_SETREG_RGBAQ(0x00,0xF0,0x00,0xFF,0xFF), // GREEN
-									GS_SETREG_RGBAQ(0x00,0x00,0xF0,0xFF,0xFF), // BLUE
-									GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0xFF,0x80) }; // YELLOW
+static u64 graphicsColorTable[] = { GS_SETREG_RGBAQ(0x00,0x00,0x00,0x80,0x80), // BLACK
+									GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0x80,0x80), // WHITE
+									GS_SETREG_RGBAQ(0xF0,0x00,0x00,0x80,0x80), // RED
+									GS_SETREG_RGBAQ(0x00,0xF0,0x00,0x80,0x80), // GREEN
+									GS_SETREG_RGBAQ(0x00,0x00,0xF0,0x80,0x80), // BLUE
+									GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80) }; // YELLOW
 
 static int vsync_callback()
 {
@@ -76,7 +76,7 @@ int initGraphicsMan()
 
 		// Initialize the GS
 		gsGlobal = gsKit_init_global();
-		gsGlobal->PrimAAEnable = GS_SETTING_OFF;
+		gsGlobal->PrimAAEnable = GS_SETTING_ON;
 		gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
 		gsGlobal->DoubleBuffering = GS_SETTING_OFF;
 		gsGlobal->PSM = GS_PSM_CT32;
@@ -97,7 +97,7 @@ int initGraphicsMan()
 		font.Clut = memalign(128, gsKit_texture_size_ee(16, 16, font.ClutPSM));
 		font.VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(16, 16, font.ClutPSM), GSKIT_ALLOC_USERBUFFER);
 		font.Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(font.Width, font.Height, font.PSM), GSKIT_ALLOC_USERBUFFER);
-		font.Filter = GS_FILTER_NEAREST;
+		font.Filter = GS_FILTER_LINEAR;
 
 		/* Generate palette */
 		unsigned int i;
@@ -131,7 +131,6 @@ int initGraphicsMan()
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering)
 {
-	printf("loading a png\n");
 	upng_t* pngTexture = upng_new_from_bytes(data, len);
 	upng_header(pngTexture);
 	upng_decode(pngTexture);
@@ -149,6 +148,8 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
 	tex->Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(tex->Width, tex->Height, tex->PSM), GSKIT_ALLOC_USERBUFFER);
 	tex->Filter = (linear_filtering) ? GS_FILTER_LINEAR : GS_FILTER_NEAREST;
 	gsKit_texture_upload(gsGlobal, tex);
+	
+	upng_free(pngTexture);
 }
 
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
@@ -170,14 +171,11 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 		}
 		int char_codepoint = *cptr++;
 		stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
-
-		///*
-		gsKit_prim_quad_texture(gsGlobal, &font,	cx + cdata->x0f, cy + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
-													cx + cdata->x1f, cy + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
-													cx + cdata->x0f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
-													cx + cdata->x1f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
-													1, color);
-
+		
+		gsKit_prim_sprite_texture(gsGlobal, &font, cx + cdata->x0f, cy + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
+												   cx + cdata->x1f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
+												   1, color);
+		
 		cx += cdata->advance_int;
 	}
 
@@ -258,7 +256,7 @@ static void drawPromptBox(int width, int height, u64 color)
 
 void graphicsDrawPromptBox(int width, int height)
 {
-	drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x25, 0x00));
+	drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x25, 0x80));
 }
 
 void graphicsDrawPromptBoxBlack(int width, int height)
@@ -269,7 +267,7 @@ void graphicsDrawPromptBoxBlack(int width, int height)
 static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
 {
 	int i;
-	const u64 unselected = GS_SETREG_RGBAQ(0xA0, 0xA0, 0xA0, 0x20, 0x80);
+	const u64 unselected = GS_SETREG_RGBAQ(0x50, 0x50, 0x50, 0x20, 0x80);
 	const u64 selected = GS_SETREG_RGBAQ(0x50, 0x50, 0x50, 0x80, 0x80);
 	
 	graphicsDrawPromptBox(350, 150);

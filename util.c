@@ -165,6 +165,9 @@ void handlePad()
 
 		else if(pad_pressed & PAD_SELECT);
 			// cheat options mini-menu
+		
+		else if(pad_pressed & PAD_START)
+			menuSetActive(MAINMENU);
 
 		if(pad_rapid & PAD_R1)
 		{
@@ -354,6 +357,12 @@ int displayPromptMenu(char **items, int numItems, char *header)
 	} while(!(pad_pressed & PAD_CROSS));
 	
 	return selectedItem;
+}
+
+int displayError(const char *error)
+{
+	const char *items[] = {"OK"};
+	return displayPromptMenu(items, 1, error);
 }
 
 void replaceIllegalChars(const char *str, char* valid, char replacement)

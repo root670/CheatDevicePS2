@@ -15,6 +15,7 @@ static cheatDatabaseType_t dbType;
 static int numGames = 0;
 static int numCheats = 0;
 static int numEnabledCheats = 0;
+static int numEnabledCodes = 0;
 static int initialized = 0;
 
 extern unsigned char _engine_erl_start[];
@@ -194,28 +195,37 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
 		
 		if(!cheat->enabled)
 		{
+			if((numEnabledCodes + cheat->numCodeLines) >= 250)
+			{
+				displayError("Too many codes enabled. Try disabling some.");
+				return 0;
+			}
+			
 			cheat->enabled = 1;
 			numEnabledCheats++;
+			numEnabledCodes += cheat->numCodeLines;
 			if(numEnabledCheats == 1) // first cheat was enabled
 			{
 				activeGame->cheats->enabled = 1; // toggle enable code on
 				numEnabledCheats++;
+				numEnabledCodes += activeGame->cheats->numCodeLines;
 			}
 		}
 		else
 		{
 			cheat->enabled = 0;
 			numEnabledCheats--;
+			numEnabledCodes -= cheat->numCodeLines;
 			if(numEnabledCheats == 1) // last cheat was disabled
 			{
 				activeGame->cheats->enabled = 0; // toggle enable code off
 				numEnabledCheats--;
+				numEnabledCodes -= activeGame->cheats->numCodeLines;
 			}
 		}
 	}
 	else
 		return 0;
-
 	return 1;
 }
 
@@ -291,6 +301,7 @@ int cheatsSetActiveGame(cheatsGame_t *game)
 		}
 
 		numEnabledCheats = 0;
+		numEnabledCodes = 0;
 	}
 
 	if(game)

@@ -948,42 +948,34 @@ static int createMAX(gameSave_t *save, device_t src)
 	return 1;
 }
 
-static void doCopy(device_t src, device_t dst, gameSave_t *save)
+static int doCopy(device_t src, device_t dst, gameSave_t *save)
 {
 	int available;
 	
 	if(src == dst)
 	{
-		graphicsDrawTextCentered(320, "Can't copy to the same device", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
+		displayError("Can't copy to the same device.");
+		return 0;
 	}
 	
 	if((src|dst) == (MC_SLOT_1|MC_SLOT_2))
 	{
-		graphicsDrawTextCentered(320, "Can't copy between memory cards", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
+		displayError("Can't copy between memory cards.");
+		return 0;
 	}
 	
 	available = savesGetAvailableDevices();
 	
 	if(!(available & src))
 	{
-		graphicsDrawTextCentered(320, "Source device is not connected", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
+		displayError("Source device is not connected.");
+		return 0;
 	}
 	
 	if(!(available & dst))
 	{
-		graphicsDrawTextCentered(320, "Destination device is not connected", YELLOW);
-		graphicsRenderNow();
-		sleep(2);
-		return;
+		displayError("Destination device is not connected.");
+		return 0;
 	}
 	
 	if((src & (MC_SLOT_1|MC_SLOT_2)) && (dst == FLASH_DRIVE))
@@ -995,6 +987,8 @@ static void doCopy(device_t src, device_t dst, gameSave_t *save)
 	{
 		save->_handler->extract(save, dst);
 	}
+	
+	return 1;
 }
 
 int savesCopySavePrompt(gameSave_t *save)
@@ -1024,8 +1018,10 @@ int savesCopySavePrompt(gameSave_t *save)
 		
 		if(pad_pressed & PAD_CROSS)
 		{
-			doCopy(currentDevice, 1 << selectedDevice, save);
-			return 1;
+			if(!doCopy(currentDevice, 1 << selectedDevice, save))
+				continue;
+			else
+				return 1;
 		}
 		
 		else if(pad_pressed & PAD_RIGHT)
