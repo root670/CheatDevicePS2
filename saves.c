@@ -127,9 +127,12 @@ void savesDrawTicker()
 			freeSpace = 0;
 	}
 	
-	graphicsDrawTextCentered(47, deviceName, WHITE);
-	snprintf(free, 20, "%d KB free", freeSpace);
-	graphicsDrawText(30, 47, free, WHITE);
+	if(currentDevice != FLASH_DRIVE)
+	{
+		graphicsDrawTextCentered(47, deviceName, WHITE);
+		snprintf(free, 20, "%d KB free", freeSpace);
+		graphicsDrawText(30, 47, free, WHITE);
+	}
 	
 	static int ticker_x = 0;
 	if (ticker_x < 1500)
@@ -986,11 +989,13 @@ static int doCopy(device_t src, device_t dst, gameSave_t *save)
 	if((src & (MC_SLOT_1|MC_SLOT_2)) && (dst == FLASH_DRIVE))
 	{
 		save->_handler = promptSaveHandler();
-		save->_handler->create(save, src);
+		if(!save->_handler->create(save, src))
+			displayError("Error creating save file.");
 	}
 	else if((src == FLASH_DRIVE) && (dst & (MC_SLOT_1|MC_SLOT_2)))
 	{
-		save->_handler->extract(save, dst);
+		if(!save->_handler->extract(save, dst))
+			displayError("Error extracting save file.");
 	}
 	
 	return 1;
