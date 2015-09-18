@@ -8,7 +8,6 @@
 #include <erl.h>
 #include <libpad.h>
 
-#include "storage.h"
 #include "menus.h"
 #include "cheats.h"
 #include "settings.h"
@@ -89,7 +88,6 @@ void startgameExecute(char *path)
 	killMenuMan();
 	killCheatMan();
 	killSettingsMan();
-	killStorageMan();
 	
 	if(strcmp(path, "==Disc==") == 0)
 	{

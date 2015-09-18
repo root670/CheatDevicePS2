@@ -5,7 +5,6 @@
 #include <debug.h>
 #include <libpad.h>
 #include "graphics.h"
-#include "storage.h"
 #include "menus.h"
 #include "cheats.h"
 #include "settings.h"
@@ -19,7 +18,6 @@ int main(int argc, char *argv[])
 {
 	loadModules();
 	initGraphicsMan();
-	initStorageMan();
 	initSettingsMan();
 	initCheatMan();
 	initMenuMan();
@@ -41,15 +39,14 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		graphicsDrawBackground();
-		handlePad();
 		
 		menuRender();
 		cheatsDrawStats();
+		handlePad();
 		graphicsRender();
 	}
 	
 	killCheatMan();
-	killStorageMan();
 	SleepThread();
 	return 0;
 }

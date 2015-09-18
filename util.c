@@ -13,14 +13,21 @@
 #include <iopheap.h>
 #include <kernel.h>
 #include <sbv_patches.h>
+#include <libmc.h>
 
-extern unsigned char _poweroff_irx_start[];
-extern unsigned char _poweroff_irx_end[];
-extern int _poweroff_irx_size;
+extern u8  _iomanX_irx_start[];
+extern int _iomanX_irx_size;
+extern u8  _ps2kbd_irx_start[];
+extern int _ps2kbd_irx_size;
+extern u8  _usbd_irx_start[];
+extern int _usbd_irx_size;
+extern u8  _usb_mass_irx_start[];
+extern int _usb_mass_irx_size;
 static char padBuff[256] __attribute__ ((aligned(64)));
 
 void loadModules()
 {
+	int ret;
 	printf("\n ** Loading main modules **\n");
 
 	/* IOP reset routine taken from ps2rd */
@@ -54,6 +61,13 @@ void loadModules()
 
 	SifLoadModule("rom0:SIO2MAN", 0, NULL);
 	SifLoadModule("rom0:PADMAN", 0, NULL);
+	SifLoadModule("rom0:MCMAN", 0, NULL);
+	SifLoadModule("rom0:MCSERV", 0, NULL);
+	SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
+	SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
+	SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
+
+	mcInit(MC_TYPE_MC);
 
 	padInit(0);
 	padPortOpen(0, 0, padBuff);
@@ -151,6 +165,9 @@ void handlePad()
 
 		else if(pad_pressed & PAD_SELECT);
 			// cheat options mini-menu
+		
+		else if(pad_pressed & PAD_START)
+			menuSetActive(MAINMENU);
 
 		if(pad_rapid & PAD_R1)
 		{
@@ -290,7 +307,7 @@ void handlePad()
 	}
 }
 
-int displayPromptMenu(char **items, int numItems, char *header)
+int displayPromptMenu(char **items, int numItems, const char *header)
 {
 	struct padButtonStatus padStat;
 	u32 old_pad = PAD_CROSS;
@@ -342,6 +359,12 @@ int displayPromptMenu(char **items, int numItems, char *header)
 	return selectedItem;
 }
 
+int displayError(const char *error)
+{
+	char *items[] = {"OK"};
+	return displayPromptMenu(items, 1, error);
+}
+
 void replaceIllegalChars(const char *str, char* valid, char replacement)
 {
 	char invalid[] = {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
@@ -381,7 +404,7 @@ char *rtrim(char *str)
 	return str;
 }
 
-unsigned long crc32(unsigned long inCrc32, const void *buf, long bufLen)
+unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
 	/*----------------------------------------------------------------------------*\
 	 *  CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29.

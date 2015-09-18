@@ -1,8 +1,7 @@
 #include "database.h"
 #include "cheats.h"
-#include "storage.h"
 #include "graphics.h"
-#include "libraries/miniz.h"
+#include "zlib.h"
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
@@ -155,37 +154,43 @@ int dbOpenBuffer(unsigned char *buff)
 
 int dbOpenDatabase(const char *path)
 {
+	u8 *compressed, *decompressed;
 	int compressedSize;
-	int decompressedSize;
+	unsigned long decompressedSize;
 	int numGames;
+	FILE *dbFile;
 
 	if(!path)
 		return 0;
 
 	strncpy(dbPath, path, 255);
-	if(storageOpenFile(dbPath, "rb"))
-	{
-		dbIsOpen = 1;
-		u8 *compressed, *decompressed;
-		
-		compressed = storageGetFileContents(dbPath, &compressedSize);
-		storageCloseFile(dbPath);
-
-		decompressed = malloc(5 * 1024 * 1024); // 5MB
-		decompressedSize = tinfl_decompress_mem_to_mem(decompressed, 5*1024*1024, compressed, compressedSize, TINFL_FLAG_PARSE_ZLIB_HEADER);
-		realloc(decompressed, decompressedSize);
-		free(compressed);
-		dbBuff = decompressed;
-
-		numGames = dbOpenBuffer(dbBuff);
-
-		return numGames;
-	}
-	else
+	dbFile = fopen(dbPath, "rb");
+	if(!dbFile)
 	{
 		printf("%s: failed to open %s\n", __FUNCTION__, path);
 		return 0;
 	}
+	
+	dbIsOpen = 1;
+	
+	fseek(dbFile, 0, SEEK_END);
+	compressedSize = ftell(dbFile);
+	fseek(dbFile, 0, SEEK_SET);
+	compressed = malloc(compressedSize);
+	fread(compressed, 1, compressedSize, dbFile);
+	fclose(dbFile);
+	
+
+	decompressedSize = 5*1024*1024; // 5MB
+	decompressed = malloc(decompressedSize);
+	uncompress(decompressed, &decompressedSize, compressed, compressedSize);
+	realloc(decompressed, decompressedSize);
+	free(compressed);
+	dbBuff = decompressed;
+
+	numGames = dbOpenBuffer(dbBuff);
+
+	return numGames;
 }
 
 int dbCloseDatabase()
