@@ -1,6 +1,6 @@
 #include "textcheats.h"
 #include "cheats.h"
-#include "storage.h"
+#include "graphics.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -13,37 +13,53 @@
 #define TOKEN_START		TOKEN_TITLE
 
 static cheatsGame_t *gamesHead = NULL;
-static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheatsHead = NULL;
+static u64 *codesHead = NULL;
 static int usedCheats = 0;
+static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheat = NULL;
-static u64 *codeLines = NULL;
-static u8 *text;
-static int tokenNext;
+static u64 *codeLine = NULL;
 
 static int numGames = 0;
 static int numCheats = 0;
 static int numCodeLines = 0;
 
-void countTokens(const char *text, int *numGames, int *numCheats, int *numCodeLines)
+static u8 *tokens = NULL;
+
+int getToken(const char *line);
+int parseLine(const char *line);
+
+static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines)
 {
+	const char *endPtr = text + length;
+	const char *end;
 	char line[255];
-	int len = 0;
+	int lineLen;
+	int token;
+	unsigned int tokenOffset = 0;
 	if(!text || !numGames || !numCheats || !numCodeLines)
 		return;
 		
-	while(*text)
+	while(text < endPtr)
 	{
-		char *off1 = strchr(text, '\n');
-		len = off1 - text;
+		float progress = (1.0 - ((endPtr - text)/(float)length))/2.0;
+		graphicsDrawLoadingBar(100, 375, progress);
+		graphicsRenderNow();
+		end = strchr(text, '\n');
+		if(!end)
+			end = endPtr;
 		
-		if(len)
+		lineLen = end - text;
+		if(lineLen)
 		{
 			strncpy(line, text, 255);
-			strtok(line, "\r");
-			line[len] = '\0';
+			if(line[lineLen-1] == '\r')
+				line[lineLen-1] = '\0';
 			
-			int token = getToken(line);
+			line[lineLen] = '\0';
+			
+			token = getToken(line);
+			tokens[tokenOffset++] = token;
 
 			switch(token)
 			{
@@ -59,9 +75,8 @@ void countTokens(const char *text, int *numGames, int *numCheats, int *numCodeLi
 				default:
 					break;
 			}
-			
-			text += len + 1;
 		}
+		text += lineLen + 1;
 	}
 }
 
@@ -70,63 +85,67 @@ int textCheatsOpenFile(const char *path)
 {
 	FILE *txtFile;
 	char *text;
+	char *end;
+	char *endPtr;
 	char *buff;
-	char *c;
 	char line[255];
-	int numLines = 0, textSize;
+	unsigned int lineLen;
+	size_t txtLen;
 	
 	if(!path)
 		return 0;
 	
 	txtFile = fopen(path, "r");
 	fseek(txtFile, 0, SEEK_END);
-	int len = ftell(txtFile);
+	txtLen = ftell(txtFile);
 	fseek(txtFile, 0, SEEK_SET);
 	
-	buff = malloc(len);
+	buff = malloc(txtLen);
 	text = buff;
-	fread(text, 1, len, txtFile);
+	endPtr = text + txtLen;
+	fread(text, 1, txtLen, txtFile);
+	fclose(txtFile);
 	
-	printf(" *** Counting tokens ***\n");
-	countTokens(text, &numGames, &numCheats, &numCodeLines);
-	fseek(txtFile, 0, SEEK_SET);
+	tokens = malloc(512 * 1024); // 512 KB
 	
-	printf("Games: %d\nCheats: %d\nLines: %d\n", numGames, numCheats, numCodeLines);
+	countTokens(text, txtLen, &numGames, &numCheats, &numCodeLines);
 	
-	printf(" *** Allocating structs\n");
 	gamesHead = calloc(numGames, sizeof(cheatsGame_t));
 	cheatsHead = calloc(numCheats, sizeof(cheatsCheat_t));
+	codesHead = calloc(numCodeLines, sizeof(u64));
+	codeLine = codesHead;
 	
-	tokenNext = TOKEN_START;
-	
-	while(*text)
+	while(text < endPtr)
 	{
-		char line[255];
-		char *off1 = strchr(text, '\n');
-		int len = off1 - text;
+		float progress = 0.5 + (1.0 - ((endPtr - text)/(float)txtLen))/2.0;
+		graphicsDrawLoadingBar(100, 375, progress);
+		graphicsRenderNow();
+		end = strchr(text, '\n');
+		if(!end) // Reading the last line
+			end = endPtr;
 		
-		if(len > 1)
+		lineLen = end - text;
+		
+		if(lineLen)
 		{
 			strncpy(line, text, 255);
-			strtok(line, "\r");
-			line[len] = '\0';
+			if(line[lineLen-1] == '\r')
+				line[lineLen-1] = '\0';
+			
+			line[lineLen] = '\0';
 			
 			parseLine(line);
 		}
 		
-		text += len + 1;
+		text += lineLen + 1;
 	}
 	
 	free(buff);
+	free(tokens);
 	
 	return numGames;
 }
 
-// Returns number og games in cheat file.
-int textCheatsOpenBuffer(unsigned char *buff)
-{
-	return 0;
-}
 // Get data structure of loaded cheat file. Returns null on error.
 cheatsGame_t *textCheatsGetCheatStruct()
 {
@@ -141,14 +160,14 @@ int textCheatsClose()
 // Determine token type for line.
 int getToken(const char *line)
 {
-	//printf("line = %s\n", line);
 	const char *c;
-	int len, numDigits = 0, ret;
+	int numDigits = 0, ret;
+	size_t len;
 	
-	if (!line || strlen(line) <= 0)
+	len = strlen(line);
+	
+	if (!line || len <= 0)
 		return 0;
-	
-	len = strlen(line);	
 	
 	if(len == 17 && line[8] == ' ')
 	{
@@ -161,6 +180,8 @@ int getToken(const char *line)
 		
 		if(numDigits == 16)
 			ret = TOKEN_CODE;
+		else
+			ret = TOKEN_CHEAT;
 	}
 	
 	else if(line[0] == '"' && line[len-1] == '"')
@@ -175,97 +196,71 @@ int getToken(const char *line)
 	return ret;
 }
 
-// Find next expected token.
-int getNextToken(int tokenCurrent)
-{
-	if(!(tokenCurrent & TOKEN_VALID))
-		return 0;
-	
-	switch(tokenCurrent)
-	{
-		case TOKEN_TITLE:
-			return TOKEN_TITLE|TOKEN_CHEAT;
-		case TOKEN_CHEAT:
-		case TOKEN_CODE:
-			return TOKEN_TITLE|TOKEN_CHEAT|TOKEN_CODE;
-		default:
-			return 0;
-	}
-}
-
 // Parse line and process token.
 int parseLine(const char *line)
 {
-	int token, len;
+	static unsigned int tokenOffset = 0;
+	int token;
 	
-	token = getToken(line);
-		
+	token = tokens[tokenOffset++];
+	
 	switch(token)
 	{
-		case TOKEN_TITLE:
-			// create new game
-			printf("%s\n", line);
+		case TOKEN_TITLE: // Create new game
 			if(!game)
 			{
-				//printf(">>>> first game\n");
+				// First game
 				game = gamesHead;
 			}
 			else
 			{
-				//printf(">>>> not first game\n");
 				game->next = ++game;
 			}
-			strncpy(game->title, strtok(line+1, "\""), 81);
-			game->next = NULL;
 			
+			strncpy(game->title, line+1, 81);
+			game->title[strlen(line) - 2] = '\0';
+			game->next = NULL;
 			break;
-		case TOKEN_CHEAT:
-			// create new cheat
-			//printf("  %s\n", line);
-			game->numCheats++;
+			
+		case TOKEN_CHEAT: // Add new cheat to game
 			if(!game)
 				return 0;
+			
+			game->numCheats++;
+			
 			if(game->cheats == NULL)
 			{
-				//printf("  >>>> first cheat in game\n");
+				// Game's first cheat
 				game->cheats = &cheatsHead[usedCheats++];
 				cheat = game->cheats;
 			}
 			else
 			{
-				//printf("  >>>> not first cheat in game\n");
 				cheat->next = &cheatsHead[usedCheats++];
 				cheat = cheat->next;
 			}
+			
 			strncpy(cheat->title, line, 81);
 			cheat->type = CHEATHEADER;
 			cheat->next = NULL;
-			
 			break;
-		case TOKEN_CODE:
-			// add code to cheat
-			//printf("Code: %s\n", line);
-			//printf("    %s\n", line);
+			
+		case TOKEN_CODE: // Add code to cheat
 			if(!game || !cheat)
 				return 0;
+			
 			if(!cheat->codeLines)
-			{
-				//printf("Allocating space for code lines");
-				cheat->codeLines = calloc(1, sizeof(u64));
-			}
-			else
-				//cheat->codeLines = realloc(cheat->codeLines, (cheat->numCodeLines + 1) * sizeof(u64));
-			//cheat->codeLines[0] = 5;
+				cheat->codeLines = codeLine;
+			
+			sscanf(line, "%08X %08X", (u32 *)codeLine, ((u32 *)codeLine + 1));
 			cheat->type = CHEATNORMAL;
 			cheat->numCodeLines++;
-			
+			codeLine++;
 			break;
 			
 		default:
-			//printf("skip\n");
 			break;
 	}
 	
-	//printf("Next token type :%d\n", tokenNext);
 	return 1;
 }

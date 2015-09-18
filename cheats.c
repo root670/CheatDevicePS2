@@ -71,11 +71,19 @@ int killCheatMan()
 
 // CheatDB --> Game --> Cheat --> Code
 
-int cheatsOpenDatabase(const char* path, cheatDatabaseType_t t)
+int cheatsOpenDatabase(const char* path)
 {
+	const char *ext;
+	
 	if(initialized)
 	{
-		dbType = t;
+		ext = path + strlen(path) - 4;
+		
+		if(strncmp(ext, ".cdb", 4) == 0)
+			dbType = BINARY;
+		else if(strncmp(ext, ".txt", 4) == 0)
+			dbType = TEXT;
+		
 		switch(dbType)
 		{
 			case TEXT:

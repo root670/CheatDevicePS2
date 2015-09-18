@@ -43,7 +43,7 @@ int initCheatMan();
 int killCheatMan();
 
 // Open a cheat database and load it's cheats.
-int cheatsOpenDatabase(const char* path, cheatDatabaseType_t t);
+int cheatsOpenDatabase(const char* path);
 // TODO: Save all cheats to a file.
 int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
 

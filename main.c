@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
 	initCheatMan();
 	initMenuMan();
 	
-	//if(!cheatsOpenDatabase(settingsGetDatabasePath(), 0))
-	if(!cheatsOpenDatabase(settingsGetDatabasePath(), 0))
+	if(!cheatsOpenDatabase(settingsGetDatabasePath()))
 	{
 		char error[255];
 		sprintf(error, "Error loading cheat database \"%s\"!", settingsGetDatabasePath());

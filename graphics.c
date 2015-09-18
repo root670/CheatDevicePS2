@@ -216,8 +216,8 @@ void graphicsDrawLoadingBar(int x, int y, float progress)
 {
 	int height = 10;
 	int width = gsGlobal->Width - 2*x;
-	u64 color = GS_SETREG_RGBAQ(0x22, 0x22, 0xee, 0x25, 0x00);
-	u64 outline = GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00);
+	u64 color = GS_SETREG_RGBAQ(0x22, 0x22, 0xee, 0x00, 0x80);
+	u64 outline = GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x80);
 
 	if(progress < 0.0)
 		progress = 0.0;
@@ -381,8 +381,9 @@ void graphicsDrawAboutPage()
 
 void graphicsRenderNow()
 {
-	//gsKit_sync_flip( gsGlobal );
 	gsKit_queue_exec( gsGlobal );
+	gsKit_lock_buffer( gsGlobal );
+	gsKit_vsync_nowait();
 }
 
 void graphicsRender()
