@@ -8,16 +8,16 @@
 #include "cheats.h"
 
 typedef struct dbMasterHeader {
-	char magic[4];
-	u8 version;
-	u16 numTitles;
-	char padding[9];
+    char magic[4];
+    u8 version;
+    u16 numTitles;
+    char padding[9];
 } dbMasterHeader_t;
 
 typedef struct dbCheat {
-	char *title;
-	u8 numCodeLines;
-	u64 *codeEntries;
+    char *title;
+    u8 numCodeLines;
+    u64 *codeEntries;
 } dbCheat_t;
 
 // Open and read/decompress the database. Only one database can be open at a time.

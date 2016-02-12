@@ -16,36 +16,36 @@ extern int _cheatdb_size;
 
 int main(int argc, char *argv[])
 {
-	loadModules();
-	initGraphicsMan();
-	initSettingsMan();
-	initCheatMan();
-	initMenuMan();
-	
-	if(!cheatsOpenDatabase(settingsGetDatabasePath()))
-	{
-		char error[255];
-		sprintf(error, "Error loading cheat database \"%s\"!", settingsGetDatabasePath());
-		graphicsDrawText(50, 300, error, WHITE);
-		graphicsRender();
-		SleepThread();
-	}
-	
-	cheatsLoadGameMenu();
-	graphicsClearScreen(128, 128, 128);
+    loadModules();
+    initGraphicsMan();
+    initSettingsMan();
+    initCheatMan();
+    initMenuMan();
+    
+    if(!cheatsOpenDatabase(settingsGetDatabasePath()))
+    {
+        char error[255];
+        sprintf(error, "Error loading cheat database \"%s\"!", settingsGetDatabasePath());
+        graphicsDrawText(50, 300, error, WHITE);
+        graphicsRender();
+        SleepThread();
+    }
+    
+    cheatsLoadGameMenu();
+    graphicsClearScreen(128, 128, 128);
 
-	/* Main Loop */
-	while(1)
-	{
-		graphicsDrawBackground();
-		
-		menuRender();
-		cheatsDrawStats();
-		handlePad();
-		graphicsRender();
-	}
-	
-	killCheatMan();
-	SleepThread();
-	return 0;
+    /* Main Loop */
+    while(1)
+    {
+        graphicsDrawBackground();
+        
+        menuRender();
+        cheatsDrawStats();
+        handlePad();
+        graphicsRender();
+    }
+    
+    killCheatMan();
+    SleepThread();
+    return 0;
 }

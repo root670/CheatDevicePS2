@@ -22,21 +22,21 @@ Cheat Database --> Game --> Cheat --> Code
 */
 
 typedef struct cheatsCheat {
-	char title[81];
-	cheatTitleType_t type;
-	int numCodeLines;
-	u64 *codeLines;
+    char title[81];
+    cheatTitleType_t type;
+    int numCodeLines;
+    u64 *codeLines;
 
-	char enabled;
-	struct cheatsCheat *next;
+    char enabled;
+    struct cheatsCheat *next;
 } cheatsCheat_t;
 
 typedef struct cheatsGame {
-	char title[81];
-	unsigned int numCheats;
-	cheatsCheat_t *cheats;
+    char title[81];
+    unsigned int numCheats;
+    cheatsCheat_t *cheats;
 
-	struct cheatsGame *next;
+    struct cheatsGame *next;
 } cheatsGame_t;
 
 int initCheatMan();

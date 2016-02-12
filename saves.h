@@ -8,10 +8,10 @@
 #define SAVES
 #include <tamtypes.h>
 
-#define NUM_SAVE_DEVICES	3
-#define MC_SLOT_1			(1 << 0)
-#define MC_SLOT_2			(1 << 1)
-#define FLASH_DRIVE			(1 << 2)
+#define NUM_SAVE_DEVICES    3
+#define MC_SLOT_1           (1 << 0)
+#define MC_SLOT_2           (1 << 1)
+#define FLASH_DRIVE         (1 << 2)
 
 typedef u8 device_t;
 typedef struct gameSave gameSave_t;

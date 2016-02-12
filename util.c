@@ -27,405 +27,405 @@ static char padBuff[256] __attribute__ ((aligned(64)));
 
 void loadModules()
 {
-	int ret;
-	printf("\n ** Loading main modules **\n");
+    int ret;
+    printf("\n ** Loading main modules **\n");
 
-	/* IOP reset routine taken from ps2rd */
-	SifInitRpc(0);
+    /* IOP reset routine taken from ps2rd */
+    SifInitRpc(0);
 
-	while (!SifIopReset("rom0:UDNL rom0:EELOADCNF", 0))
-		;
-	while (!SifIopSync())
-		;
+    while (!SifIopReset("rom0:UDNL rom0:EELOADCNF", 0))
+        ;
+    while (!SifIopSync())
+        ;
 
-	/* exit services */
-	fioExit();
-	SifExitIopHeap();
-	SifLoadFileExit();
-	SifExitRpc();
-	SifExitCmd();
+    /* exit services */
+    fioExit();
+    SifExitIopHeap();
+    SifLoadFileExit();
+    SifExitRpc();
+    SifExitCmd();
 
-	FlushCache(0);
-	FlushCache(2);
+    FlushCache(0);
+    FlushCache(2);
 
-	/* init services */
-	SifInitRpc(0);
-	SifLoadFileInit();
-	SifInitIopHeap();
-	fioInit();
+    /* init services */
+    SifInitRpc(0);
+    SifLoadFileInit();
+    SifInitIopHeap();
+    fioInit();
 
-	FlushCache(0);
-	FlushCache(2);
+    FlushCache(0);
+    FlushCache(2);
 
-	//sbv_patch_enable_lmb();
+    //sbv_patch_enable_lmb();
 
-	SifLoadModule("rom0:SIO2MAN", 0, NULL);
-	SifLoadModule("rom0:PADMAN", 0, NULL);
-	SifLoadModule("rom0:MCMAN", 0, NULL);
-	SifLoadModule("rom0:MCSERV", 0, NULL);
-	SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
-	SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
-	SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
+    SifLoadModule("rom0:SIO2MAN", 0, NULL);
+    SifLoadModule("rom0:PADMAN", 0, NULL);
+    SifLoadModule("rom0:MCMAN", 0, NULL);
+    SifLoadModule("rom0:MCSERV", 0, NULL);
+    SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
 
-	mcInit(MC_TYPE_MC);
+    mcInit(MC_TYPE_MC);
 
-	padInit(0);
-	padPortOpen(0, 0, padBuff);
-	padSetMainMode(0, 0, PAD_MMODE_DIGITAL, PAD_MMODE_LOCK);
+    padInit(0);
+    padPortOpen(0, 0, padBuff);
+    padSetMainMode(0, 0, PAD_MMODE_DIGITAL, PAD_MMODE_LOCK);
 }
 
 void handlePad()
 {
-	u32 pad_rapid = 0;
-	static u32 old_pad = 0;
-	static u32 pad_pressed;
-	struct padButtonStatus padStat;
-	int state;
-	static u32 time_held = 0;
-	static int selected = 0;
-	static int selectedDevice = 0;
+    u32 pad_rapid = 0;
+    static u32 old_pad = 0;
+    static u32 pad_pressed;
+    struct padButtonStatus padStat;
+    int state;
+    static u32 time_held = 0;
+    static int selected = 0;
+    static int selectedDevice = 0;
 
-	state = padGetState(0, 0);
-	while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-		state = padGetState(0, 0);
+    state = padGetState(0, 0);
+    while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+        state = padGetState(0, 0);
 
-	padRead(0, 0, &padStat);
-	pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-	old_pad = 0xFFFF ^ padStat.btns;
-	
-	// pad_rapid will have an initial delay when a button is held
-	if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
-	{
-		if(time_held++ > 18 && time_held % 2 == 0) // don't go too fast!
-			pad_rapid = (0xFFFF ^ padStat.btns);
-		else
-			pad_rapid = pad_pressed;
-	}
-	else
-		time_held = 0;
+    padRead(0, 0, &padStat);
+    pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+    old_pad = 0xFFFF ^ padStat.btns;
+    
+    // pad_rapid will have an initial delay when a button is held
+    if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
+    {
+        if(time_held++ > 18 && time_held % 2 == 0) // don't go too fast!
+            pad_rapid = (0xFFFF ^ padStat.btns);
+        else
+            pad_rapid = pad_pressed;
+    }
+    else
+        time_held = 0;
 
-	menuID_t currentMenu = menuGetActive();
-	
-	if(currentMenu == GAMEMENU ||
-	   currentMenu == CHEATMENU ||
-	   currentMenu == CODEMENU ||
-	   currentMenu == BOOTMENU ||
-	   currentMenu == SAVEMENU)
-	{
-		if(pad_rapid & PAD_UP)
-			menuUp();
+    menuID_t currentMenu = menuGetActive();
+    
+    if(currentMenu == GAMEMENU ||
+       currentMenu == CHEATMENU ||
+       currentMenu == CODEMENU ||
+       currentMenu == BOOTMENU ||
+       currentMenu == SAVEMENU)
+    {
+        if(pad_rapid & PAD_UP)
+            menuUp();
 
-		else if(pad_rapid & PAD_DOWN)
-			menuDown();
-	}
+        else if(pad_rapid & PAD_DOWN)
+            menuDown();
+    }
 
-	if(currentMenu == GAMEMENU)
-	{
-		if(pad_pressed & PAD_CROSS)
-			menuSetActive(CHEATMENU);
+    if(currentMenu == GAMEMENU)
+    {
+        if(pad_pressed & PAD_CROSS)
+            menuSetActive(CHEATMENU);
 
-		else if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
-		{
-			menuSetActive(MAINMENU);
-			selected = 0;
-		}
+        else if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
+        {
+            menuSetActive(MAINMENU);
+            selected = 0;
+        }
 
-		else if(pad_pressed & PAD_SELECT)
-			menuSetActive(ABOUTMENU);
+        else if(pad_pressed & PAD_SELECT)
+            menuSetActive(ABOUTMENU);
 
-		if(pad_rapid & PAD_R1)
-		{
-			int i;
-			for(i = 0; i < 10; i++)
-				menuDown();
-		}
+        if(pad_rapid & PAD_R1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuDown();
+        }
 
-		else if(pad_rapid & PAD_L1)
-		{
-			int i;
-			for(i = 0; i < 10; i++)
-				menuUp();
-		}
+        else if(pad_rapid & PAD_L1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuUp();
+        }
 
-		if(pad_rapid & PAD_R2)
-			menuDownAlpha();
+        if(pad_rapid & PAD_R2)
+            menuDownAlpha();
 
-		else if(pad_rapid & PAD_L2)
-			menuUpAlpha();
-		// TODO: Goto settings menu, mini menu, etc
-	}
+        else if(pad_rapid & PAD_L2)
+            menuUpAlpha();
+        // TODO: Goto settings menu, mini menu, etc
+    }
 
-	else if(currentMenu == CHEATMENU)
-	{
-		if(pad_pressed & PAD_CROSS)
-			menuToggleItem();
+    else if(currentMenu == CHEATMENU)
+    {
+        if(pad_pressed & PAD_CROSS)
+            menuToggleItem();
 
-		else if(pad_pressed & PAD_CIRCLE)
-			menuSetActive(GAMEMENU);
+        else if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(GAMEMENU);
 
-		else if(pad_pressed & PAD_SELECT);
-			// cheat options mini-menu
-		
-		else if(pad_pressed & PAD_START)
-			menuSetActive(MAINMENU);
+        else if(pad_pressed & PAD_SELECT);
+            // cheat options mini-menu
+        
+        else if(pad_pressed & PAD_START)
+            menuSetActive(MAINMENU);
 
-		if(pad_rapid & PAD_R1)
-		{
-			int i;
-			for(i = 0; i < 10; i++)
-				menuDown();
-		}
+        if(pad_rapid & PAD_R1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuDown();
+        }
 
-		else if(pad_rapid & PAD_L1)
-		{
-			int i;
-			for(i = 0; i < 10; i++)
-				menuUp();
-		}
-	}
+        else if(pad_rapid & PAD_L1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuUp();
+        }
+    }
 
-	else if(currentMenu == CODEMENU)
-	{
-		if(pad_pressed & PAD_CIRCLE)
-			menuSetActive(CHEATMENU);
+    else if(currentMenu == CODEMENU)
+    {
+        if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(CHEATMENU);
 
-		else if(pad_pressed & PAD_SQUARE);
-		// add a code line. open keyboard to key-in the code
+        else if(pad_pressed & PAD_SQUARE);
+        // add a code line. open keyboard to key-in the code
 
-		else if(pad_pressed & PAD_TRIANGLE);
-		// delete a code line. ask the user for confirmation.
+        else if(pad_pressed & PAD_TRIANGLE);
+        // delete a code line. ask the user for confirmation.
 
-		// TODO: goto code edit menu (show keyboard etc), open mini menu
-	}
+        // TODO: goto code edit menu (show keyboard etc), open mini menu
+    }
 
-	else if(currentMenu == ABOUTMENU)
-	{
-		if(pad_pressed & PAD_CIRCLE)
-			menuSetActive(GAMEMENU);
-	}
+    else if(currentMenu == ABOUTMENU)
+    {
+        if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(GAMEMENU);
+    }
 
-	else if(currentMenu == MAINMENU)
-	{
-		graphicsDrawMainMenu(selected);
-		if(pad_pressed & PAD_CROSS)
-		{
-			if(selected == 0) // boot game
-				menuSetActive(BOOTMENU);
-			if(selected == 1) // game menu
-				menuSetActive(GAMEMENU);
-			if(selected == 2) // save manager (device menu)
-				menuSetActive(SAVEDEVICEMENU);
-		}
+    else if(currentMenu == MAINMENU)
+    {
+        graphicsDrawMainMenu(selected);
+        if(pad_pressed & PAD_CROSS)
+        {
+            if(selected == 0) // boot game
+                menuSetActive(BOOTMENU);
+            if(selected == 1) // game menu
+                menuSetActive(GAMEMENU);
+            if(selected == 2) // save manager (device menu)
+                menuSetActive(SAVEDEVICEMENU);
+        }
 
-		else if(pad_pressed & PAD_CIRCLE)
-			menuSetActive(GAMEMENU);
+        else if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(GAMEMENU);
 
-		else if(pad_pressed & PAD_RIGHT)
-		{
-			if(selected >= 3)
-				selected = 0;
-			else
-				++selected;
-		}
+        else if(pad_pressed & PAD_RIGHT)
+        {
+            if(selected >= 3)
+                selected = 0;
+            else
+                ++selected;
+        }
 
-		else if(pad_pressed & PAD_LEFT)
-		{
-			if (selected == 0)
-				selected = 3;
-			else
-				--selected;
-		}
-	}
-	
-	else if(currentMenu == BOOTMENU)
-	{
-		if(pad_pressed & PAD_CROSS)
-		{
-			cheatsInstallCodesForEngine();
-			menuToggleItem();
-		}
-		
-		if(pad_pressed & PAD_CIRCLE)
-		{
-			menuRemoveAllItems();
-			menuSetActive(MAINMENU);
-		}
-	}
-	
-	else if(currentMenu == SAVEDEVICEMENU)
-	{
-		graphicsDrawDeviceMenu(selectedDevice);
-		graphicsDrawTextCentered(150, "Select device to view saves", WHITE);
-		if(pad_pressed & PAD_CROSS)
-		{
-			menuSetActive(SAVEMENU);
-			if(selectedDevice == 0)
-				savesLoadSaveMenu(MC_SLOT_1);
-			if(selectedDevice == 1)
-				savesLoadSaveMenu(MC_SLOT_2);
-			if(selectedDevice == 2)
-				savesLoadSaveMenu(FLASH_DRIVE);
-		}
-		
-		if(pad_pressed & PAD_CIRCLE)
-		{
-			menuSetActive(MAINMENU);
-			killSaveMan();
-		}
-		
-		else if(pad_pressed & PAD_RIGHT)
-		{
-			if(selectedDevice >= 2)
-				selectedDevice = 0;
-			else
-				++selectedDevice;
-		}
+        else if(pad_pressed & PAD_LEFT)
+        {
+            if (selected == 0)
+                selected = 3;
+            else
+                --selected;
+        }
+    }
+    
+    else if(currentMenu == BOOTMENU)
+    {
+        if(pad_pressed & PAD_CROSS)
+        {
+            cheatsInstallCodesForEngine();
+            menuToggleItem();
+        }
+        
+        if(pad_pressed & PAD_CIRCLE)
+        {
+            menuRemoveAllItems();
+            menuSetActive(MAINMENU);
+        }
+    }
+    
+    else if(currentMenu == SAVEDEVICEMENU)
+    {
+        graphicsDrawDeviceMenu(selectedDevice);
+        graphicsDrawTextCentered(150, "Select device to view saves", WHITE);
+        if(pad_pressed & PAD_CROSS)
+        {
+            menuSetActive(SAVEMENU);
+            if(selectedDevice == 0)
+                savesLoadSaveMenu(MC_SLOT_1);
+            if(selectedDevice == 1)
+                savesLoadSaveMenu(MC_SLOT_2);
+            if(selectedDevice == 2)
+                savesLoadSaveMenu(FLASH_DRIVE);
+        }
+        
+        if(pad_pressed & PAD_CIRCLE)
+        {
+            menuSetActive(MAINMENU);
+            killSaveMan();
+        }
+        
+        else if(pad_pressed & PAD_RIGHT)
+        {
+            if(selectedDevice >= 2)
+                selectedDevice = 0;
+            else
+                ++selectedDevice;
+        }
 
-		else if(pad_pressed & PAD_LEFT)
-		{
-			if (selectedDevice == 0)
-				selectedDevice = 2;
-			else
-				--selectedDevice;
-		}
-	}
-	
-	else if(currentMenu == SAVEMENU)
-	{
-		if(pad_pressed & PAD_CROSS)
-		{
-			// choose destination device
-			menuToggleItem();
-			// if user backs out of device menu, they'll be holding circle.
-			old_pad |= PAD_CIRCLE;
-		}
-		else if(pad_pressed & PAD_CIRCLE)
-		{
-			menuRemoveAllItems();
-			menuSetActive(SAVEDEVICEMENU);
-		}
-	}
+        else if(pad_pressed & PAD_LEFT)
+        {
+            if (selectedDevice == 0)
+                selectedDevice = 2;
+            else
+                --selectedDevice;
+        }
+    }
+    
+    else if(currentMenu == SAVEMENU)
+    {
+        if(pad_pressed & PAD_CROSS)
+        {
+            // choose destination device
+            menuToggleItem();
+            // if user backs out of device menu, they'll be holding circle.
+            old_pad |= PAD_CIRCLE;
+        }
+        else if(pad_pressed & PAD_CIRCLE)
+        {
+            menuRemoveAllItems();
+            menuSetActive(SAVEDEVICEMENU);
+        }
+    }
 }
 
 int displayPromptMenu(char **items, int numItems, const char *header)
 {
-	struct padButtonStatus padStat;
-	u32 old_pad = PAD_CROSS;
-	u32 pad_pressed = 0;
-	int state, i, y;
-	int selectedItem = 0;
-	
-	if(!items || numItems <= 0 || !header)
-		return 0;
-	
-	do
-	{
-		state = padGetState(0, 0);
-		while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-			state = padGetState(0, 0);
-	
-		padRead(0, 0, &padStat);
-	
-		pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-		old_pad = 0xFFFF ^ padStat.btns;
-		
-		graphicsDrawPromptBoxBlack(500, 44 + (numItems * 22));
-		graphicsDrawTextCentered(224 - numItems*11 - 22, header, WHITE);
-		y = 224 - numItems*11 + 11;
-		for(i = 0; i < numItems; i++)
-		{
-			graphicsDrawTextCentered(y, items[i], i == selectedItem ? YELLOW : WHITE);
-			y += 22;
-		}
-		graphicsRender();
-		
-		if(pad_pressed & PAD_UP)
-		{
-			if(selectedItem == 0)
-				selectedItem = numItems - 1;
-			else
-				--selectedItem;
-		}
+    struct padButtonStatus padStat;
+    u32 old_pad = PAD_CROSS;
+    u32 pad_pressed = 0;
+    int state, i, y;
+    int selectedItem = 0;
+    
+    if(!items || numItems <= 0 || !header)
+        return 0;
+    
+    do
+    {
+        state = padGetState(0, 0);
+        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+            state = padGetState(0, 0);
+    
+        padRead(0, 0, &padStat);
+    
+        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+        old_pad = 0xFFFF ^ padStat.btns;
+        
+        graphicsDrawPromptBoxBlack(500, 44 + (numItems * 22));
+        graphicsDrawTextCentered(224 - numItems*11 - 22, header, WHITE);
+        y = 224 - numItems*11 + 11;
+        for(i = 0; i < numItems; i++)
+        {
+            graphicsDrawTextCentered(y, items[i], i == selectedItem ? YELLOW : WHITE);
+            y += 22;
+        }
+        graphicsRender();
+        
+        if(pad_pressed & PAD_UP)
+        {
+            if(selectedItem == 0)
+                selectedItem = numItems - 1;
+            else
+                --selectedItem;
+        }
 
-		else if(pad_pressed & PAD_DOWN)
-		{
-			if (selectedItem == numItems - 1)
-				selectedItem = 0;
-			else
-				++selectedItem;
-		}
-	} while(!(pad_pressed & PAD_CROSS));
-	
-	return selectedItem;
+        else if(pad_pressed & PAD_DOWN)
+        {
+            if (selectedItem == numItems - 1)
+                selectedItem = 0;
+            else
+                ++selectedItem;
+        }
+    } while(!(pad_pressed & PAD_CROSS));
+    
+    return selectedItem;
 }
 
 int displayError(const char *error)
 {
-	char *items[] = {"OK"};
-	return displayPromptMenu(items, 1, error);
+    char *items[] = {"OK"};
+    return displayPromptMenu(items, 1, error);
 }
 
 void replaceIllegalChars(const char *str, char* valid, char replacement)
 {
-	char invalid[] = {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
-	const char *c = str;
-	char *cvalid = valid;
-	int i;
-	if(!str || !valid)
-		return;
-	
-	while(*c)
-	{
-		for(i = 0; i < sizeof(invalid); i++)
-		{
-			if(*c == invalid[i])
-			{
-				*cvalid = replacement;
-				break;
-			}
-			else
-				*cvalid = *c;
-		}
-		c++;
-		cvalid++;
-	}
-	
-	*cvalid = '\0';
+    char invalid[] = {'<', '>', ':', '"', '/', '\\', '|', '?', '*'};
+    const char *c = str;
+    char *cvalid = valid;
+    int i;
+    if(!str || !valid)
+        return;
+    
+    while(*c)
+    {
+        for(i = 0; i < sizeof(invalid); i++)
+        {
+            if(*c == invalid[i])
+            {
+                *cvalid = replacement;
+                break;
+            }
+            else
+                *cvalid = *c;
+        }
+        c++;
+        cvalid++;
+    }
+    
+    *cvalid = '\0';
 }
 
 char *rtrim(char *str)
 {
-	char *end;
-	
-	end = str + strlen(str) - 1;
-	while(end > str && isspace(*end)) end--;
-	*(end+1) = '\0';
-	
-	return str;
+    char *end;
+    
+    end = str + strlen(str) - 1;
+    while(end > str && isspace(*end)) end--;
+    *(end+1) = '\0';
+    
+    return str;
 }
 
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
-	/*----------------------------------------------------------------------------*\
-	 *  CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29.
-	 *
-	 *  This program generates the CRC-32 values for the files named in the
-	 *  command-line arguments.  These are the same CRC-32 values used by GZIP,
-	 *  PKZIP, and ZMODEM.  The Crc32_ComputeBuf() can also be detached and
-	 *  used independently.
-	 *
-	 *  THIS PROGRAM IS PUBLIC-DOMAIN SOFTWARE.
-	 *
-	 *  Based on the byte-oriented implementation "File Verification Using CRC"
-	 *  by Mark R. Nelson in Dr. Dobb's Journal, May 1992, pp. 64-67.
-	 *
-	 *  v1.0.0: original release.
-	 *  v1.0.1: fixed printf formats.
-	 *  v1.0.2: fixed something else.
-	 *  v1.0.3: replaced CRC constant table by generator function.
-	 *  v1.0.4: reformatted code, made ANSI C.  1994-12-05.
-	 *  v2.0.0: rewrote to use memory buffer & static table, 2006-04-29.
-	\*----------------------------------------------------------------------------*/
+    /*----------------------------------------------------------------------------*\
+     *  CRC-32 version 2.0.0 by Craig Bruce, 2006-04-29.
+     *
+     *  This program generates the CRC-32 values for the files named in the
+     *  command-line arguments.  These are the same CRC-32 values used by GZIP,
+     *  PKZIP, and ZMODEM.  The Crc32_ComputeBuf() can also be detached and
+     *  used independently.
+     *
+     *  THIS PROGRAM IS PUBLIC-DOMAIN SOFTWARE.
+     *
+     *  Based on the byte-oriented implementation "File Verification Using CRC"
+     *  by Mark R. Nelson in Dr. Dobb's Journal, May 1992, pp. 64-67.
+     *
+     *  v1.0.0: original release.
+     *  v1.0.1: fixed printf formats.
+     *  v1.0.2: fixed something else.
+     *  v1.0.3: replaced CRC constant table by generator function.
+     *  v1.0.4: reformatted code, made ANSI C.  1994-12-05.
+     *  v2.0.0: rewrote to use memory buffer & static table, 2006-04-29.
+    \*----------------------------------------------------------------------------*/
 
     static const unsigned long crcTable[256] = {
    0x00000000,0x77073096,0xEE0E612C,0x990951BA,0x076DC419,0x706AF48F,0xE963A535,

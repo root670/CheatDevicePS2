@@ -32,19 +32,19 @@ char *erl_id = "engine";
  */
 #if 0
 char *erl_dependancies[] = {
-	"libkernel",
-	NULL
+    "libkernel",
+    NULL
 };
 #endif
 
-#define KSEG0(x)	((void*)(((u32)(x)) | 0x80000000))
-#define MAKE_J(addr)	(u32)(0x08000000 | (0x03FFFFFF & ((u32)addr >> 2)))
+#define KSEG0(x)    ((void*)(((u32)(x)) | 0x80000000))
+#define MAKE_J(addr)    (u32)(0x08000000 | (0x03FFFFFF & ((u32)addr >> 2)))
 
 #ifdef _HOOK_9
 static void *(*OldSetupThread)(void *gp, void *stack, s32 stack_size,
-	void *args, void *root_func) = NULL;
+    void *args, void *root_func) = NULL;
 extern void *HookSetupThread(void *gp, void *stack, s32 stack_size,
-	void *args, void *root_func);
+    void *args, void *root_func);
 extern u32 j_SetupThread;
 
 extern u32 maxhooks;
@@ -53,39 +53,39 @@ extern u32 hooklist[];
 
 int get_max_hooks(void)
 {
-	return maxhooks;
+    return maxhooks;
 }
 
 int get_num_hooks(void)
 {
-	return numhooks;
+    return numhooks;
 }
 
 const u32 *get_hook_list(void)
 {
-	return hooklist;
+    return hooklist;
 }
 
 int add_hook(u32 addr, u32 val)
 {
-	if(numhooks >= maxhooks)
-		return -1;
+    if(numhooks >= maxhooks)
+        return -1;
 
-	hooklist[numhooks * 2] = addr & 0x01FFFFFC;
-	hooklist[numhooks * 2 + 1] = val;
-	numhooks++;
+    hooklist[numhooks * 2] = addr & 0x01FFFFFC;
+    hooklist[numhooks * 2 + 1] = val;
+    numhooks++;
 
-	return 0;
+    return 0;
 }
 
 void clear_hooks(void)
 {
-	int i;
+    int i;
 
-	for (i = 0; i < numhooks * 2; i++)
-		hooklist[i] = 0;
+    for (i = 0; i < numhooks * 2; i++)
+        hooklist[i] = 0;
 
-	numhooks = 0;
+    numhooks = 0;
 }
 #endif /* _HOOK_9 */
 
@@ -95,44 +95,44 @@ extern u32 codelist[];
 
 int get_max_codes(void)
 {
-	return maxcodes;
+    return maxcodes;
 }
 
 void set_max_codes(int num)
 {
-	maxcodes = num;
+    maxcodes = num;
 }
 
 int get_num_codes(void)
 {
-	return numcodes;
+    return numcodes;
 }
 
 const u32 *get_code_list(void)
 {
-	return codelist;
+    return codelist;
 }
 
 int add_code(u32 addr, u32 val)
 {
-	if (numcodes >= maxcodes)
-		return -1;
+    if (numcodes >= maxcodes)
+        return -1;
 
-	codelist[numcodes * 2] = addr;
-	codelist[numcodes * 2 + 1] = val;
-	numcodes++;
+    codelist[numcodes * 2] = addr;
+    codelist[numcodes * 2 + 1] = val;
+    numcodes++;
 
-	return 0;
+    return 0;
 }
 
 void clear_codes(void)
 {
-	int i;
+    int i;
 
-	for (i = 0; i < numcodes * 2; i++)
-		codelist[i] = 0;
+    for (i = 0; i < numcodes * 2; i++)
+        codelist[i] = 0;
 
-	numcodes = 0;
+    numcodes = 0;
 }
 
 extern u32 maxcallbacks;
@@ -141,27 +141,27 @@ extern u32 callbacks[];
 /* TODO register multiple callbacks */
 int register_callback(void *func)
 {
-	callbacks[0] = (u32)func;
+    callbacks[0] = (u32)func;
 
-	return 0;
+    return 0;
 }
 
 int __attribute__((section(".init"))) _init(void)
 {
 #ifdef _HOOK_9
-	/* hook syscall */
-	OldSetupThread = GetSyscallHandler(__NR_SetupThread);
-	j_SetupThread = MAKE_J(OldSetupThread);
-	SetSyscall(__NR_SetupThread, KSEG0(HookSetupThread));
+    /* hook syscall */
+    OldSetupThread = GetSyscallHandler(__NR_SetupThread);
+    j_SetupThread = MAKE_J(OldSetupThread);
+    SetSyscall(__NR_SetupThread, KSEG0(HookSetupThread));
 #endif
-	return 0;
+    return 0;
 }
 
 int __attribute__((section(".fini"))) _fini(void)
 {
 #ifdef _HOOK_9
-	/* unhook syscall */
-	SetSyscall(__NR_SetupThread, OldSetupThread);
+    /* unhook syscall */
+    SetSyscall(__NR_SetupThread, OldSetupThread);
 #endif
-	return 0;
+    return 0;
 }
