@@ -75,9 +75,7 @@ modules:
 	bin2o bootstrap/bootstrap.elf bootstrap_elf.o _bootstrap_elf
 
 version:
-	echo -n '#define GIT_VERSION "' > version.h
-	git describe | tr -d '\n' >> version.h
-	echo '"' >> version.h
+	$(version.sh)
 
 main: $(EE_BIN)
 	rm -f version.h
