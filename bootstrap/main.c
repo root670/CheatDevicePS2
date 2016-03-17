@@ -11,9 +11,6 @@
 #include <string.h>
 #include <stdio.h>
 
-int (*get_num_hooks)(void);
-int (*add_hook)(u32 addr, u32 val);
-
 /* Debug colors. Now NTSC Safe! At least I believe they are... */
 int red = 0x1010B4; /* RED: Opening elf */
 int green = 0x10B410; /* GREEN: Reading elf */

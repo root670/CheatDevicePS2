@@ -1,11 +1,1 @@
-The following is no longer valid! The bootstrap process has been changed...
-
-Run this with the path to an ELF to run as an argument.
-
-Basic process:
-1. loop through code list
-  - copy hooks to hooklist and regular codes to codelist
-  - set numhooks & numcodes
-2. hook SetupThread
-3. hook LoadExecPS2
-4. LoadExecPS2(ELF path, 0, NULL);
+Load ELF into memory, reset the IOP, and execute it. If loading and ELF from a device other than cdrom0, make sure the proper IRX modules are loaded before running this.
