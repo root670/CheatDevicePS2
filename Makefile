@@ -75,10 +75,9 @@ modules:
 	bin2o bootstrap/bootstrap.elf bootstrap_elf.o _bootstrap_elf
 
 version:
-	$(version.sh)
+	./version.sh > version.h
 
 main: $(EE_BIN)
-	rm -f version.h
 	rm -f *.o
 	rm -f libraries/*.o
 	rm -f bootstrap/*.elf bootstrap/*.o

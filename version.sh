@@ -1,5 +1,5 @@
 #!/bin/bash
 
-echo -n '#define GIT_VERSION "' > version.h
-git describe | tr -d '\n' >> version.h
-echo '"' >> version.h
+echo -n '#define GIT_VERSION "'
+git describe | tr -d '\n'
+echo '"'
