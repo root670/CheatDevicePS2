@@ -214,7 +214,8 @@ int parseLine(const char *line)
             }
             else
             {
-                game->next = ++game;
+                game->next = game + 1;
+                game++;
             }
             
             strncpy(game->title, line+1, 81);
