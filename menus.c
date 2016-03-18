@@ -250,7 +250,7 @@ int menuDownAlpha()
 
 void menuToggleItem()
 {
-    if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) activeMenu->current->extra)->type != CHEATHEADER)
+    if(activeMenu->identifier == CHEATMENU && activeMenu->current && ((cheatsCheat_t *) activeMenu->current->extra)->type != CHEATHEADER)
     {
         cheatsSetActiveGame(activeMenu->game);
         cheatsToggleCheat((cheatsCheat_t *) activeMenu->current->extra);
