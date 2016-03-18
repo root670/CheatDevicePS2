@@ -47,29 +47,10 @@ extern int _bootstrap_elf_size;
 
 static void discPrompt()
 {
-    struct padButtonStatus padStat;
-    static u32 old_pad = PAD_CROSS;
-    static u32 pad_pressed = 0;
-    int state;
+    char *items[] = {"OK"};
+    displayPromptMenu(items, 1, "Please insert disc");
     
-    graphicsDrawBackground();
-    graphicsDrawText(30, 200, "Insert disc and press X to start the game.", WHITE);
-    graphicsRenderNow();
-    
-    while(!(pad_pressed & PAD_CROSS))
-    {       
-        state = padGetState(0, 0);
-        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-            state = padGetState(0, 0);
-    
-        padRead(0, 0, &padStat);
-    
-        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-        old_pad = 0xFFFF ^ padStat.btns;
-    }
-    
-    graphicsDrawBackground();
-    graphicsDrawText(30, 200, "Starting game...", WHITE);
+    graphicsDrawTextCentered(310, "Starting game...", YELLOW);
     graphicsRenderNow();
 }
 
