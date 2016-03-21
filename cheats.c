@@ -205,9 +205,6 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
 {
     if(cheat && cheat->type != CHEATHEADER)
     {
-        if(cheat == activeGame->cheats) // first cheat is the enable code, which will be enabled/disabled automatically.
-            return 0;
-        
         if(!cheat->enabled)
         {
             if((numEnabledCodes + cheat->numCodeLines) >= 250)
@@ -219,24 +216,12 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
             cheat->enabled = 1;
             numEnabledCheats++;
             numEnabledCodes += cheat->numCodeLines;
-            if(numEnabledCheats == 1) // first cheat was enabled
-            {
-                activeGame->cheats->enabled = 1; // toggle enable code on
-                numEnabledCheats++;
-                numEnabledCodes += activeGame->cheats->numCodeLines;
-            }
         }
         else
         {
             cheat->enabled = 0;
             numEnabledCheats--;
             numEnabledCodes -= cheat->numCodeLines;
-            if(numEnabledCheats == 1) // last cheat was disabled
-            {
-                activeGame->cheats->enabled = 0; // toggle enable code off
-                numEnabledCheats--;
-                numEnabledCodes -= activeGame->cheats->numCodeLines;
-            }
         }
     }
     else
@@ -369,6 +354,44 @@ void SetupERL()
     printf("Symbols loaded.\n");
 }
 
+static void readCodes(cheatsCheat_t *cheats)
+{
+    int i;
+    u32 addr, val;
+    int nextCodeCanBeHook = 1;
+    cheatsCheat_t *cheat = cheats;
+
+    while(cheat)
+    {
+        if(cheat->enabled)
+        {
+            for(i = 0; i < cheat->numCodeLines; ++i)
+            {
+                addr = (u32)*((u32 *)cheat->codeLines + 2*i);
+                val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
+                
+                if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
+                {
+                    printf("hook: %08X %08X\n", addr, val);
+                    add_hook(addr, val);
+                }
+                else
+                {
+                    printf("code: %08X %08X\n", addr, val);
+                    add_code(addr, val);
+                }
+                
+                if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
+                    nextCodeCanBeHook = 0;
+                else
+                    nextCodeCanBeHook = 1;
+            }
+        }
+
+        cheat = cheat->next;
+    }
+}
+
 void cheatsInstallCodesForEngine()
 {
     if(activeGame != NULL)
@@ -378,36 +401,8 @@ void cheatsInstallCodesForEngine()
         int nextCodeCanBeHook = 1;
         
         SetupERL();
-        
-        cheatsCheat_t *cheat = activeGame->cheats;
 
-        while(cheat)
-        {
-            if(cheat->enabled)
-            {
-                for(i = 0; i < cheat->numCodeLines; ++i)
-                {
-                    addr = (u32)*((u32 *)cheat->codeLines + 2*i);
-                    val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
-                    
-                    if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
-                    {
-                        printf("hook: %08X %08X\n", addr, val);
-                        add_hook(addr, val);
-                    }
-                    else
-                    {
-                        printf("code: %08X %08X\n", addr, val);
-                        add_code(addr, val);
-                    }
-                    
-                    if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
-                        nextCodeCanBeHook = 0;
-                    else
-                        nextCodeCanBeHook = 1;
-                }
-            }
-            cheat = cheat->next;
-        }
+        readCodes(activeGame->enableCheat);
+        readCodes(activeGame->cheats);
     }
 }

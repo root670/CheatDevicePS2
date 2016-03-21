@@ -11,6 +11,7 @@
 #include "menus.h"
 #include "cheats.h"
 #include "settings.h"
+#include "util.h"
 
 typedef struct {
     u8  ident[16];  // struct definition for ELF object header

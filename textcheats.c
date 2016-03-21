@@ -226,19 +226,25 @@ int parseLine(const char *line)
         case TOKEN_CHEAT: // Add new cheat to game
             if(!game)
                 return 0;
-            
-            game->numCheats++;
-            
-            if(game->cheats == NULL)
+
+            if(game->enableCheat == NULL)
             {
-                // Game's first cheat
+                game->enableCheat = &cheatsHead[usedCheats++];
+                game->enableCheat->enabled = 1;
+                cheat = game->enableCheat;
+            }
+            else if(game->cheats == NULL)
+            {
+                // Game's first cheat following enable cheat
                 game->cheats = &cheatsHead[usedCheats++];
                 cheat = game->cheats;
+                game->numCheats++;
             }
             else
             {
                 cheat->next = &cheatsHead[usedCheats++];
                 cheat = cheat->next;
+                game->numCheats++;
             }
             
             strncpy(cheat->title, line, 81);
