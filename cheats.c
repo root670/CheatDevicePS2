@@ -143,43 +143,31 @@ cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
         cheatsGame_t *node = gamesHead;
         printf("Loading cheat menu for %s\n", game->title);
 
-        /* Find the game */
-        while(node)
+        /* Build the menu */
+        cheatsCheat_t *cheat = game->cheats;
+        menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
+        menuItem_t *item = items;
+        printf("%d cheats\n", game->numCheats);
+        while(cheat != NULL)
         {
-            if(node == game)
-            {
-                printf("Found game.\n");
-                /* Build the menu */
-                cheatsCheat_t *cheat = node->cheats;
-                menuItem_t *items = calloc(node->numCheats, sizeof(menuItem_t));
-                menuItem_t *item = items;
-                printf("%d cheats\n", node->numCheats);
-                while(cheat != NULL)
-                {
-                    if(cheat->type == CHEATNORMAL)
-                        item->type = NORMAL;
-                    else
-                        item->type = HEADER;
-                    
-                    item->text = calloc(1, strlen(cheat->title) + 1);
-                    strcpy(item->text, cheat->title);
-                    
-                    item->extra = (void *)cheat;
+            if(cheat->type == CHEATNORMAL)
+                item->type = NORMAL;
+            else
+                item->type = HEADER;
 
-                    menuAppendItem(item);
-                    cheat = cheat->next;
-                    item++;
-                }
-                
-                numCheats = node->numCheats;
-                return node;
-            }
+            item->text = calloc(1, strlen(cheat->title) + 1);
+            strcpy(item->text, cheat->title);
 
-            node = node->next;
+            item->extra = (void *)cheat;
+
+            menuAppendItem(item);
+            cheat = cheat->next;
+            item++;
         }
-    }
 
-    return NULL;
+        numCheats = game->numCheats;
+        return game;
+    }
 }
 
 int cheatsLoadCodeMenu(const char* game, const char* cheat);
@@ -222,6 +210,11 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
             cheat->enabled = 0;
             numEnabledCheats--;
             numEnabledCodes -= cheat->numCodeLines;
+
+            if(numEnabledCheats == 0)
+            {
+                activeGame = NULL;
+            }
         }
     }
     else
@@ -304,10 +297,7 @@ int cheatsSetActiveGame(cheatsGame_t *game)
         numEnabledCodes = 0;
     }
 
-    if(game)
-    {
-        activeGame = game;
-    }
+    activeGame = game;
 
     return 1;
 }
