@@ -14,7 +14,6 @@ typedef enum { NORMAL, HEADER } menutype_t;
 typedef struct menuItem {
     menutype_t type;
     char *text;
-    //cheatsCheat_t *cheat; // Optional: Cheat menu will use this to associate cheat.
     void *extra; // Optional: Associate additional data with the menuItem.
     
     struct menuItem *prev;
