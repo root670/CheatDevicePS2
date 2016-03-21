@@ -132,9 +132,15 @@ int dbOpenBuffer(unsigned char *buff)
             codeLines += cheat->numCodeLines;
             cheat = cheat->next;
         }
+
+        // Use first cheat as enable cheat.
+        game->enableCheat = cheatsHead;
+        game->cheats = cheatsHead->next;
+        game->enableCheat->next = NULL;
+        game->enableCheat->enabled = 1;
         
-        game->cheats = cheatsHead;
-        game->numCheats = numCheats;
+        if(numCheats > 0)
+            game->numCheats = numCheats - 1; // don't count the enable cheat
         
         if(i+1 < dbHeader->numTitles)
         {
