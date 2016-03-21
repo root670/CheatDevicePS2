@@ -396,10 +396,6 @@ void cheatsInstallCodesForEngine()
 {
     if(activeGame != NULL)
     {
-        int i;
-        u32 addr, val;
-        int nextCodeCanBeHook = 1;
-        
         SetupERL();
 
         readCodes(activeGame->enableCheat);
