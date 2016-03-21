@@ -11,9 +11,6 @@
 #include "util.h"
 #include "database.h"
 
-extern u8  _cheatdb_start[];
-extern int _cheatdb_size;
-
 int main(int argc, char *argv[])
 {
     loadModules();
