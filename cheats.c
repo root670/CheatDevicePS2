@@ -132,12 +132,12 @@ int cheatsLoadHistory()
                 menuSetActiveItem(lastGameMenu);
 
                 free(cheatHashes);
-                free(gameHashes);
             }
 
             fclose(historyFile);
         }
 
+        free(gameHashes);
         return 1;
     }
 
