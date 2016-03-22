@@ -39,6 +39,7 @@ menuID_t menuGetActive();
 int menuAppendItem(menuItem_t *item);
 int menuRemoveActiveItem();
 int menuRemoveAllItems();
+int menuSetActiveItem(menuItem_t *item);
 
 int menuUp();
 int menuDown();

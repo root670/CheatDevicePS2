@@ -10,6 +10,7 @@ OBJS += libraries/upng.o
 OBJS += libraries/ini.o
 
 # Main
+OBJS += hash.o
 OBJS += util.o
 OBJS += startgame.o
 OBJS += database.o

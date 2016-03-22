@@ -47,6 +47,8 @@ int killCheatMan();
 int cheatsOpenDatabase(const char* path);
 // TODO: Save all cheats to a file.
 int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
+// Re-enable previously used cheats
+int cheatsLoadHistory();
 
 // Create a menu with game titles.
 int cheatsLoadGameMenu();

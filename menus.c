@@ -116,6 +116,16 @@ int menuRemoveAllItems()
     return 1;
 }
 
+int menuSetActiveItem(menuItem_t *item)
+{
+    if(!item)
+        return 0;
+
+    activeMenu->current = item;
+
+    return 1;
+}
+
 menuID_t menuGetActive()
 {
     return activeMenu->identifier;

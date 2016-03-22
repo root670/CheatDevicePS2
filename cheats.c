@@ -4,6 +4,7 @@
 #include "menus.h"
 #include "graphics.h"
 #include "util.h"
+#include "hash.h"
 #include <debug.h>
 #include <kernel.h>
 #include <stdio.h>
@@ -14,6 +15,9 @@
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
 static cheatDatabaseType_t dbType;
+static hashTable_t *gameHashes;
+static hashTable_t *cheatHashes;
+static FILE *historyFile;
 static int numGames = 0;
 static int numCheats = 0;
 static int numEnabledCheats = 0;
@@ -69,8 +73,78 @@ int killCheatMan()
     return 1;
 }
 
-// CheatDB --> Game --> Cheat --> Code
+static void populateCheatHashTable()
+{
+    if(!cheatHashes)
+        return;
 
+    cheatsCheat_t *cheat = activeGame->cheats;
+
+    while(cheat != NULL)
+    {
+        unsigned int hash = hashFunction(cheat->codeLines, cheat->numCodeLines * 8);
+        hashAdd(cheatHashes, cheat, hash);
+
+        cheat = cheat->next;
+    }
+}
+
+int cheatsLoadHistory()
+{
+    int i;
+    FILE *historyFile;
+    size_t historyLength;
+    unsigned int lastGameHash, cheatHash;
+    menuItem_t *lastGameMenu;
+    cheatsCheat_t *cheat;
+
+    if(initialized)
+    {
+        if(!gameHashes)
+            return 0;
+
+        historyFile = fopen("CheatHistory.bin", "rb");
+
+        if(historyFile)
+        {
+            fseek(historyFile, 0, SEEK_END);
+            historyLength = ftell(historyFile);
+            fseek(historyFile, 0, SEEK_SET);
+
+            fread(&lastGameHash, 4, 1, historyFile);
+            lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
+
+            if(lastGameMenu != NULL)
+            {
+                cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
+                cheatHashes = hashNewTable(activeGame->numCheats * 1.6);
+                populateCheatHashTable();
+
+                for(i = 0; i < historyLength - 4; i+= 4)
+                {
+                    fread(&cheatHash, 4, 1, historyFile);
+                    cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
+
+                    if(cheat != NULL)
+                        cheatsToggleCheat(cheat);
+                }
+
+                menuSetActiveItem(lastGameMenu);
+
+                free(cheatHashes);
+                free(gameHashes);
+            }
+
+            fclose(historyFile);
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+// CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
     const char *ext;
@@ -117,6 +191,9 @@ int cheatsLoadGameMenu()
         cheatsGame_t *node = gamesHead;
         menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
         menuItem_t *item = items;
+        unsigned int hash;
+
+        gameHashes = hashNewTable(numGames * 1.6);
         
         while(node)
         {
@@ -124,6 +201,9 @@ int cheatsLoadGameMenu()
             item->text = calloc(1, strlen(node->title) + 1);
             strcpy(item->text, node->title);
             item->extra = node;
+
+            hash = hashFunction(item->text, strlen(item->text));
+            hashAdd(gameHashes, item, hash);
 
             menuAppendItem(item);
             node = node->next;
@@ -140,9 +220,6 @@ cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
 {
     if(initialized && gamesHead!=NULL && game)
     {
-        cheatsGame_t *node = gamesHead;
-        printf("Loading cheat menu for %s\n", game->title);
-
         /* Build the menu */
         cheatsCheat_t *cheat = game->cheats;
         menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
@@ -355,6 +432,13 @@ static void readCodes(cheatsCheat_t *cheats)
     {
         if(cheat->enabled)
         {
+            if(historyFile)
+            {
+                // Save cheat's hash
+                unsigned int cheatHash = hashFunction(cheat->codeLines, cheat->numCodeLines * 8);
+                fwrite(&cheatHash, 4, 1, historyFile);
+            }
+
             for(i = 0; i < cheat->numCodeLines; ++i)
             {
                 addr = (u32)*((u32 *)cheat->codeLines + 2*i);
@@ -388,7 +472,17 @@ void cheatsInstallCodesForEngine()
     {
         SetupERL();
 
+        historyFile = fopen("CheatHistory.bin", "wb");
+        if(historyFile)
+        {
+            unsigned int gameHash = hashFunction(activeGame->title, strlen(activeGame->title));
+            fwrite(&gameHash, 4, 1, historyFile);
+        }
+
         readCodes(activeGame->enableCheat);
         readCodes(activeGame->cheats);
+
+        if(historyFile)
+            fclose(historyFile);
     }
 }
