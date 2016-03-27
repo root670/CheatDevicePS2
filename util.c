@@ -15,6 +15,17 @@
 #include <sbv_patches.h>
 #include <libmc.h>
 
+#ifdef _DTL_T10000
+extern u8  _sio2man_irx_start[];
+extern int _sio2man_irx_size;
+extern u8  _mcman_irx_start[];
+extern int _mcman_irx_size;
+extern u8  _mcserv_irx_start[];
+extern int _mcserv_irx_size;
+extern u8  _padman_irx_start[];
+extern int _padman_irx_size;
+#endif
+
 extern u8  _iomanX_irx_start[];
 extern int _iomanX_irx_size;
 extern u8  _ps2kbd_irx_start[];
@@ -33,10 +44,12 @@ void loadModules()
     /* IOP reset routine taken from ps2rd */
     SifInitRpc(0);
 
-    while (!SifIopReset("rom0:UDNL rom0:EELOADCNF", 0))
-        ;
-    while (!SifIopSync())
-        ;
+    #ifdef _DTL_T10000
+    while (!SifIopReset("rom0:UDNL", 0));
+    #else
+    while (!SifIopReset("rom0:UDNL rom0:EELOADCNF", 0));
+    #endif
+    while (!SifIopSync());
 
     /* exit services */
     fioExit();
@@ -57,17 +70,30 @@ void loadModules()
     FlushCache(0);
     FlushCache(2);
 
-    //sbv_patch_enable_lmb();
+    sbv_patch_enable_lmb();
+    sbv_patch_disable_prefix_check();
 
+    #ifdef _DTL_T10000
+    SifExecModuleBuffer(_sio2man_irx_start, _sio2man_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_padman_irx_start, _padman_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_mcman_irx_start, _mcman_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_mcserv_irx_start, _mcserv_irx_size, 0, NULL, &ret);
+
+    #else
     SifLoadModule("rom0:SIO2MAN", 0, NULL);
     SifLoadModule("rom0:PADMAN", 0, NULL);
     SifLoadModule("rom0:MCMAN", 0, NULL);
     SifLoadModule("rom0:MCSERV", 0, NULL);
+    #endif
     SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
 
+    #ifdef _DTL_T10000
+    mcInit(MC_TYPE_XMC);
+    #else
     mcInit(MC_TYPE_MC);
+    #endif
 
     padInit(0);
     padPortOpen(0, 0, padBuff);

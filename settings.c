@@ -19,7 +19,11 @@ int initSettingsMan()
     {
         printf("\n ** Initializing Settings Manager **\n");
 
+        #ifdef _DTL_T10000
+        ini = ini_load("host:CheatDevicePS2.ini");
+        #else
         ini = ini_load("CheatDevicePS2.ini");
+        #endif
         if(!ini)
         {
             printf("Error opening CheatDevicePS2.ini\n");

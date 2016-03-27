@@ -3,6 +3,8 @@
 # by root670
 #
 
+DTL_T10000 = 0
+
 EE_BIN = cheatdevice.elf
 
 # Helper libraries
@@ -40,11 +42,20 @@ OBJS += bootstrap_elf.o
 
 GSKIT = $(PS2DEV)/gsKit
 
-EE_LIBS += -lpad -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd -lz
+ifeq ($(DTL_T10000),1)
+	EE_CFLAGS += -D_DTL_T10000 -g
+	EE_LIBS += -lpadx
+else
+	EE_LIBS += -lpad
+endif
+EE_LIBS += -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd -lz
 EE_LDFLAGS += -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -s
 EE_INCS += -I$(GSKIT)/include -I$(PS2SDK)/ports/include
 
 IRX_OBJS += usbd_irx.o usb_mass_irx.o iomanX_irx.o
+ifeq ($(DTL_T10000),1)
+	IRX_OBJS += sio2man_irx.o mcman_irx.o mcserv_irx.o padman_irx.o
+endif
 
 EE_OBJS = $(IRX_OBJS) $(OBJS) main.o
 
@@ -55,6 +66,12 @@ modules:
 	bin2o resources/iomanX.irx iomanX_irx.o _iomanX_irx
 	bin2o resources/usbd.irx usbd_irx.o _usbd_irx
 	bin2o resources/usb_mass.irx usb_mass_irx.o _usb_mass_irx
+ifeq ($(DTL_T10000),1)
+	bin2o $(PS2SDK)/iop/irx/freesio2.irx sio2man_irx.o _sio2man_irx
+	bin2o $(PS2SDK)/iop/irx/mcman.irx mcman_irx.o _mcman_irx
+	bin2o $(PS2SDK)/iop/irx/mcserv.irx mcserv_irx.o _mcserv_irx
+	bin2o $(PS2SDK)/iop/irx/freepad.irx padman_irx.o _padman_irx
+endif
 
 	# Graphics
 	bin2o resources/background.png background_png.o _background_png
