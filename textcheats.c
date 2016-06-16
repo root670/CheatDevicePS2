@@ -227,13 +227,7 @@ int parseLine(const char *line)
             if(!game)
                 return 0;
 
-            if(game->enableCheat == NULL)
-            {
-                game->enableCheat = &cheatsHead[usedCheats++];
-                game->enableCheat->enabled = 1;
-                cheat = game->enableCheat;
-            }
-            else if(game->cheats == NULL)
+            if(game->cheats == NULL)
             {
                 // Game's first cheat following enable cheat
                 game->cheats = &cheatsHead[usedCheats++];

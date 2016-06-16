@@ -35,7 +35,6 @@ typedef struct cheatsGame {
     char title[81];
     unsigned int numCheats;
     cheatsCheat_t *cheats;
-    cheatsCheat_t *enableCheat;
 
     struct cheatsGame *next;
 } cheatsGame_t;
