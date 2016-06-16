@@ -408,15 +408,16 @@ void SetupERL()
     printf("%08x %s\n", (u32)sym->address, name); \
     var = (typeof(var))sym->address
     
-    GET_SYMBOL(get_max_hooks, "get_max_hooks");
-    GET_SYMBOL(get_num_hooks, "get_num_hooks");
-    GET_SYMBOL(add_hook, "add_hook");
-    GET_SYMBOL(clear_hooks, "clear_hooks");
+    //GET_SYMBOL(get_max_hooks, "get_max_hooks");
+    //GET_SYMBOL(get_num_hooks, "get_num_hooks");
+    //GET_SYMBOL(add_hook, "add_hook");
+    //GET_SYMBOL(clear_hooks, "clear_hooks");
     GET_SYMBOL(get_max_codes, "get_max_codes");
     GET_SYMBOL(set_max_codes, "set_max_codes");
     GET_SYMBOL(get_num_codes, "get_num_codes");
     GET_SYMBOL(add_code, "add_code");
     GET_SYMBOL(clear_codes, "clear_codes");
+    GET_SYMBOL(syscallHook, "syscallHook");
     
     printf("Symbols loaded.\n");
 }
@@ -447,7 +448,7 @@ static void readCodes(cheatsCheat_t *cheats)
                 if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
                 {
                     printf("hook: %08X %08X\n", addr, val);
-                    add_hook(addr, val);
+                    //add_hook(addr, val);
                 }
                 else
                 {
@@ -479,8 +480,10 @@ void cheatsInstallCodesForEngine()
             fwrite(&gameHash, 4, 1, historyFile);
         }
 
-        readCodes(activeGame->enableCheat);
+        printf("Reading cheats\n");
+        //readCodes(activeGame->enableCheat);
         readCodes(activeGame->cheats);
+        printf("Done readin cheats\n");
 
         if(historyFile)
             fclose(historyFile);

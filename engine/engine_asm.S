@@ -25,14 +25,6 @@
 #define F_CodeHandler
 /*#define F_BootCodeHandler*/
 
-#ifdef _HOOK_9
-#define F_HookSetupThread
-#endif
-
-/* Max number of hooks in hook list */
-#ifndef MAX_HOOKS
-#define	MAX_HOOKS	5
-#endif
 /* Max number of codes in code list */
 #ifndef MAX_CODES
 #define	MAX_CODES	100
@@ -50,21 +42,14 @@
 	/*
 	 * All global symbols are exported when built as ERL.
 	 */
+	.globl	syscallHook
+	.globl	jal_syscallHook
 	.globl	EngineHandler
-	.globl	jal_EngineHandler
 	.globl	maxcallbacks
 	.globl	callbacks
 	.globl	eh_backup
 	.globl	CodeHandler
-	.globl	BootCodeHandler
 
-#ifdef _HOOK_9
-	.globl	HookSetupThread
-	.globl	j_SetupThread
-	.globl	maxhooks
-	.globl	numhooks
-	.globl	hooklist
-#endif
 	.globl	maxcodes
 	.globl	numcodes
 	.globl	codelist
@@ -82,9 +67,21 @@ _start:
  ******************************************************************************/
 #ifdef F_EngineHandler
 	.ent	EngineHandler
-jal_EngineHandler:
-	jal	EngineHandler
+jal_syscallHook:
+	jal syscallHook
 	nop
+syscallHook:
+	addiu $sp, -0x10
+	sq $ra, 0($sp)
+	// Call the syscall handler
+	jalr $k0
+	nop
+	jal EngineHandler
+	nop
+	lq $ra, 0($sp)
+	jr $ra
+	addiu $sp, 0x10
+
 EngineHandler:
 	addiu	$sp, -0xe0
 	sd	$ra, 0($sp)
@@ -558,195 +555,6 @@ type_tab:
 
 /*******************************************************************************
  *
- * BootCodeHandler - Process all boot codes in the code list.
- *
- * This function is always called before the hooked syscalls are executed.
- * Therefore, the boot codes take effect before CodeHandler() does its work.
- *
- ******************************************************************************/
-#ifdef F_BootCodeHandler
-	.ent	BootCodeHandler
-BootCodeHandler:
-	/* TODO */
-	nop
-	nop
-	jr	$ra
-	nop
-	.end	BootCodeHandler
-#endif
-
-/**
- * AutoHooker - Create hook for code engine when no hook codes are available
- *
- * This function searches for the first call to sceSifSendCmd and replaces it
- * with a call to the code engine.
- * Reference: http://web.archive.org/web/20140304104515/http://www.codemasters-project.net/guides/showentry.php?e=902&epage=3
- * TODO: Provide feedback when the patterns are found, but the JAL
- * instruction couldn't be found.
- **/
-
-hookskips:
-	.word	1
-
-	.ent	AutoHooker
-AutoHooker:
-	/* save registers to the stack */
-	addiu	$sp, -0x28
-	sd	$t1, 0($sp)
-	sd	$t2, 8($sp)
-	sd	$t3, 16($sp)
-	sd	$v0, 24($sp)
-	sd	$v1, 32($sp)
-	
-	/*
-	* Don't autohook until the 2nd SetupThread call. This prevents hooking
-	* the bootstrap.
-	*/
-	lw	$t2, hookskips
-	nop
-	addiu $t2, $t2, -1
-	sw	$t2, hookskips
-	bgez	$t2, AutoHooker_done
-	
-	li	$t1, 0x00100000 // starting address
-
-AutoHooker_loop:
-	/* branch if all addresses in the range have been checked */
-	li	$t2, 0x018FFFF0
-	bge	$t1, $t2, AutoHooker_done
-	nop
-	
-	/* check first part of pattern, branch if it isn't found */
-	lw	$t3, 0($t1)
-	li	$t2, 0x0060402d // daddu t0, v1, zero
-	bne	$t2, $t3, AutoHooker_loop
-	addiu	$t1, 4
-	
-	/* check second part of pattern, branch if it isn't found */
-	lw	$t3, 0($t1)
-	li	$t2, 0x0160482d // daddu t1, t3, zero
-	bne	$t2, $t3, AutoHooker_loop
-	nop
-	
-	/* pattern has been found! look for the next jal and install the hook.
-	 * only check the next 3 instructions.
-	 */
-	li	$v0, 3
-AutoHooker_findjal:
-	beqz	$v0, AutoHooker_done // didn't find a jal!
-	addiu	$t1, 4
-	lw	$t3, 0($t1)
-	srl	$t3, $t3, 24
-	xori	$v1, $t3, 0x0c
-	bnez	$v1, AutoHooker_findjal
-	addiu	$v0, -1
-
-	/* back up opcodes */
-	lw	$t3, 0($t1)
-	la	$t2, eh_backup
-	sw	$t3, 0($t2) // original instruction
-	lw	$v1, 4($t1)
-	sw	$v1, 4($t2) // delay slot
-	
-	/* inject jal to engine handler */
-	lw	$v1, jal_EngineHandler
-	sw	$v1, 0($t1)
-	sw	$zero, 4($t1)
-	
-AutoHooker_done:
-	ld	$t1, 0($sp)
-	ld	$t2, 8($sp)
-	ld	$t3, 16($sp)
-	ld	$v0, 24($sp)
-	ld	$v1, 32($sp)
-	nop
-	jr	$ra
-	addiu	$sp, 0x28
-	.end AutoHooker
-
-/*******************************************************************************
- *
- * HookSetupThread - Pre-call hook function for syscall SetupThread().
- *
- * It runs through all hooks in the hook list and hard-codes a jal to
- * EngineHandler() if a hook's value is equal to the opcode at the hook address;
- * replaced opcodes are backed up. After processing the boot codes, it jumps to
- * the original SetupThread() function.
- *
- * NOTE: Only the _first_ matching hook will be activated.
- *
- * Here are the syscall parameters - those regs must not be modified!
- *
- * void *SetupThread(void *gp,	$a0
- *	void *stack,		$a1
- *	s32 stack_size,		$a2
- *	void *args,		$a3
- *	void *root_func)	$t0
- *
- ******************************************************************************/
-#ifdef F_HookSetupThread
-	.ent	HookSetupThread
-HookSetupThread:
-	addiu	$sp, -0x10
-	sd	$ra, 0($sp)
-
-	/*
-	 * $t1 - number of hooks to do
-	 * $t3 - ptr to hook list entry
-	 * $v0 - hook address
-	 */
-	lw	$t1, numhooks
-	nop
-	bgtz	$t1, 1f
-	nop
-	
-	/* find a place to hook */
-	jal	AutoHooker
-	nop
-1:
-	/* hook only if opcodes are equal */
-	la	$t3, hooklist
-	lw	$v0, 0($t3)
-	beqz	$v0, 2f
-	lw	$v1, 4($t3)
-	lw	$t2, 0($v0)
-	bne	$t2, $v1, 2f
-	nop
-
-	/* back up opcodes */
-	la	$at, eh_backup
-	sw	$t2, 0($at)
-	lw	$v1, 4($v0)
-	sw	$v1, 4($at)
-
-	/* inject jal to engine handler */
-	lw	$v1, jal_EngineHandler
-	sw	$v1, 0($v0)
-	b	3f
-	sw	$zero, 4($v0)
-2:
-	/* next hook */
-	addiu	$t1, -1
-	bgtz	$t1, 1b
-	addiu	$t3, 8
-3:
-#ifdef F_BootCodeHandler
-	/* process boot codes */
-	jal	BootCodeHandler
-	nop
-#endif
-	ld	$ra, 0($sp)
-	addiu	$sp, 0x10
-
-	/* jump to original SetupThread() */
-j_SetupThread:
-	j	0
-	nop
-	.end	HookSetupThread
-#endif
-
-/*******************************************************************************
- *
  * .rodata section
  *
  ******************************************************************************/
@@ -760,11 +568,6 @@ engine_info:
 
 maxcallbacks:
 	.word	MAX_CALLBACKS
-
-#ifdef _HOOK_9
-maxhooks:
-	.word	MAX_HOOKS
-#endif
 
 maxcodes:
 	.word	MAX_CODES
@@ -782,16 +585,6 @@ maxcodes:
 callbacks:
 	.space	(MAX_CALLBACKS*4)
 	.word	0 /* terminator */
-
-/*
- * Hook list to be filled by loader.
- */
-#ifdef _HOOK_9
-numhooks:
-	.word	0
-hooklist:
-	.space	(MAX_HOOKS*8)
-#endif
 
 /*
  * Code list to be filled by loader.

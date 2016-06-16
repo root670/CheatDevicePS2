@@ -39,55 +39,9 @@ char *erl_dependancies[] = {
 
 #define KSEG0(x)    ((void*)(((u32)(x)) | 0x80000000))
 #define MAKE_J(addr)    (u32)(0x08000000 | (0x03FFFFFF & ((u32)addr >> 2)))
+#define MAKE_JAL(addr)  (u32)(0x0C000000 | (0x03FFFFFF & ((u32)addr >> 2)))
 
-#ifdef _HOOK_9
-static void *(*OldSetupThread)(void *gp, void *stack, s32 stack_size,
-    void *args, void *root_func) = NULL;
-extern void *HookSetupThread(void *gp, void *stack, s32 stack_size,
-    void *args, void *root_func);
-extern u32 j_SetupThread;
-
-extern u32 maxhooks;
-extern u32 numhooks;
-extern u32 hooklist[];
-
-int get_max_hooks(void)
-{
-    return maxhooks;
-}
-
-int get_num_hooks(void)
-{
-    return numhooks;
-}
-
-const u32 *get_hook_list(void)
-{
-    return hooklist;
-}
-
-int add_hook(u32 addr, u32 val)
-{
-    if(numhooks >= maxhooks)
-        return -1;
-
-    hooklist[numhooks * 2] = addr & 0x01FFFFFC;
-    hooklist[numhooks * 2 + 1] = val;
-    numhooks++;
-
-    return 0;
-}
-
-void clear_hooks(void)
-{
-    int i;
-
-    for (i = 0; i < numhooks * 2; i++)
-        hooklist[i] = 0;
-
-    numhooks = 0;
-}
-#endif /* _HOOK_9 */
+extern u32 syscallHook;
 
 extern u32 maxcodes;
 extern u32 numcodes;
@@ -148,20 +102,16 @@ int register_callback(void *func)
 
 int __attribute__((section(".init"))) _init(void)
 {
-#ifdef _HOOK_9
-    /* hook syscall */
-    OldSetupThread = GetSyscallHandler(__NR_SetupThread);
-    j_SetupThread = MAKE_J(OldSetupThread);
-    SetSyscall(__NR_SetupThread, KSEG0(HookSetupThread));
-#endif
+    ee_kmode_enter();
+    //*((u32 *)(0x800002FC)) = ((syscallHook << 4) >> 6) + 0x0C000000;
+    //*((u32 *)(0x800002FC)) = MAKE_JAL(&syscallHook);
+    //*((u32 *)(0x800002FC)) = MAKE_JAL(0x00080000);
+    ee_kmode_exit();
+
     return 0;
 }
 
 int __attribute__((section(".fini"))) _fini(void)
 {
-#ifdef _HOOK_9
-    /* unhook syscall */
-    SetSyscall(__NR_SetupThread, OldSetupThread);
-#endif
     return 0;
 }

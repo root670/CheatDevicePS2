@@ -78,15 +78,18 @@ int cheatsSetActiveGame(cheatsGame_t *game);
 void cheatsInstallCodesForEngine();
 
 /* used by cheat engine */
+/*
 int (*get_max_hooks)(void);
 int (*get_num_hooks)(void);
 int (*add_hook)(u32 addr, u32 val);
 void (*clear_hooks)(void);
+*/
 
 int (*get_max_codes)(void);
 void (*set_max_codes)(int num);
 int (*get_num_codes)(void);
 int (*add_code)(u32 addr, u32 val);
 void (*clear_codes)(void);
+void (*syscallHook)(void);
 
 #endif
