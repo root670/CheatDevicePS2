@@ -102,12 +102,6 @@ int register_callback(void *func)
 
 int __attribute__((section(".init"))) _init(void)
 {
-    ee_kmode_enter();
-    //*((u32 *)(0x800002FC)) = ((syscallHook << 4) >> 6) + 0x0C000000;
-    //*((u32 *)(0x800002FC)) = MAKE_JAL(&syscallHook);
-    //*((u32 *)(0x800002FC)) = MAKE_JAL(0x00080000);
-    ee_kmode_exit();
-
     return 0;
 }
 

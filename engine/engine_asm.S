@@ -47,7 +47,6 @@
 	.globl	EngineHandler
 	.globl	maxcallbacks
 	.globl	callbacks
-	.globl	eh_backup
 	.globl	CodeHandler
 
 	.globl	maxcodes
@@ -154,12 +153,7 @@ EngineHandler:
 	ld	$v0, 0x10($sp)
 	ld	$at, 0x08($sp)
 
-	/* call original function here */
-eh_backup:
-	nop
-	nop
-
-	/* finally, return to normal execution */
+	/* return to normal execution */
 	ld	$ra, 0($sp)
 	jr	$ra
 	addiu	$sp, 0xe0
