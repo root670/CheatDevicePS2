@@ -29,9 +29,8 @@ int g_argc;
 char *g_argv[16];
 #define GS_BGCOLOUR *((vu32*)0x120000e0)
 
-//#define MAKE_JAL(addr)  (((u32)addr << 4) >> 6) + 0x0C000000;
 #define MAKE_JAL(addr)  (u32)(0x0C000000 | (0x03FFFFFF & ((u32)addr >> 2)))
-u64 syscallHook;
+u32 syscallHook;
 
 struct _lf_elf_load_arg {
     union
@@ -95,7 +94,7 @@ void MyLoadElf(char *elfpath)
     char *args[1];
     t_ExecData sifelf;
 
-    memset(&sifelf, 0, sizeof(t_ExecData)); 
+    memset(&sifelf, 0, sizeof(t_ExecData));
 
     elf_header_t boot_header;
     elf_pheader_t boot_pheader;
@@ -104,20 +103,20 @@ void MyLoadElf(char *elfpath)
     GS_BGCOLOUR = red; /* RED: Opening elf */
     fd = fioOpen(elfpath, O_RDONLY); //Open the elf
     if (fd < 0) { fioClose(fd); return; } //If it doesn't exist, return
-    
+
     GS_BGCOLOUR = blue;
-    
+
     if(read(fd, &boot_header, sizeof(elf_header_t)) != sizeof(elf_header_t)) {
         close(fd);
     }
-    
+
     GS_BGCOLOUR = white;
-    
+
     /* check ELF magic */
     if ((*(u32*)boot_header.ident) != ELF_MAGIC) {
         close(fd);
     }
-    
+
     /* copy loadable program segments to RAM */
     for (i = 0; i < boot_header.phnum; i++) {
         lseek(fd, boot_header.phoff+(i*sizeof(elf_pheader_t)), SEEK_SET);
@@ -132,14 +131,13 @@ void MyLoadElf(char *elfpath)
         if (boot_pheader.memsz > boot_pheader.filesz)
             memset(boot_pheader.vaddr + boot_pheader.filesz, 0,
                     boot_pheader.memsz - boot_pheader.filesz);
-                    
     }
-    
+
     close(fd);
 
     // Booting part
     GS_BGCOLOUR = yellow; /* YELLOW: ExecPS2 */
-    
+
     /* IOP reboot routine from ps2rd */
     SifInitRpc(0);
 
@@ -161,7 +159,6 @@ void MyLoadElf(char *elfpath)
     args[0] = elfpath;
     ee_kmode_enter();
     *((u32 *)(0x800002FC)) = MAKE_JAL(syscallHook);
-    //*((u32 *)(0x800002fc)) = 0x0C02000e;
     ee_kmode_exit();
     ExecPS2((u32*)boot_header.entry, 0, 1, args);
 }
@@ -174,8 +171,6 @@ argv[1] = syscallHook address
 int main(int argc, char *argv[])
 {
     sscanf(argv[1], "%X", &syscallHook);
-    //syscallHook = 0x00080038;
-    printf("%X %X\n", syscallHook, (void*)argv[1]);
     MyLoadElf((char *) argv[0]);
 
     return 0;
