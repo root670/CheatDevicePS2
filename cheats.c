@@ -382,10 +382,10 @@ int cheatsSetActiveGame(cheatsGame_t *game)
 void SetupERL()
 {
     struct erl_record_t *erl;
-    
+
     erl_add_global_symbol("GetSyscallHandler", (u32)GetSyscallHandler);
     erl_add_global_symbol("SetSyscall", (u32)SetSyscall);
-    
+
     /* Install cheat engine ERL */
     erl = load_erl_from_mem_to_addr(_engine_erl_start, 0x00080000, 0, NULL);
     if(!erl)
@@ -393,10 +393,10 @@ void SetupERL()
         printf("Error loading cheat engine ERL!\n");
         SleepThread();
     }
-    
+
     erl->flags |= ERL_FLAG_CLEAR;
     FlushCache(0);
-    
+
     printf("Installed cheat engine ERL. Getting symbols...\n");
     struct symbol_t *sym;
     #define GET_SYMBOL(var, name) \
@@ -407,18 +407,14 @@ void SetupERL()
     } \
     printf("%08x %s\n", (u32)sym->address, name); \
     var = (typeof(var))sym->address
-    
-    //GET_SYMBOL(get_max_hooks, "get_max_hooks");
-    //GET_SYMBOL(get_num_hooks, "get_num_hooks");
-    //GET_SYMBOL(add_hook, "add_hook");
-    //GET_SYMBOL(clear_hooks, "clear_hooks");
+
     GET_SYMBOL(get_max_codes, "get_max_codes");
     GET_SYMBOL(set_max_codes, "set_max_codes");
     GET_SYMBOL(get_num_codes, "get_num_codes");
     GET_SYMBOL(add_code, "add_code");
     GET_SYMBOL(clear_codes, "clear_codes");
     GET_SYMBOL(syscallHook, "syscallHook");
-    
+
     printf("Symbols loaded.\n");
 }
 
@@ -444,7 +440,7 @@ static void readCodes(cheatsCheat_t *cheats)
             {
                 addr = (u32)*((u32 *)cheat->codeLines + 2*i);
                 val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
-                
+
                 if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
                 {
                     printf("hook: %08X %08X\n", addr, val);
@@ -455,7 +451,7 @@ static void readCodes(cheatsCheat_t *cheats)
                     printf("code: %08X %08X\n", addr, val);
                     add_code(addr, val);
                 }
-                
+
                 if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
                     nextCodeCanBeHook = 0;
                 else
@@ -481,7 +477,6 @@ void cheatsInstallCodesForEngine()
         }
 
         printf("Reading cheats\n");
-        //readCodes(activeGame->enableCheat);
         readCodes(activeGame->cheats);
         printf("Done readin cheats\n");
 
