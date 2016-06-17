@@ -19,6 +19,7 @@ static cheatsGame_t *gamesHead = NULL;
 
 int dbOpenBuffer(unsigned char *buff)
 {
+    int ignoreFirst = 0;
     unsigned short numCheats;
     unsigned short numCodeLines;
     unsigned int cheatsOffset;
@@ -93,6 +94,7 @@ int dbOpenBuffer(unsigned char *buff)
         cheatsHead = &cheatsArray[0];
         cheat = cheatsHead;
         
+        ignoreFirst = 0;
         /* Read each cheat */
         for(j = 0; j < numCheats; j++)
         {
@@ -116,6 +118,13 @@ int dbOpenBuffer(unsigned char *buff)
                 cheat->codeLines = codeLines;
                 memcpy(codeLines, dbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
 
+                if(j == 0 && cheat->numCodeLines == 1)
+                {
+                    u64 first = codeLines[0] & 0xF0000000;
+                    if(first == 0x90000000 || first == 0xF0000000)
+                        ignoreFirst = 1;
+                }
+
                 dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
             }
             else
@@ -133,8 +142,16 @@ int dbOpenBuffer(unsigned char *buff)
             cheat = cheat->next;
         }
 
-        game->cheats = cheatsHead;
-        game->numCheats = numCheats;
+        if(ignoreFirst)
+        {
+            game->cheats = cheatsHead->next;
+            game->numCheats = numCheats - 1;
+        }
+        else
+        {
+            game->cheats = cheatsHead;
+            game->numCheats = numCheats;
+        }
 
         if(i+1 < dbHeader->numTitles)
         {
