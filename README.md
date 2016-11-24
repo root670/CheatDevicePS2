@@ -64,7 +64,7 @@ Note: You must have zlib installed from ps2sdk-ports.
     cd cheatdeviceps2
 	make release
 ```
-If you have Docker installed, its easiest to compile Cheat Device using my
+If you have Docker installed, it's easiest to compile Cheat Device using my
 docker image:
 ```bash
     ./docker-make
