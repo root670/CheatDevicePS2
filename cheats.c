@@ -216,7 +216,7 @@ int cheatsLoadGameMenu()
     return 0;
 }
 
-cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
+cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 {
     if(initialized && gamesHead!=NULL && game)
     {
@@ -245,6 +245,8 @@ cheatsGame_t* cheatsLoadCheatMenu(const cheatsGame_t* game)
         numCheats = game->numCheats;
         return game;
     }
+
+    return NULL;
 }
 
 int cheatsLoadCodeMenu(const char* game, const char* cheat);

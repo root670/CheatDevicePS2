@@ -145,7 +145,7 @@ void startgameExecute(char *path)
     FlushCache(0); // data cache
     FlushCache(2); // instruction cache
 
-    sprintf(syscallHookAddr, "0x%X", syscallHook);
+    sprintf(syscallHookAddr, "0x%p", syscallHook);
     char *argv[3] = {boot2, syscallHookAddr, "\0"};
 
     ExecPS2((void *)eh->entry, 0, 3, argv);
