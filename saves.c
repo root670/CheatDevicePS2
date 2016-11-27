@@ -11,6 +11,8 @@
 #include "graphics.h"
 #include "util.h"
 #include "zlib.h"
+#include "libraries/minizip/zip.h"
+#include "libraries/minizip/unzip.h"
 
 static int initialized = 0;
 static device_t currentDevice;
@@ -62,11 +64,11 @@ static int createPSU(gameSave_t *save, device_t src);
 static int extractCBS(gameSave_t *save, device_t dst);
 static int createCBS(gameSave_t *save, device_t src);
 static int extractZIP(gameSave_t *save, device_t dst);
-static int createZip(gameSave_t *save, device_t src);
+static int createZIP(gameSave_t *save, device_t src);
 
 static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extractPSU};
 static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", createCBS, extractCBS};
-static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", createZip, extractZip};
+static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", createZIP, extractZIP};
 
 struct gameSave {
     char name[100];
@@ -939,12 +941,105 @@ static int createCBS(gameSave_t *save, device_t src)
     return 1;
 }
 
-static int extractZIP(gameSave_t *save, device_t dst)
+static int createZIP(gameSave_t *save, device_t dst)
 {
+    FILE *mcFile;
+    zipFile zf;
+    mcTable mcDir[64] __attribute__((aligned(64)));
+    dirEntry_t dir, file;
+    fio_stat_t stat;
+    char mcPath[100];
+    char zipPath[100];
+    char filePath[150];
+    char validName[32];
+    char *data;
+    int numFiles = 0;
+    int i, j, padding;
+    int ret;
+    float progress = 0.0;
+    
+    if(!save || !(src & (MC_SLOT_1|MC_SLOT_2)))
+        return 0;
+    
+    memset(&dir, 0, sizeof(dirEntry_t));
+    memset(&file, 0, sizeof(dirEntry_t));
+    
+    replaceIllegalChars(save->name, validName, '-');
+    rtrim(validName);
+    snprintf(psuPath, 100, "mass:%s.zip", validName);
+    
+    if(fioGetstat(zipPath, &stat) == 0)
+    {
+        char *items[] = {"Yes", "No"};
+        int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
+        
+        if(choice == 1)
+            return 0;
+    }
+    
+    graphicsDrawLoadingBar(50, 350, 0.0);
+    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsRenderNow();
+    
+    zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
+    if(!zf)
+        return 0;
+    printf("Opened zip file %s.\n", zipPath);
+    
+    snprintf(mcPath, 100, "%s/*", strstr(save->path, ":") + 1);
+    
+    mcGetDir((src == MC_SLOT_1) ? 0 : 1, 0, mcPath, 0, 54, mcDir);
+    mcSync(0, NULL, &ret);
+    
+    for(i = 0; i < ret; i++)
+    {
+        if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+            continue;
+
+        else if(mcDir[i].attrFile & MC_ATTR_FILE)
+        {
+            progress += (float)1/(ret-2);
+            graphicsDrawLoadingBar(50, 350, progress);
+            graphicsRenderNow();
+
+            strncpy(file.name, mcDir[i].name, 32);
+            snprintf(filePath, 100, "%s/%s", save->path, file.name);
+            
+            mcFile = fopen(filePath, "rb");
+            data = malloc(file.length);
+            fread(data, 1, file.length, mcFile);
+            fclose(mcFile);
+            
+            fwrite(&file, 1, 512, psuFile);
+            fwrite(data, 1, file.length, psuFile);
+            
+            printf("Adding %s... ", strstr(filePath, ":") + 1);
+
+            if(zipOpenNewFileInZip(zf, strstr(filePath, ":") + 1, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION, 0, 0) == S_OK)
+            {
+                zipWriteFileInZip(zf, data, file.length);
+                zipCloseFileInZip(zf);
+                printf("done!\n");
+            }
+            else
+            {
+                printf("failed!!!\n");
+                zipClose(zf, NULL);
+                free(data);
+                return 0;
+            }
+            free(data);
+            numFiles++;
+        }
+    }
+
+    printf("Closing zip file\n");
+    zipClose(zf, NULL);
+
     return 1;
 }
 
-static int createZIP(gameSave_t *save, device_t src)
+static int extractZIP(gameSave_t *save, device_t src)
 {
     return 1;
 }
