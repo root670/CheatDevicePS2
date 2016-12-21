@@ -118,6 +118,7 @@ release: all
 clean:
 	rm -f *.o *.elf
 	rm -f libraries/*.o
+	rm -f libraries/minizip/*.o
 	rm -f bootstrap/*.elf
 	cd engine && make clean
 
