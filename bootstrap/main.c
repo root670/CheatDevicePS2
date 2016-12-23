@@ -157,9 +157,14 @@ void MyLoadElf(char *elfpath)
     FlushCache(2);
 
     args[0] = elfpath;
-    ee_kmode_enter();
-    *((u32 *)(0x800002FC)) = MAKE_JAL(syscallHook);
-    ee_kmode_exit();
+
+    if(syscallHook > 0)
+    {
+        ee_kmode_enter();
+        *((u32 *)(0x800002FC)) = MAKE_JAL(syscallHook);
+        ee_kmode_exit();
+    }
+    
     ExecPS2((u32*)boot_header.entry, 0, 1, args);
 }
 

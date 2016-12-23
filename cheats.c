@@ -251,17 +251,66 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 
 int cheatsLoadCodeMenu(const char* game, const char* cheat);
 
-int cheatsAddGame(const char* title)
+int cheatsAddGame()
 {
     cheatsGame_t *node = gamesHead;
     cheatsGame_t *newGame = calloc(1, sizeof(cheatsGame_t));
     if(!newGame)
         return 0;
 
+    if(displayInputMenu(newGame->title, 80, NULL, "Enter Game Title") == 0)
+    {
+        free(newGame);
+        return 0;
+    }
+
     while(node++->next);
 
     node->next = newGame;
-    strncpy(newGame->title, title, 80);
+
+    numGames++;
+
+    menuItem_t *item = calloc(1, sizeof(menuItem_t));
+    item->type = NORMAL;
+    item->text = calloc(1, strlen(newGame->title) + 1);
+    item->extra = newGame;
+    strcpy(item->text, newGame->title);
+
+    menuAppendItem(item);
+
+    return 1;
+}
+
+int cheatsRenameGame()
+{
+    if(menuGetActive() != GAMEMENU)
+        return 0;
+
+    cheatsGame_t *selectedGame = menuGetActiveItemExtra();
+
+    if(displayInputMenu(selectedGame->title, 80, selectedGame->title, "Enter Game Title") == 0)
+        return 0;
+
+    menuRenameActiveItem(selectedGame->title);
+
+    return 1;
+}
+
+int cheatsDeleteGame()
+{
+    if(menuGetActive() != GAMEMENU)
+        return 0;
+
+    cheatsGame_t *selectedGame = menuGetActiveItemExtra();
+    cheatsDeactivateGame(selectedGame);
+
+    // With binary databases, the game structs are allocated as one chunk,
+    // so we will use a NULL title to denotate a deleted game.
+    selectedGame->title[0] = '\0';
+
+    menuRemoveActiveItem();
+
+    numGames--;
 
     return 1;
 }
@@ -360,10 +409,9 @@ int cheatsIsActiveGame(const cheatsGame_t *game)
     return game == activeGame;
 }
 
-int cheatsSetActiveGame(cheatsGame_t *game)
+int cheatsDeactivateGame(cheatsGame_t *game)
 {
-    /* Disable all active cheats if a new game was selected */
-    if(activeGame != NULL && game != activeGame)
+    if(game)
     {
         cheatsCheat_t *cheat = activeGame->cheats;
         while(cheat)
@@ -375,6 +423,13 @@ int cheatsSetActiveGame(cheatsGame_t *game)
         numEnabledCheats = 0;
         numEnabledCodes = 0;
     }
+}
+
+int cheatsSetActiveGame(cheatsGame_t *game)
+{
+    /* Disable all active cheats if a new game was selected */
+    if(activeGame != NULL && game != activeGame)
+        cheatsDeactivateGame(game);
 
     activeGame = game;
 

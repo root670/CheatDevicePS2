@@ -53,7 +53,7 @@ static u64 graphicsColorTable[] =
          GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0x80,0x80), // WHITE
          GS_SETREG_RGBAQ(0xF0,0x00,0x00,0x80,0x80), // RED
          GS_SETREG_RGBAQ(0x00,0xF0,0x00,0x80,0x80), // GREEN
-         GS_SETREG_RGBAQ(0x00,0x00,0xF0,0x80,0x80), // BLUE
+         GS_SETREG_RGBAQ(0x20,0x20,0xA0,0x80,0x80), // BLUE
          GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80) }; // YELLOW
 
 static int vsync_callback()
@@ -156,8 +156,8 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 {
     char const *cptr = txt;
-    int cx = x;
-    int cy = y;
+    float cx = x;
+    float cy = y;
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
@@ -177,9 +177,21 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
                                                    cx + cdata->x1f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
                                                    1, color);
         
-        cx += cdata->advance_int;
+        cx += cdata->advance;
     }
 
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
+void graphicsDrawChar(int x, int y, char c, graphicsColor_t color)
+{
+    stb_fontchar *cdata = &fontdata[c - STB_SOMEFONT_FIRST_CHAR];
+    u64 colorValue = graphicsColorTable[color];
+
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+    gsKit_prim_sprite_texture(gsGlobal, &font, x + cdata->x0f, y + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
+                                               x + cdata->x1f, y + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
+                                               1, colorValue);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
@@ -207,7 +219,7 @@ void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
         }
         int char_codepoint = *cptr++;
         stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
-        lineWidth += cdata->advance_int;
+        lineWidth += cdata->advance;
     }
     
     graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]); // last line
@@ -238,12 +250,24 @@ void graphicsDrawLoadingBar(int x, int y, float progress)
                               x + (progress * width), y+height, 1, color);
 }
 
+void graphicsDrawQuad(int x, int y, int xsize, int ysize, graphicsColor_t color)
+{
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+
+    gsKit_prim_quad(gsGlobal, x, y,
+                              x + xsize, y,
+                              x, y + ysize,
+                              x + xsize, y + ysize, 1, graphicsColorTable[color]);
+
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
 static void drawPromptBox(int width, int height, u64 color)
 {
-    const int x0 = (gsGlobal->Width/2) - (width/2);
-    const int x1 = (gsGlobal->Width/2) + (width/2);
-    const int y0 = (gsGlobal->Height/2) - (height/2);
-    const int y1 = (gsGlobal->Height/2) + (height/2);
+    const int x0 = (gsGlobal->Width/2.0) - (width/2.0);
+    const int x1 = (gsGlobal->Width/2.0) + (width/2.0);
+    const int y0 = (gsGlobal->Height/2.0) - (height/2.0);
+    const int y1 = (gsGlobal->Height/2.0) + (height/2.0);
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
@@ -348,6 +372,29 @@ void graphicsDrawPointer(int x, int y)
                                         1,
                                         0x80808080);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
+int graphicsGetWidth(const char *str)
+{
+    if(!str)
+        return 0;
+
+    char const *cptr = str;
+    char const *start = str;
+    double lineWidth = 0;
+    
+    while(*cptr)
+    {
+        if(*cptr == '\n')
+            break;
+
+        int char_codepoint = *cptr++;
+        stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
+        
+        lineWidth += cdata->advance;
+    }
+
+    return lineWidth;
 }
 
 void graphicsDrawAboutPage()

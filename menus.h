@@ -40,6 +40,8 @@ int menuAppendItem(menuItem_t *item);
 int menuRemoveActiveItem();
 int menuRemoveAllItems();
 int menuSetActiveItem(menuItem_t *item);
+int menuRenameActiveItem(const char *str);
+void *menuGetActiveItemExtra();
 
 int menuUp();
 int menuDown();

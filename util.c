@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "startgame.h"
 #include "saves.h"
+#include "cheats.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <loadfile.h>
@@ -159,6 +160,12 @@ void handlePad()
         else if(pad_pressed & PAD_SELECT)
             menuSetActive(ABOUTMENU);
 
+        else if(pad_pressed & PAD_SQUARE)
+        {
+            displayContextMenu(GAMEMENU);
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
+        }
+
         if(pad_rapid & PAD_R1)
         {
             int i;
@@ -189,8 +196,11 @@ void handlePad()
         else if(pad_pressed & PAD_CIRCLE)
             menuSetActive(GAMEMENU);
 
-        else if(pad_pressed & PAD_SELECT);
-            // cheat options mini-menu
+        else if(pad_pressed & PAD_SQUARE)
+        {
+            displayContextMenu(CHEATMENU);
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
+        }
         
         else if(pad_pressed & PAD_START)
             menuSetActive(MAINMENU);
@@ -271,10 +281,16 @@ void handlePad()
             menuToggleItem();
         }
         
-        if(pad_pressed & PAD_CIRCLE)
+        else if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
             menuSetActive(MAINMENU);
+        }
+
+        else if(pad_pressed & PAD_SQUARE)
+        {
+            displayContextMenu(BOOTMENU);
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
         }
     }
     
@@ -333,6 +349,227 @@ void handlePad()
     }
 }
 
+void displayContextMenu(int menuID)
+{
+    int ret;
+
+    if(menuID == GAMEMENU)
+    {
+        char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
+        ret = displayPromptMenu(items, 4, "Game Options");
+
+        if(ret == 0)
+            cheatsAddGame();
+        else if(ret == 1)
+            cheatsRenameGame();
+        else if(ret == 2)
+        {
+            char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete the game?");
+
+            if(choice == 0)
+                cheatsDeleteGame();
+        }
+    }
+
+    else if(menuID == CHEATMENU)
+    {
+        char *items[] = {"Add Cheat", "Rename Cheat", "Edit Code Lines", "Delete Cheat", "Cancel"};
+        ret = displayPromptMenu(items, 5, "Cheat Options");
+    }
+
+    else if(menuID == BOOTMENU)
+    {
+        char *items[] = {"Edit Path", "Cancel"};
+        ret = displayPromptMenu(items, 2, "Boot Options");
+    }
+}
+
+char *keyBoardChars = "`1234567890-=" \
+                      "qwertyuiop[]\\" \
+                      "asdfghjkl;'  " \
+                      "zxcvbnm,./   ";
+char *keyBoardCharsUpper = "~!@#$%^&*()_+" \
+                           "QWERTYUIOP{}|" \
+                           "ASDFGHJKL:\"  "\
+                           "ZXCVBNM<>?   ";
+#define KEYBOARD_COLUMNS 13
+#define KEYBOARD_ROWS 4
+#define ACCEPT_ROW KEYBOARD_ROWS
+#define CANCEL_ROW ACCEPT_ROW + 1
+
+int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
+{
+    struct padButtonStatus padStat;
+    char tmp[1024];
+    int tmpLoc, state;
+    u32 old_pad = PAD_CROSS;
+    u32 pad_pressed = 0;
+    u32 pad_rapid = 0;
+    static u32 time_held = 0;
+    int row = 0;
+    int column = 0;
+    int upper = 0;
+    float width = 0;
+
+    tmp[0] = '\0';
+
+    if(initialStr)
+        strncpy(tmp, initialStr, 1024);
+    else
+        tmp[0] = '\0';
+
+    tmpLoc = strlen(tmp);
+
+    do
+    {
+        if(tmp)
+            width = graphicsGetWidth(tmp) + 20;
+
+        if(width < 345)
+            width = 345;
+
+        graphicsDrawPromptBoxBlack(width, 220);
+
+        if(prompt)
+            graphicsDrawTextCentered(125, prompt, GREEN);
+
+        if(tmp)
+            graphicsDrawTextCentered(150, tmp, YELLOW);
+
+        state = padGetState(0, 0);
+        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+            state = padGetState(0, 0);
+    
+        padRead(0, 0, &padStat);
+    
+        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+        old_pad = 0xFFFF ^ padStat.btns;
+
+        // pad_rapid will have an initial delay when a button is held
+        if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
+        {
+            if(time_held++ > 18 && time_held % 6 == 0) // don't go too fast!
+                pad_rapid = (0xFFFF ^ padStat.btns);
+            else
+                pad_rapid = pad_pressed;
+        }
+        else
+            time_held = 0;
+
+        if(pad_pressed & PAD_CROSS)
+        {
+            if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
+            {
+                if(upper)
+                    tmp[tmpLoc] = keyBoardCharsUpper[row*KEYBOARD_COLUMNS + column];
+                else
+                    tmp[tmpLoc] = keyBoardChars[row*KEYBOARD_COLUMNS + column];
+
+                tmp[tmpLoc + 1] = '\0';
+                tmpLoc++;
+            }
+
+            else if(row == ACCEPT_ROW)
+            {
+                strncpy(dstStr, tmp, dstLen);
+                return 1;
+            }
+
+            else if(row == CANCEL_ROW)
+                return 0;
+        }
+
+        else if(pad_pressed & PAD_CIRCLE)
+        {
+            tmp[tmpLoc + 1] = '\0';
+            tmpLoc++;
+        }
+
+        else if(pad_rapid & PAD_SQUARE)
+        {
+            if(tmpLoc > 0)
+                tmpLoc--;
+
+            tmp[tmpLoc] = '\0';
+        }
+
+        else if(pad_pressed & PAD_R2)
+            upper ^= 1;
+        
+        if(pad_pressed & PAD_UP)
+        {
+            if(row > 0)
+                row--;
+            else
+                row = KEYBOARD_ROWS + 1;
+        }
+
+        else if(pad_pressed & PAD_DOWN)
+        {
+            if(row < KEYBOARD_ROWS + 1)
+                row++;
+            else
+                row = 0;
+        }
+
+        else if(pad_pressed & PAD_LEFT)
+        {
+            if(row < KEYBOARD_ROWS) // Accept or Cancel not selected
+            {
+                if(column > 0)
+                    column--;
+                else
+                    column = KEYBOARD_COLUMNS - 1;
+            }
+        }
+
+        else if(pad_pressed & PAD_RIGHT)
+        {
+            if(row < KEYBOARD_ROWS)
+            {
+                if(column < KEYBOARD_COLUMNS - 1)
+                    column++;
+                else
+                    column = 0;
+            }
+        }
+
+        int i, j, color;
+        for(i = 0; i < KEYBOARD_ROWS; i++)
+        {
+            for(j = 0; j < KEYBOARD_COLUMNS; j++)
+            {
+                if(i == row && j == column)
+                {
+                    color = YELLOW;
+                    graphicsDrawQuad(162 + j*25, 175 + i*25, 25, 25, BLUE);
+                }
+                else
+                    color = WHITE;
+
+                if(upper)
+                    graphicsDrawChar(162 + j*25, 175 + i*25, keyBoardCharsUpper[i*KEYBOARD_COLUMNS + j], color);
+                else
+                    graphicsDrawChar(162 + j*25, 175 + i*25, keyBoardChars[i*KEYBOARD_COLUMNS + j], color);
+            }
+        }
+
+        if(row == ACCEPT_ROW)
+            graphicsDrawQuad(320 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, BLUE);
+        else if(row == CANCEL_ROW)
+            graphicsDrawQuad(320 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, BLUE);
+
+        graphicsDrawTextCentered(175 + KEYBOARD_ROWS*25, "Accept", (row == ACCEPT_ROW) ? YELLOW : WHITE);
+        graphicsDrawTextCentered(175 + (KEYBOARD_ROWS+1)*25, "Cancel", (row == CANCEL_ROW) ? YELLOW : WHITE);
+
+        graphicsRender();
+
+    } while(!(pad_pressed & PAD_CIRCLE));
+
+    return 0;
+}
+
 int displayPromptMenu(char **items, int numItems, const char *header)
 {
     struct padButtonStatus padStat;
@@ -340,10 +577,25 @@ int displayPromptMenu(char **items, int numItems, const char *header)
     u32 pad_pressed = 0;
     int state, i, y;
     int selectedItem = 0;
+
+    float maxLength = 0;
+    int width = 0;
     
     if(!items || numItems <= 0 || !header)
         return 0;
     
+    maxLength = graphicsGetWidth(header);
+
+    for(i = 0; i < numItems; i++)
+    {
+        float length = 0;
+
+        length = graphicsGetWidth(items[i]);
+
+        if(length > maxLength)
+            maxLength = length;
+    }
+
     do
     {
         state = padGetState(0, 0);
@@ -355,11 +607,13 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
         old_pad = 0xFFFF ^ padStat.btns;
         
-        graphicsDrawPromptBoxBlack(500, 44 + (numItems * 22));
-        graphicsDrawTextCentered(224 - numItems*11 - 22, header, WHITE);
+        graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + 1) * 22 + 20);
+        graphicsDrawTextCentered(224 - numItems*11 - 16, header, GREEN);
         y = 224 - numItems*11 + 11;
         for(i = 0; i < numItems; i++)
         {
+            if(i == selectedItem)
+                graphicsDrawQuad(320 - maxLength/2, y, maxLength, 22, BLUE);
             graphicsDrawTextCentered(y, items[i], i == selectedItem ? YELLOW : WHITE);
             y += 22;
         }

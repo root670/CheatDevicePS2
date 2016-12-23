@@ -86,10 +86,22 @@ int menuRemoveActiveItem()
     {
         menuItem_t *prev = activeMenu->current->prev;
         menuItem_t *next = activeMenu->current->next;
-        free(activeMenu->current);
-        activeMenu->current = prev;
-        if(activeMenu->current)
-            activeMenu->current->next = next;
+
+        if(activeMenu->current->text)
+            free(activeMenu->current->text);
+
+        if(!prev) // first game in list
+        {
+            next->prev = NULL;
+            activeMenu->head = next;
+            activeMenu->current = next;
+        }
+        else
+        {
+            prev->next = next;
+            next->prev = prev;
+            activeMenu->current = prev;
+        }
 
         return 1;
     }
@@ -124,6 +136,32 @@ int menuSetActiveItem(menuItem_t *item)
     activeMenu->current = item;
 
     return 1;
+}
+
+int menuRenameActiveItem(const char *str)
+{
+    if(!activeMenu)
+        return 0;
+
+    if(!activeMenu->current)
+        return 0;
+
+    free(activeMenu->current->text);
+    activeMenu->current->text = calloc(1, strlen(str) + 1);
+    strcpy(activeMenu->current->text, str);
+
+    return 0;
+}
+
+void *menuGetActiveItemExtra()
+{
+    if(!activeMenu)
+        return NULL;
+
+    if(!activeMenu->current)
+        return NULL;
+
+    return activeMenu->current->extra;
 }
 
 menuID_t menuGetActive()
