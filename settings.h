@@ -14,7 +14,7 @@ int initSettingsMan();
 // Free allocated strings.
 int killSettingsMan();
 
-// Save setting file with current settings (not used).
+// Save setting file with current settings.
 int settingsSave();
 
 // Get database path string.

@@ -105,7 +105,30 @@ int settingsSave()
 {
     if(initialized)
     {
-        // TODO: Save the settings
+        FILE *iniFile;
+
+        #ifdef _DTL_T10000
+        iniFile = fopen("CheatDevicePS2.ini", "r");
+        #else
+        iniFile = fopen("host:CheatDevicePS2.ini", "r");
+        #endif
+
+        if(!iniFile)
+        {
+            printf("Error saving CheatDevicePS2.ini\n");
+            return 0;
+        }
+
+        fputs("[CheatDevicePS2]\n", iniFile);
+        fprintf(iniFile, "database = %s\n", settings.databasePath);
+        fprintf(iniFile, "boot1 = %s\n", settings.boot1);
+        fprintf(iniFile, "boot2 = %s\n", settings.boot2);
+        fprintf(iniFile, "boot3 = %s\n", settings.boot3);
+        fprintf(iniFile, "boot4 = %s\n", settings.boot4);
+        fprintf(iniFile, "boot5 = %s\n", settings.boot5);
+
+        fclose(iniFile);
+
         return 1;
     }
 
