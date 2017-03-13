@@ -121,11 +121,11 @@ int settingsSave()
 
         fputs("[CheatDevicePS2]\n", iniFile);
         fprintf(iniFile, "database = %s\n", settings.databasePath);
-        fprintf(iniFile, "boot1 = %s\n", settings.boot1);
-        fprintf(iniFile, "boot2 = %s\n", settings.boot2);
-        fprintf(iniFile, "boot3 = %s\n", settings.boot3);
-        fprintf(iniFile, "boot4 = %s\n", settings.boot4);
-        fprintf(iniFile, "boot5 = %s\n", settings.boot5);
+        fprintf(iniFile, "boot1 = %s\n", settings.bootPaths[0]);
+        fprintf(iniFile, "boot2 = %s\n", settings.bootPaths[1]);
+        fprintf(iniFile, "boot3 = %s\n", settings.bootPaths[2]);
+        fprintf(iniFile, "boot4 = %s\n", settings.bootPaths[3]);
+        fprintf(iniFile, "boot5 = %s\n", settings.bootPaths[4]);
 
         fclose(iniFile);
 
