@@ -276,7 +276,8 @@ int cheatsAddGame()
     item->extra = newGame;
     strcpy(item->text, newGame->title);
 
-    menuAppendItem(item);
+    menuInsertItemSorted(item);
+    menuSetActiveItem(item);
 
     return 1;
 }

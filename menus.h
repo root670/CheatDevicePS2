@@ -37,6 +37,7 @@ int menuSetActive(menuID_t id);
 menuID_t menuGetActive();
 
 int menuAppendItem(menuItem_t *item);
+int menuInsertItemSorted(menuItem_t *item);
 int menuRemoveActiveItem();
 int menuRemoveAllItems();
 int menuSetActiveItem(menuItem_t *item);

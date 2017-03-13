@@ -79,6 +79,37 @@ int menuAppendItem(menuItem_t *item)
     return 0;
 }
 
+int menuInsertItemSorted(menuItem_t *item)
+{
+    if(initialized)
+    {
+        if(activeMenu->head != NULL)
+        {
+            menuItem_t *node = activeMenu->head;
+            while(node->next && strcmp(node->text, item->text) < 0)
+                node = node->next;
+
+            if(node->next == NULL) // insert at end of list
+                menuAppendItem(item);
+            else // insert within list
+            {
+                item->next = node;
+                item->prev = node->prev;
+                if(node->prev)
+                    node->prev->next = item;
+                node->prev = item;
+
+            }
+
+            return 1;
+        }
+        else
+            return menuAppendItem(item);
+    }
+
+    return 0;
+}
+
 // Remove active item and sets previous item as the new active.
 int menuRemoveActiveItem()
 {
