@@ -97,8 +97,9 @@ int menuInsertItemSorted(menuItem_t *item)
                 item->prev = node->prev;
                 if(node->prev)
                     node->prev->next = item;
+                else // first item of list
+                    activeMenu->head = item;
                 node->prev = item;
-
             }
 
             return 1;
