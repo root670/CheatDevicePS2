@@ -89,6 +89,8 @@ int menuInsertItemSorted(menuItem_t *item)
             while(node->next && strcmp(node->text, item->text) < 0)
                 node = node->next;
 
+            printf("inserting %s before %s\n", item->text, node->text);
+
             if(node->next == NULL) // insert at end of list
                 menuAppendItem(item);
             else // insert within list
@@ -168,21 +170,106 @@ int menuSetActiveItem(menuItem_t *item)
     activeMenu->current = item;
 
     return 1;
-}
+}/*
+            menuItem_t *node = activeMenu->head;
+            while(node->next && strcmp(node->text, item->text) < 0)
+                node = node->next;
 
+            printf("inserting %s before %s\n", item->text, node->text);
+
+            if(node->next == NULL) // insert at end of list
+                menuAppendItem(item);
+            else // insert within list
+            {
+                item->next = node;
+                item->prev = node->prev;
+                if(node->prev)
+                    node->prev->next = item;
+                else // first item of list
+                    activeMenu->head = item;
+                node->prev = item;
+            }
+*/
 int menuRenameActiveItem(const char *str)
 {
+    menuItem_t *node;
+    int direction;
+
     if(!activeMenu)
         return 0;
 
     if(!activeMenu->current)
         return 0;
 
+    direction = strcmp(activeMenu->current->text, str);
+    node = activeMenu->current;
+
+    printf("direction %d\n", direction);
+
+    if(direction < 0)
+    {
+        // Move down list
+        while(node->next && strcmp(node->text, str) < 0)
+            node = node->next;
+        printf("inserting %s before %s\n", str, node->text);
+
+        activeMenu->current->next->prev = activeMenu->current->prev;
+        activeMenu->current->prev->next = activeMenu->current->next;
+
+        if(node == activeMenu->tail)
+        {
+            printf("it's the new tail!\n");
+            activeMenu->tail = activeMenu->current;
+            activeMenu->current->next = NULL;
+            activeMenu->current->prev = node;
+            node->next = activeMenu->current;
+        }
+        else
+        {
+            activeMenu->current->next = node;
+            activeMenu->current->prev = node->prev;
+            node->prev->next = activeMenu->current;
+            node->prev = activeMenu->current;
+        }
+    }
+    else if(direction > 0)
+    {
+        // Move up list
+        while(node->prev && strcmp(node->text, str) > 0)
+            node = node->prev;
+        printf("inserting %s after %s\n", str, node->text);
+
+        activeMenu->current->prev->next = activeMenu->current->next;
+        activeMenu->current->next->prev = activeMenu->current->prev;
+
+        if(node == activeMenu->head)
+        {
+            printf("it's the new head!\n");
+
+            activeMenu->head = activeMenu->current;
+            activeMenu->current->next = node;
+            activeMenu->current->prev = NULL;
+            node->prev = activeMenu->current;
+        }
+        else
+        {
+            activeMenu->current->next = node->next;
+            activeMenu->current->prev = node;
+            node->next->prev = activeMenu->current;
+            node->next = activeMenu->current;
+        }
+    }
+    else
+    {
+        // Name not changed
+        return 0;
+    }
+
     free(activeMenu->current->text);
     activeMenu->current->text = calloc(1, strlen(str) + 1);
     strcpy(activeMenu->current->text, str);
 
-    return 0;
+    return 1;
 }
 
 void *menuGetActiveItemExtra()
