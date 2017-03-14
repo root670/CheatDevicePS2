@@ -497,7 +497,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         else if(pad_pressed & PAD_R2)
             upper ^= 1;
         
-        if(pad_pressed & PAD_UP)
+        if(pad_rapid & PAD_UP)
         {
             if(row > 0)
                 row--;
@@ -505,7 +505,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 row = KEYBOARD_ROWS + 1;
         }
 
-        else if(pad_pressed & PAD_DOWN)
+        else if(pad_rapid & PAD_DOWN)
         {
             if(row < KEYBOARD_ROWS + 1)
                 row++;
@@ -513,7 +513,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 row = 0;
         }
 
-        else if(pad_pressed & PAD_LEFT)
+        else if(pad_rapid & PAD_LEFT)
         {
             if(row < KEYBOARD_ROWS) // Accept or Cancel not selected
             {
@@ -524,7 +524,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
             }
         }
 
-        else if(pad_pressed & PAD_RIGHT)
+        else if(pad_rapid & PAD_RIGHT)
         {
             if(row < KEYBOARD_ROWS)
             {
