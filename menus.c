@@ -4,6 +4,7 @@
 #include "settings.h"
 #include "saves.h"
 #include "startgame.h"
+#include "version.h"
 #include <stdio.h>
 #include <malloc.h>
 
@@ -195,6 +196,11 @@ int menuSetActive(menuID_t id)
     else if (id == SAVEDEVICEMENU)
     {
         activeMenu->text = strdup("Save Manager");
+    }
+
+    else if(id == ABOUTMENU)
+    {
+        activeMenu->text = GIT_VERSION;
     }
 
     return 1;
