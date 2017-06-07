@@ -277,38 +277,12 @@ void menuToggleItem()
     }
 }
 
-int menuRender()
+void drawMenuItems()
 {
     int yItems = 14;
     int yAbove = 7;
     int y = 76;
     menuItem_t *item = activeMenu->current;
-
-    switch(activeMenu->identifier)
-    {
-        case SAVEMENU:
-            savesDrawTicker();
-            break;
-        case SAVEDEVICEMENU:
-        case CHEATMENU:
-        case CODEMENU:
-        case BOOTMENU:
-            graphicsDrawTextCentered(47, activeMenu->text, WHITE);
-            break;
-        case ABOUTMENU:
-            graphicsDrawAboutPage();
-            return 1;
-            break;
-        case MAINMENU:
-            return 1;
-            break;
-        case GAMEMENU:
-        case CHEATMINIMENU:
-        case CODEMINIMENU:
-        case SETTINGSMENU:
-        case NUMMENUS:
-            break;
-    };
 
     while(yAbove-- > 0 && item && item->prev)
         item = item->prev;
@@ -340,6 +314,30 @@ int menuRender()
             item = item->next;
         }
     }
+}
+
+int menuRender()
+{
+    if(activeMenu->identifier != GAMEMENU)
+    {
+        graphicsDrawTextCentered(47, activeMenu->text, WHITE);
+    }
+
+    if(activeMenu->identifier == SAVEMENU)
+    {
+        savesDrawTicker();
+    }
+    else if(activeMenu->identifier == ABOUTMENU)
+    {
+        graphicsDrawAboutPage();
+        return 1;
+    }
+    else if(activeMenu->identifier == MAINMENU)
+    {
+        return 1;
+    }
+
+    drawMenuItems();
 
     return 1;
 }
