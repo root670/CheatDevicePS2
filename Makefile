@@ -25,6 +25,7 @@ OBJS += database.o
 OBJS += textcheats.o
 OBJS += cheats.o
 OBJS += graphics.o
+OBJS += saveutil.o
 OBJS += saves.o
 OBJS += menus.o
 OBJS += settings.o
