@@ -13,7 +13,7 @@
 
 typedef enum { BLACK, WHITE, RED, GREEN, BLUE, YELLOW } graphicsColor_t;
 
-int initGraphicsMan();
+int initGraphics();
 
 // Draw text at (x,y) with a color
 void graphicsDrawText(int x, int y, const char *txt, graphicsColor_t color);

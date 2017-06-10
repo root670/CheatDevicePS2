@@ -16,9 +16,6 @@
 typedef u8 device_t;
 typedef struct gameSave gameSave_t;
 
-int initSaveMan();
-int killSaveMan();
-
 // Create a menu with save titles.
 void savesLoadSaveMenu(device_t dev);
 // Get list of saves on a memory card or PSU files on a flash drive.

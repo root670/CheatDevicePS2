@@ -22,53 +22,37 @@ static int numGames = 0;
 static int numCheats = 0;
 static int numEnabledCheats = 0;
 static int numEnabledCodes = 0;
-static int initialized = 0;
 
 extern unsigned char _engine_erl_start[];
 
-int initCheatMan()
+int killCheats()
 {
-    if(!initialized)
+    int first = 1;
+    printf("\n ** Killing Cheats **\n");
+    dbCloseDatabase();
+
+    cheatsGame_t *game = gamesHead;
+    while(game)
     {
-        printf("\n ** Initializing Cheat Manager **\n");
-        initialized = 1;
-        return 1;
-    }
-    else
-        return 0;
-}
+        cheatsGame_t *next = game->next;
 
-int killCheatMan()
-{
-    if(initialized)
-    {
-        int first = 1;
-        printf("\n ** Killing Cheat Manager **\n");
-        dbCloseDatabase();
-
-        cheatsGame_t *game = gamesHead;
-        while(game)
-        {
-            cheatsGame_t *next = game->next;
-
-            printf("Freeing %s\n", game->title);
-            if(game->cheats != NULL) {
-                if(first && dbType == BINARY) // Binay DB has allocates cheats structs and code lines once.
-                {
-                    free(game->cheats);
-                    free(game->cheats->codeLines);
-                    first = 0;
-                }
-
-                free(game->cheats->codeLines);
+        printf("Freeing %s\n", game->title);
+        if(game->cheats != NULL) {
+            if(first && dbType == BINARY) // Binay DB has allocates cheats structs and code lines once.
+            {
                 free(game->cheats);
+                free(game->cheats->codeLines);
+                first = 0;
             }
 
-            game = next;
+            free(game->cheats->codeLines);
+            free(game->cheats);
         }
-        
-        free(gamesHead);
+
+        game = next;
     }
+    
+    free(gamesHead);
 
     return 1;
 }
@@ -98,50 +82,45 @@ int cheatsLoadHistory()
     menuItem_t *lastGameMenu;
     cheatsCheat_t *cheat;
 
-    if(initialized)
+    if(!gameHashes)
+        return 0;
+
+    historyFile = fopen("CheatHistory.bin", "rb");
+
+    if(historyFile)
     {
-        if(!gameHashes)
-            return 0;
+        fseek(historyFile, 0, SEEK_END);
+        historyLength = ftell(historyFile);
+        fseek(historyFile, 0, SEEK_SET);
 
-        historyFile = fopen("CheatHistory.bin", "rb");
+        fread(&lastGameHash, 4, 1, historyFile);
+        lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
 
-        if(historyFile)
+        if(lastGameMenu != NULL)
         {
-            fseek(historyFile, 0, SEEK_END);
-            historyLength = ftell(historyFile);
-            fseek(historyFile, 0, SEEK_SET);
+            cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
+            cheatHashes = hashNewTable(activeGame->numCheats * 1.6);
+            populateCheatHashTable();
 
-            fread(&lastGameHash, 4, 1, historyFile);
-            lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
-
-            if(lastGameMenu != NULL)
+            for(i = 0; i < historyLength - 4; i+= 4)
             {
-                cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
-                cheatHashes = hashNewTable(activeGame->numCheats * 1.6);
-                populateCheatHashTable();
+                fread(&cheatHash, 4, 1, historyFile);
+                cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
 
-                for(i = 0; i < historyLength - 4; i+= 4)
-                {
-                    fread(&cheatHash, 4, 1, historyFile);
-                    cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
-
-                    if(cheat != NULL)
-                        cheatsToggleCheat(cheat);
-                }
-
-                menuSetActiveItem(lastGameMenu);
-
-                free(cheatHashes);
+                if(cheat != NULL)
+                    cheatsToggleCheat(cheat);
             }
 
-            fclose(historyFile);
+            menuSetActiveItem(lastGameMenu);
+
+            free(cheatHashes);
         }
 
-        free(gameHashes);
-        return 1;
+        fclose(historyFile);
     }
 
-    return 0;
+    free(gameHashes);
+    return 1;
 }
 
 // CheatDB --> Game --> Cheat --> Code
@@ -149,32 +128,29 @@ int cheatsOpenDatabase(const char* path)
 {
     const char *ext;
     
-    if(initialized)
+    ext = path + strlen(path) - 4;
+    
+    if(strncmp(ext, ".cdb", 4) == 0)
+        dbType = BINARY;
+    else if(strncmp(ext, ".txt", 4) == 0)
+        dbType = TEXT;
+    
+    switch(dbType)
     {
-        ext = path + strlen(path) - 4;
-        
-        if(strncmp(ext, ".cdb", 4) == 0)
-            dbType = BINARY;
-        else if(strncmp(ext, ".txt", 4) == 0)
-            dbType = TEXT;
-        
-        switch(dbType)
-        {
-            case TEXT:
-                numGames = textCheatsOpenFile(path);
-                gamesHead = textCheatsGetCheatStruct();
-                textCheatsClose();
-                break;
+        case TEXT:
+            numGames = textCheatsOpenFile(path);
+            gamesHead = textCheatsGetCheatStruct();
+            textCheatsClose();
+            break;
 
-            case BINARY:
-                numGames = dbOpenDatabase(path);
-                gamesHead = dbGetCheatStruct();
-                dbCloseDatabase();
-                break;
+        case BINARY:
+            numGames = dbOpenDatabase(path);
+            gamesHead = dbGetCheatStruct();
+            dbCloseDatabase();
+            break;
 
-            default:
-                break;
-        }
+        default:
+            break;
     }
     
     printf("loaded %d games\n", numGames);
@@ -186,7 +162,7 @@ int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
 
 int cheatsLoadGameMenu()
 {
-    if(initialized && gamesHead!=NULL)
+    if(gamesHead!=NULL)
     {
         cheatsGame_t *node = gamesHead;
         menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
@@ -218,7 +194,7 @@ int cheatsLoadGameMenu()
 
 cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 {
-    if(initialized && gamesHead!=NULL && game)
+    if(gamesHead!=NULL && game)
     {
         /* Build the menu */
         cheatsCheat_t *cheat = game->cheats;

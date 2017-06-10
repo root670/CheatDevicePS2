@@ -68,9 +68,9 @@ void startgameExecute(char *path)
     char *line, *substr;
     static char syscallHookAddr[16];
 
-    killMenuMan();
-    killCheatMan();
-    killSettingsMan();
+    killMenus();
+    killCheats();
+    killSettings();
     
     if(strcmp(path, "==Disc==") == 0)
     {

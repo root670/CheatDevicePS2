@@ -14,7 +14,6 @@
 #include "libraries/minizip/zip.h"
 #include "libraries/minizip/unzip.h"
 
-static int initialized = 0;
 static device_t currentDevice;
 static int mc1Free, mc2Free;
 
@@ -77,32 +76,6 @@ struct gameSave {
     
     struct gameSave *next;
 };
-
-int initSaveMan()
-{
-    if(!initialized)
-    {
-        printf("\n ** Initializing Save Manager **\n");
-        
-        initialized = 1;
-        return 1;
-    }
-    
-    return 0;
-}
-
-int killSaveMan()
-{
-    if(initialized)
-    {
-        printf("\n ** Killing Save Manager **\n");
-        
-        initialized = 0;
-        return 1;
-    }
-    
-    return 0;
-}
 
 void savesDrawTicker()
 {
@@ -386,43 +359,38 @@ gameSave_t *savesGetSaves(device_t dev)
 
 int savesGetAvailableDevices()
 {
-    if(initialized)
+    int mcType, mcFree, mcFormat, ret;
+    int available = 0;
+    
+    // Memory card slot 1
+    mcGetInfo(0, 0, &mcType, &mcFree, &mcFormat);
+    mcSync(0, NULL, &ret);
+    if(ret == 0 || ret == -1)
     {
-        int mcType, mcFree, mcFormat, ret;
-        int available = 0;
-        
-        // Memory card slot 1
-        mcGetInfo(0, 0, &mcType, &mcFree, &mcFormat);
-        mcSync(0, NULL, &ret);
-        if(ret == 0 || ret == -1)
-        {
-            available |= MC_SLOT_1;
-            printf("mem card slot 1 available\n");
-        }
-        mc1Free = mcFree;
+        available |= MC_SLOT_1;
+        printf("mem card slot 1 available\n");
+    }
+    mc1Free = mcFree;
 
-        // Memory card slot 2
-        mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
-        mcSync(0, NULL, &ret);
-        if(ret == 0 || ret == -1)
-        {
-            available |= MC_SLOT_2;
-            printf("mem card slot 2 available\n");
-        }
-        mc2Free = mcFree;
-        
-        // Flash drive
-        int f = fioDopen("mass:");
-        if(f > 0)
-        {
-            available |= FLASH_DRIVE;
-            fioDclose(f);
-        }
-        
-        return available;
+    // Memory card slot 2
+    mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
+    mcSync(0, NULL, &ret);
+    if(ret == 0 || ret == -1)
+    {
+        available |= MC_SLOT_2;
+        printf("mem card slot 2 available\n");
+    }
+    mc2Free = mcFree;
+    
+    // Flash drive
+    int f = fioDopen("mass:");
+    if(f > 0)
+    {
+        available |= FLASH_DRIVE;
+        fioDclose(f);
     }
     
-    return 0;
+    return available;
 }
 
 void savesLoadSaveMenu(device_t dev)

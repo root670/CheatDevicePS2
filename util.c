@@ -296,7 +296,6 @@ void handlePad()
         if(pad_pressed & PAD_CIRCLE)
         {
             menuSetActive(MAINMENU);
-            killSaveMan();
         }
         
         else if(pad_pressed & PAD_RIGHT)

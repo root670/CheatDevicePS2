@@ -30,8 +30,8 @@ typedef struct menuState {
     menuItem_t *tail;
 } menuState_t;
 
-int initMenuMan();
-int killMenuMan();
+int initMenus();
+int killMenus();
 
 int menuSetActive(menuID_t id);
 menuID_t menuGetActive();

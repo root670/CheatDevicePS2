@@ -39,8 +39,7 @@ typedef struct cheatsGame {
     struct cheatsGame *next;
 } cheatsGame_t;
 
-int initCheatMan();
-int killCheatMan();
+int killCheats();
 
 // Open a cheat database and load it's cheats.
 int cheatsOpenDatabase(const char* path);
@@ -77,13 +76,6 @@ int cheatsSetActiveGame(cheatsGame_t *game);
 void cheatsInstallCodesForEngine();
 
 /* used by cheat engine */
-/*
-int (*get_max_hooks)(void);
-int (*get_num_hooks)(void);
-int (*add_hook)(u32 addr, u32 val);
-void (*clear_hooks)(void);
-*/
-
 int (*get_max_codes)(void);
 void (*set_max_codes)(int num);
 int (*get_num_codes)(void);

@@ -63,11 +63,11 @@ static int vsync_callback()
     return 0;
 }
 
-int initGraphicsMan()
+int initGraphics()
 {
     if(!initialized)
     {
-        printf("\n ** Initializing Graphics Manager **\n");
+        printf("\n ** Initializing Graphics **\n");
         dmaKit_init(D_CTRL_RELE_OFF, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
                     D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
 
@@ -109,11 +109,12 @@ int initGraphicsMan()
 
         STB_SOMEFONT_CREATE(fontdata, (unsigned char(*)[])font.Mem, STB_SOMEFONT_BITMAP_HEIGHT);
         gsKit_texture_upload(gsGlobal, &font);
-            
+
+        graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
+        graphicsDrawBackground();
         graphicsDrawText(450, 400, "Please wait...", WHITE);
         graphicsRenderNow();
 
-        graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
         graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 0);
         graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 0);

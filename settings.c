@@ -13,11 +13,11 @@ static int initialized = 0;
 static struct ini_info *ini;
 settings_t settings;
 
-int initSettingsMan()
+int initSettings()
 {
     if(!initialized)
     {
-        printf("\n ** Initializing Settings Manager **\n");
+        printf("\n ** Initializing Settings **\n");
 
         #ifdef _DTL_T10000
         ini = ini_load("host:CheatDevicePS2.ini");
@@ -84,7 +84,7 @@ int initSettingsMan()
     return 0;
 }
 
-int killSettingsMan()
+int killSettings()
 {
     if(initialized)
     {

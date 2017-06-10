@@ -14,10 +14,9 @@
 int main(int argc, char *argv[])
 {
     loadModules();
-    initGraphicsMan();
-    initSettingsMan();
-    initCheatMan();
-    initMenuMan();
+    initGraphics();
+    initSettings();
+    initMenus();
     
     if(!cheatsOpenDatabase(settingsGetDatabasePath()))
     {
@@ -45,7 +44,7 @@ int main(int argc, char *argv[])
         graphicsRender();
     }
     
-    killCheatMan();
+    killCheats();
     SleepThread();
     return 0;
 }

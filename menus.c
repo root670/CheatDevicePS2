@@ -12,7 +12,7 @@ static menuState_t menues[NUMMENUS];
 static menuState_t *activeMenu = NULL;
 static int initialized = 0;
 
-int initMenuMan()
+int initMenus()
 {
     if(!initialized)
     {
@@ -35,7 +35,7 @@ int initMenuMan()
 }
 
 // free all menu items. free all menustates
-int killMenuMan()
+int killMenus()
 {
     int i;
     
