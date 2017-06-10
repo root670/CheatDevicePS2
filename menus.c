@@ -187,12 +187,6 @@ int menuSetActive(menuID_t id)
         }
     }
     
-    else if(id == SAVEMENU)
-    {
-        initSaveMan();
-        activeMenu->text = strdup("Save Manager");
-    }
-    
     else if (id == SAVEDEVICEMENU)
     {
         activeMenu->text = strdup("Save Manager");
@@ -324,7 +318,11 @@ void drawMenuItems()
 
 int menuRender()
 {
-    if(activeMenu->identifier != GAMEMENU)
+    if(activeMenu->identifier == MAINMENU)
+    {
+        return 1;
+    }
+    else if(activeMenu->identifier != GAMEMENU)
     {
         graphicsDrawTextCentered(47, activeMenu->text, WHITE);
     }
@@ -336,10 +334,6 @@ int menuRender()
     else if(activeMenu->identifier == ABOUTMENU)
     {
         graphicsDrawAboutPage();
-        return 1;
-    }
-    else if(activeMenu->identifier == MAINMENU)
-    {
         return 1;
     }
 
