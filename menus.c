@@ -81,27 +81,37 @@ int menuAppendItem(menuItem_t *item)
 
 int menuInsertItemSorted(menuItem_t *item)
 {
+    int direction;
+
     if(initialized)
     {
         if(activeMenu->head != NULL)
         {
+            // try moving item down list
             menuItem_t *node = activeMenu->head;
             while(node->next && strcmp(node->text, item->text) < 0)
                 node = node->next;
 
-            printf("inserting %s before %s\n", item->text, node->text);
-
-            if(node->next == NULL) // insert at end of list
-                menuAppendItem(item);
-            else // insert within list
+            direction = strcmp(node->text, item->text);
+            if(direction > 0)
             {
+                // insert item before node
                 item->next = node;
                 item->prev = node->prev;
                 if(node->prev)
                     node->prev->next = item;
                 else // first item of list
                     activeMenu->head = item;
+
                 node->prev = item;
+            }
+            else
+            {
+                // insert item after node
+                node->next = item;
+                item->prev = node;
+                item->next = NULL;
+                activeMenu->tail = item;
             }
 
             return 1;
@@ -170,26 +180,8 @@ int menuSetActiveItem(menuItem_t *item)
     activeMenu->current = item;
 
     return 1;
-}/*
-            menuItem_t *node = activeMenu->head;
-            while(node->next && strcmp(node->text, item->text) < 0)
-                node = node->next;
+}
 
-            printf("inserting %s before %s\n", item->text, node->text);
-
-            if(node->next == NULL) // insert at end of list
-                menuAppendItem(item);
-            else // insert within list
-            {
-                item->next = node;
-                item->prev = node->prev;
-                if(node->prev)
-                    node->prev->next = item;
-                else // first item of list
-                    activeMenu->head = item;
-                node->prev = item;
-            }
-*/
 int menuRenameActiveItem(const char *str)
 {
     menuItem_t *node;
@@ -201,62 +193,65 @@ int menuRenameActiveItem(const char *str)
     if(!activeMenu->current)
         return 0;
 
-    direction = strcmp(activeMenu->current->text, str);
     node = activeMenu->current;
-
-    printf("direction %d\n", direction);
+    direction = strcmp(str, node->text);
 
     if(direction < 0)
     {
-        // Move down list
-        while(node->next && strcmp(node->text, str) < 0)
-            node = node->next;
-        printf("inserting %s before %s\n", str, node->text);
+        // try moving active item up list
+        while(node->prev && strcmp(node->text, str) > 0)
+            node = node->prev;
 
-        activeMenu->current->next->prev = activeMenu->current->prev;
-        activeMenu->current->prev->next = activeMenu->current->next;
+        if(node != activeMenu->current)
+        {
+            activeMenu->current->prev->next = activeMenu->current->next;
+            activeMenu->current->next->prev = activeMenu->current->prev;
 
-        if(node == activeMenu->tail)
-        {
-            printf("it's the new tail!\n");
-            activeMenu->tail = activeMenu->current;
-            activeMenu->current->next = NULL;
-            activeMenu->current->prev = node;
-            node->next = activeMenu->current;
-        }
-        else
-        {
-            activeMenu->current->next = node;
-            activeMenu->current->prev = node->prev;
-            node->prev->next = activeMenu->current;
-            node->prev = activeMenu->current;
+            if(node == activeMenu->head)
+            {
+                // insert active item before head
+                activeMenu->head = activeMenu->current;
+                activeMenu->current->next = node;
+                activeMenu->current->prev = NULL;
+                node->prev = activeMenu->current;
+            }
+            else
+            {
+                // insert active item after node
+                activeMenu->current->next = node->next;
+                activeMenu->current->prev = node;
+                node->next->prev = activeMenu->current;
+                node->next = activeMenu->current;
+            }
         }
     }
     else if(direction > 0)
     {
-        // Move up list
-        while(node->prev && strcmp(node->text, str) > 0)
-            node = node->prev;
-        printf("inserting %s after %s\n", str, node->text);
+        // try moving active item down list
+        while(node->next && strcmp(node->text, str) < 0)
+            node = node->next;
 
-        activeMenu->current->prev->next = activeMenu->current->next;
-        activeMenu->current->next->prev = activeMenu->current->prev;
-
-        if(node == activeMenu->head)
+        if(node != activeMenu->current)
         {
-            printf("it's the new head!\n");
+            activeMenu->current->next->prev = activeMenu->current->prev;
+            activeMenu->current->prev->next = activeMenu->current->next;
 
-            activeMenu->head = activeMenu->current;
-            activeMenu->current->next = node;
-            activeMenu->current->prev = NULL;
-            node->prev = activeMenu->current;
-        }
-        else
-        {
-            activeMenu->current->next = node->next;
-            activeMenu->current->prev = node;
-            node->next->prev = activeMenu->current;
-            node->next = activeMenu->current;
+            if(node == activeMenu->tail)
+            {
+                // insert active item after tail
+                activeMenu->tail = activeMenu->current;
+                activeMenu->current->next = NULL;
+                activeMenu->current->prev = node;
+                node->next = activeMenu->current;
+            }
+            else
+            {
+                // insert active item before node
+                activeMenu->current->next = node;
+                activeMenu->current->prev = node->prev;
+                node->prev->next = activeMenu->current;
+                node->prev = activeMenu->current;
+            }
         }
     }
     else

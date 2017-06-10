@@ -472,8 +472,13 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
             else if(row == ACCEPT_ROW)
             {
-                strncpy(dstStr, tmp, dstLen);
-                return 1;
+                if(strlen(tmp) > 0)
+                {
+                    strncpy(dstStr, tmp, dstLen);
+                    return 1;
+                }
+                else
+                    return 0;
             }
 
             else if(row == CANCEL_ROW)
