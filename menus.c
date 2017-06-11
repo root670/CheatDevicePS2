@@ -322,16 +322,16 @@ int menuRender()
     {
         return 1;
     }
+    else if(activeMenu->identifier == SAVEMENU)
+    {
+        savesDrawTicker();
+    }
     else if(activeMenu->identifier != GAMEMENU)
     {
         graphicsDrawTextCentered(47, activeMenu->text, WHITE);
     }
 
-    if(activeMenu->identifier == SAVEMENU)
-    {
-        savesDrawTicker();
-    }
-    else if(activeMenu->identifier == ABOUTMENU)
+    if(activeMenu->identifier == ABOUTMENU)
     {
         graphicsDrawAboutPage();
         return 1;
