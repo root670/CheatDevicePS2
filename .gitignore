@@ -54,3 +54,6 @@ dkms.conf
 
 # Other
 .DS_Store
+version\.h
+
+CheatHistory\.bin
