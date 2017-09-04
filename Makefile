@@ -104,8 +104,8 @@ version:
 
 main: $(EE_BIN)
 	rm -f *.o
-	rm -f libraries/*.o
-	rm -f bootstrap/*.elf bootstrap/*.o
+	rm -rf libraries/*.o
+	rm -f bootstrap/*.elf
 
 release: all
 	rm -rf release
@@ -118,8 +118,7 @@ release: all
 
 clean:
 	rm -f *.o *.elf
-	rm -f libraries/*.o
-	rm -f libraries/minizip/*.o
+	rm -rf libraries/*.o
 	rm -f bootstrap/*.elf
 	cd engine && make clean
 
