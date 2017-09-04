@@ -66,7 +66,6 @@ void startgameExecute(char *path)
     char syscnfText[256];
     static char boot2[100];
     char *line, *substr;
-    static char syscallHookAddr[16];
 
     killMenus();
     killCheats();
@@ -145,8 +144,7 @@ void startgameExecute(char *path)
     FlushCache(0); // data cache
     FlushCache(2); // instruction cache
 
-    sprintf(syscallHookAddr, "0x%p", syscallHook);
-    char *argv[3] = {boot2, syscallHookAddr, "\0"};
+    char *argv[2] = {boot2, "\0"};
 
-    ExecPS2((void *)eh->entry, 0, 3, argv);
+    ExecPS2((void *)eh->entry, 0, 2, argv);
 };

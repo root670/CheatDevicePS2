@@ -15,9 +15,6 @@ typedef struct menuItem {
     menutype_t type;
     char *text;
     void *extra; // Optional: Associate additional data with the menuItem.
-    
-    struct menuItem *prev;
-    struct menuItem *next;
 } menuItem_t;
 
 typedef struct menuState {
@@ -25,9 +22,10 @@ typedef struct menuState {
     char *text;
     cheatsGame_t *game; // Optional: Cheat menu uses this to associate entry with a game.
     
-    menuItem_t *head; // linked list
-    menuItem_t *current;
-    menuItem_t *tail;
+    menuItem_t **items;
+    unsigned int currentItem;
+    unsigned int numItems;
+    unsigned int chunks;
 } menuState_t;
 
 int initMenus();

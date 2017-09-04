@@ -28,6 +28,14 @@ typedef struct cheatsCheat {
     u64 *codeLines;
 
     char enabled;
+
+    /*
+    set skip = 1 if:
+    -> cheat has been marked for deletion
+    OR
+    -> cheat is used as an enable cheat
+    */
+    int skip;
     struct cheatsCheat *next;
 } cheatsCheat_t;
 
@@ -35,13 +43,14 @@ typedef struct cheatsGame {
     char title[81];
     unsigned int numCheats;
     cheatsCheat_t *cheats;
+    cheatsCheat_t *enableCheats;
 
     struct cheatsGame *next;
 } cheatsGame_t;
 
 int killCheats();
 
-// Open a cheat database and load it's cheats.
+// Open a cheat database and load cheats.
 int cheatsOpenDatabase(const char* path);
 // TODO: Save all cheats to a file.
 int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
@@ -76,11 +85,15 @@ int cheatsSetActiveGame(cheatsGame_t *game);
 void cheatsInstallCodesForEngine();
 
 /* used by cheat engine */
+int (*get_max_hooks)(void);
+int (*get_num_hooks)(void);
+int (*add_hook)(u32 addr, u32 val);
+void (*clear_hooks)(void);
+
 int (*get_max_codes)(void);
 void (*set_max_codes)(int num);
 int (*get_num_codes)(void);
 int (*add_code)(u32 addr, u32 val);
 void (*clear_codes)(void);
-void (*syscallHook)(void);
 
 #endif

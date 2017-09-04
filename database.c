@@ -112,17 +112,31 @@ int dbOpenBuffer(unsigned char *buff)
             cheat->numCodeLines = *((u8 *)dbCheatsBuffer);
             dbCheatsBuffer++;
 
+            int numHookLines = 0;
+            int line = 0;
             if(cheat->numCodeLines > 0)
             {
                 cheat->type = CHEATNORMAL;
                 cheat->codeLines = codeLines;
                 memcpy(codeLines, dbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
 
-                if(j == 0 && cheat->numCodeLines == 1)
+                /*
+                If cheat only contains 9-type hook codes:
+                -> don't display cheat in the menu
+                -> automatically enable cheat when launching game
+                -> engine will NOT look for a hook if 1 or more 9-type hook codes are found
+                */
+                while(line < cheat->numCodeLines && (cheat->codeLines[line] & 0xF0000000) == 0x90000000)
                 {
-                    u64 first = codeLines[0] & 0xF0000000;
-                    if(first == 0x90000000 || first == 0xF0000000)
-                        ignoreFirst = 1;
+                    numHookLines++;
+                    line++;
+                }
+
+                if(numHookLines == cheat->numCodeLines)
+                {
+                    cheat->skip = 1;
+                    game->enableCheats = cheat;
+                    game->numCheats--;
                 }
 
                 dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
@@ -142,16 +156,8 @@ int dbOpenBuffer(unsigned char *buff)
             cheat = cheat->next;
         }
 
-        if(ignoreFirst)
-        {
-            game->cheats = cheatsHead->next;
-            game->numCheats = numCheats - 1;
-        }
-        else
-        {
-            game->cheats = cheatsHead;
-            game->numCheats = numCheats;
-        }
+        game->cheats = cheatsHead;
+        game->numCheats = numCheats;
 
         if(i+1 < dbHeader->numTitles)
         {
@@ -185,16 +191,15 @@ int dbOpenDatabase(const char *path)
         printf("%s: failed to open %s\n", __FUNCTION__, path);
         return 0;
     }
-    
+
     dbIsOpen = 1;
-    
+
     fseek(dbFile, 0, SEEK_END);
     compressedSize = ftell(dbFile);
     fseek(dbFile, 0, SEEK_SET);
     compressed = malloc(compressedSize);
     fread(compressed, 1, compressedSize, dbFile);
     fclose(dbFile);
-    
 
     decompressedSize = 5*1024*1024; // 5MB
     decompressed = malloc(decompressedSize);
