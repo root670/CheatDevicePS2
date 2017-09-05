@@ -25,8 +25,7 @@ if(ZLIB_FOUND)
     include_directories(${ZLIB_INCLUDE_DIRS})
 endif()
 
-set(MINIZIP_SRC "crypt.c"
-  "ioapi.c"
+set(MINIZIP_SRC "ioapi.c"
   "ioapi_buf.c"
   "ioapi_mem.c"
   "unzip.c"
@@ -47,10 +46,6 @@ endif()
 
 if(UNIX)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -O3")
-  add_definitions(-D__USE_FILE_OFFSET64)
-  add_definitions(-D__USE_LARGEFILE64)
-  add_definitions(-D_LARGEFILE64_SOURCE)
-  add_definitions(-D_FILE_OFFSET_BIT=64)
 endif()
 
 # create minizip library
@@ -63,7 +58,7 @@ if(USE_AES)
     aes/aescrypt.c
     aes/aeskey.c
     aes/aestab.c
-    aes/aes_ni.c
+    aes/entropy.c
     aes/fileenc.c
     aes/hmac.c
     aes/prng.c
@@ -72,11 +67,12 @@ if(USE_AES)
 
   set(AES_PUBLIC_HEADERS 
     aes/aes.h
-    aes/aes_ni.h
+    aes/aes_via_ace.h
     aes/aesopt.h
     aes/aestab.h
     aes/brg_endian.h
     aes/brg_types.h
+    aes/entropy.h
     aes/fileenc.h
     aes/hmac.h
     aes/prng.h
@@ -114,10 +110,10 @@ install(FILES ${MINIZIP_PUBLIC_HEADERS}
 
 option (BUILD_TEST "enabled building of executables minizip and miniunz. Requires ZLIB!" OFF)
 if(BUILD_TEST)
-  add_executable(miniunz_exec miniunz.c minishared.c)
+  add_executable(miniunz_exec miniunz.c)
   target_link_libraries(miniunz_exec minizip)
 
-  add_executable(minizip_exec minizip.c minishared.c)
+  add_executable(minizip_exec minizip.c)
   target_link_libraries(minizip_exec minizip)
 
   install(TARGETS miniunz_exec minizip_exec
