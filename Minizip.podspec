@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name     = 'Minizip'
-  s.version  = '1.1.0.2017.06.25'
+  s.version  = '1.1.0.2016.04.24'
   s.license  = 'zlib'
   s.summary  = 'Minizip contrib in zlib with latest bug fixes that supports PKWARE disk spanning, AES encryption, and IO buffering'
   s.description = <<-DESC
@@ -17,16 +17,11 @@ DESC
   s.libraries = 'z'
 
   s.subspec 'Core' do |sp|
-    sp.source_files = '{ioapi,ioapi_mem,ioapi_buf,unzip,zip,crypt}.{c,h}'
+    sp.source_files = '{ioapi,ioapi_mem,ioapi_buf,unzip,zip}.{c,h}', 'crypt.h'
   end
 
   s.subspec 'AES' do |sp|
     sp.dependency 'Minizip/Core'
     sp.source_files = 'aes/*.{c,h}'
-  end
-  
-  s.subspec 'minishared' do |sp|
-    sp.dependency 'Minizip/Core'
-    sp.source_files = 'minishared.{c,h}'
   end
 end
