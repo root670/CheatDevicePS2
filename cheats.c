@@ -11,6 +11,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <erl.h>
+#include <floatlib.h>
 
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
@@ -98,7 +99,7 @@ int cheatsLoadHistory()
         if(lastGameMenu != NULL)
         {
             cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
-            cheatHashes = hashNewTable(activeGame->numCheats * 1.6);
+            cheatHashes = hashNewTable(ceilf(activeGame->numCheats * 1.6));
             populateCheatHashTable();
 
             for(i = 0; i < historyLength - 4; i+= 4)
@@ -168,7 +169,7 @@ int cheatsLoadGameMenu()
         menuItem_t *item = items;
         unsigned int hash;
 
-        gameHashes = hashNewTable(numGames * 1.6);
+        gameHashes = hashNewTable(ceilf(numGames * 1.6));
         
         while(node)
         {

@@ -7,7 +7,7 @@ hashTable_t *hashNewTable(int numEntries)
     hashTable_t *table;
 
     table = calloc(1, sizeof(hashTable_t));
-    table->keyHashes = calloc(numEntries, sizeof(unsigned int));
+    table->hashes = calloc(numEntries, sizeof(unsigned int));
     table->values = calloc(numEntries, sizeof(void*));
     table->numEntries = numEntries;
 
@@ -35,15 +35,15 @@ unsigned int hashFunction(void *key, int len)
     return h;
 }
 
-void *hashFind(hashTable_t *table, unsigned int keyHash)
+void *hashFind(hashTable_t *table, unsigned int hash)
 {
     unsigned int i;
 
-    i = keyHash % table->numEntries;
+    i = hash % table->numEntries;
 
-    while(table->keyHashes[i] != keyHash)
+    while(table->hashes[i] != hash)
     {
-        if(table->keyHashes[i] == 0) // not in table
+        if(table->hashes[i] == 0) // not in table
             return NULL;
         else if(i == table->numEntries - 1) // last entry in table
             i = 0;
@@ -54,13 +54,13 @@ void *hashFind(hashTable_t *table, unsigned int keyHash)
     return table->values[i];
 }
 
-void hashAdd(hashTable_t *table, void *ptr, unsigned int keyHash)
+void hashAdd(hashTable_t *table, void *ptr, unsigned int hash)
 {
     unsigned int i;
 
-    i = keyHash % table->numEntries;
+    i = hash % table->numEntries;
 
-    while(table->keyHashes[i] != 0)
+    while(table->hashes[i] != 0)
     {
         if(i == table->numEntries - 1) // last entry in table
             i = 0;
@@ -68,6 +68,6 @@ void hashAdd(hashTable_t *table, void *ptr, unsigned int keyHash)
             i++;
     }
 
-    table->keyHashes[i] = keyHash;
+    table->hashes[i] = hash;
     table->values[i] = ptr;
 }
