@@ -29,16 +29,15 @@ int killCheats()
 {
     int first = 1;
     printf("\n ** Killing Cheats **\n");
-    dbCloseDatabase();
+    dbClose();
 
     cheatsGame_t *game = gamesHead;
     while(game)
     {
         cheatsGame_t *next = game->next;
 
-        printf("Freeing %s\n", game->title);
         if(game->cheats != NULL) {
-            if(first && dbType == BINARY) // Binay DB has allocates cheats structs and code lines once.
+            if(first && dbType == BINARY) // Binary DB allocates cheats structs and code lines once.
             {
                 free(game->cheats);
                 free(game->cheats->codeLines);
@@ -125,19 +124,29 @@ int cheatsLoadHistory()
 // CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
-    const char *ext;
+    const char *extension;
+
+    extension = getFileExtension(path);
     
-    ext = path + strlen(path) - 4;
-    
-    if(strncmp(ext, ".cdb", 4) == 0)
+    if(strncmp(extension, ".cdb", 4) == 0)
         dbType = BINARY;
-    else if(strncmp(ext, ".txt", 4) == 0)
+    else if(strncmp(extension, ".txt", 4) == 0)
         dbType = TEXT;
+    else
+    {
+        char error[255];
+        sprintf(error, "Unsupported cheat database filetype: \"%s\"!", extension);
+        char *items[] = {"OK"};
+        displayPromptMenu(items, 1, error);
+
+        // TODO: Use default empty database
+        numGames = 0;
+    }
     
     switch(dbType)
     {
         case TEXT:
-            numGames = textCheatsOpenFile(path);
+            numGames = textCheatsOpenDatabase(path);
             gamesHead = textCheatsGetCheatStruct();
             textCheatsClose();
             break;
@@ -145,7 +154,7 @@ int cheatsOpenDatabase(const char* path)
         case BINARY:
             numGames = dbOpenDatabase(path);
             gamesHead = dbGetCheatStruct();
-            dbCloseDatabase();
+            dbClose();
             break;
 
         default:

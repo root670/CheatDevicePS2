@@ -1,3 +1,8 @@
+/*
+ * Save Utilities
+ * Additional functions used by the save manager.
+ */
+
 #ifndef SAVEUTIL_H
 #define SAVEUTIL_H
 

@@ -10,6 +10,19 @@
 
 #define DBVERSION 0x02
 
+typedef struct dbMasterHeader {
+    char magic[4];
+    u8 version;
+    u16 numTitles;
+    char padding[9];
+} dbMasterHeader_t;
+
+typedef struct dbCheat {
+    char *title;
+    u8 numCodeLines;
+    u64 *codeEntries;
+} dbCheat_t;
+
 static int dbIsOpen = 0;
 static u8 *dbBuff = NULL;
 static u8 *dbTitleBuffer = NULL;
@@ -17,7 +30,7 @@ static u8 *dbCheatsBuffer = NULL;
 static dbMasterHeader_t *dbHeader = NULL;
 static cheatsGame_t *gamesHead = NULL;
 
-int dbOpenBuffer(unsigned char *buff)
+static int dbOpenBuffer(unsigned char *buff)
 {
     int ignoreFirst = 0;
     unsigned short numCheats;
@@ -208,7 +221,7 @@ int dbOpenDatabase(const char *path)
     return numGames;
 }
 
-int dbCloseDatabase()
+int dbClose()
 {
     if(dbIsOpen)
     {

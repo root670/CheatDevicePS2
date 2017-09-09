@@ -26,62 +26,12 @@ static int numCodeLines = 0;
 
 static u8 *tokens = NULL;
 
+static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines);
 static int getToken(const char *line);
 static int parseLine(const char *line);
 
-static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines)
-{
-    const char *endPtr = text + length;
-    const char *end;
-    char line[255];
-    int lineLen;
-    int token;
-    unsigned int tokenOffset = 0;
-    if(!text || !numGames || !numCheats || !numCodeLines)
-        return;
-        
-    while(text < endPtr)
-    {
-        float progress = (1.0 - ((endPtr - text)/(float)length))/2.0;
-        graphicsDrawLoadingBar(100, 375, progress);
-        graphicsRenderNow();
-        end = strchr(text, '\n');
-        if(!end)
-            end = endPtr;
-        
-        lineLen = end - text;
-        if(lineLen)
-        {
-            strncpy(line, text, 255);
-            if(line[lineLen-1] == '\r')
-                line[lineLen-1] = '\0';
-            
-            line[lineLen] = '\0';
-            
-            token = getToken(line);
-            tokens[tokenOffset++] = token;
-
-            switch(token)
-            {
-                case TOKEN_TITLE:
-                    *numGames += 1;
-                    break;
-                case TOKEN_CHEAT:
-                    *numCheats += 1;
-                    break;
-                case TOKEN_CODE:
-                    *numCodeLines += 1;
-                    break;
-                default:
-                    break;
-            }
-        }
-        text += lineLen + 1;
-    }
-}
-
-// Returns number of games in cheat file.
-int textCheatsOpenFile(const char *path)
+// Open TXT cheat database. Returns number of games in cheat file.
+int textCheatsOpenDatabase(const char *path)
 {
     FILE *txtFile;
     char *text;
@@ -155,6 +105,57 @@ cheatsGame_t *textCheatsGetCheatStruct()
 int textCheatsClose()
 {
     return 1;
+}
+
+static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines)
+{
+    const char *endPtr = text + length;
+    const char *end;
+    char line[255];
+    int lineLen;
+    int token;
+    unsigned int tokenOffset = 0;
+    if(!text || !numGames || !numCheats || !numCodeLines)
+        return;
+        
+    while(text < endPtr)
+    {
+        float progress = (1.0 - ((endPtr - text)/(float)length))/2.0;
+        graphicsDrawLoadingBar(100, 375, progress);
+        graphicsRenderNow();
+        end = strchr(text, '\n');
+        if(!end)
+            end = endPtr;
+        
+        lineLen = end - text;
+        if(lineLen)
+        {
+            strncpy(line, text, 255);
+            if(line[lineLen-1] == '\r')
+                line[lineLen-1] = '\0';
+            
+            line[lineLen] = '\0';
+            
+            token = getToken(line);
+            tokens[tokenOffset++] = token;
+
+            switch(token)
+            {
+                case TOKEN_TITLE:
+                    *numGames += 1;
+                    break;
+                case TOKEN_CHEAT:
+                    *numCheats += 1;
+                    break;
+                case TOKEN_CODE:
+                    *numCodeLines += 1;
+                    break;
+                default:
+                    break;
+            }
+        }
+        text += lineLen + 1;
+    }
 }
 
 // Determine token type for line.

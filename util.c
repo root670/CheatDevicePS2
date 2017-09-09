@@ -429,6 +429,23 @@ char *rtrim(char *str)
     return str;
 }
 
+const char *getFileExtension(const char *filename)
+{
+    const char *c;
+
+    if(!filename)
+        return NULL;
+
+    // Find trailing period character
+    c = filename + strlen(filename) - 1;
+    while(c > filename && *c != '.') --c;
+
+    if(c == filename)
+        return NULL;
+    else
+        return c;
+}
+
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
     /*----------------------------------------------------------------------------*\

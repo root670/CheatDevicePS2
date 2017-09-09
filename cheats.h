@@ -2,8 +2,10 @@
  * Cheats Manager
  * Manages cheats used by Cheat Device.
  */
+
 #ifndef CHEATS_H
 #define CHEATS_H
+
 #include <tamtypes.h>
 
 typedef enum { TEXT, BINARY } cheatDatabaseType_t;
