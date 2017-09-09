@@ -52,6 +52,7 @@ int killCheats()
         game = next;
     }
     
+    hashDestroyTable(gameHashes);
     free(gamesHead);
 
     return 1;
@@ -99,7 +100,7 @@ int cheatsLoadHistory()
         if(lastGameMenu != NULL)
         {
             cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
-            cheatHashes = hashNewTable(activeGame->numCheats * 1.6);
+            cheatHashes = hashNewTable(activeGame->numCheats);
             populateCheatHashTable();
 
             for(i = 0; i < historyLength - 4; i+= 4)
@@ -112,14 +113,12 @@ int cheatsLoadHistory()
             }
 
             menuSetActiveItem(lastGameMenu);
-
-            free(cheatHashes);
+            hashDestroyTable(cheatHashes);
         }
 
         fclose(historyFile);
     }
 
-    free(gameHashes);
     return 1;
 }
 
@@ -169,7 +168,7 @@ int cheatsLoadGameMenu()
         menuItem_t *item = items;
         unsigned int hash;
 
-        gameHashes = hashNewTable(numGames * 1.6);
+        gameHashes = hashNewTable(numGames);
         
         while(node)
         {

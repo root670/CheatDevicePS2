@@ -1,17 +1,31 @@
+#include "hash.h"
 #include <stdio.h>
 #include <tamtypes.h>
-#include "hash.h"
+#include <floatlib.h>
 
 hashTable_t *hashNewTable(int numEntries)
 {
     hashTable_t *table;
 
     table = calloc(1, sizeof(hashTable_t));
-    table->keyHashes = calloc(numEntries, sizeof(unsigned int));
-    table->values = calloc(numEntries, sizeof(void*));
-    table->numEntries = numEntries;
+    table->size = ceilf(numEntries * 1.6);
+    table->hashes = calloc(table->size, sizeof(unsigned int));
+    table->values = calloc(table->size, sizeof(void*));
 
     return table;
+}
+
+void hashDestroyTable(hashTable_t *table)
+{
+    if(!table)
+        return;
+
+    if(table->hashes)
+        free(table->hashes);
+    if(table->values)
+        free(table->values);
+
+    free(table);
 }
 
 // http://www.eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
@@ -35,17 +49,17 @@ unsigned int hashFunction(void *key, int len)
     return h;
 }
 
-void *hashFind(hashTable_t *table, unsigned int keyHash)
+void *hashFind(hashTable_t *table, unsigned int hash)
 {
     unsigned int i;
 
-    i = keyHash % table->numEntries;
+    i = hash % table->size;
 
-    while(table->keyHashes[i] != keyHash)
+    while(table->hashes[i] != hash)
     {
-        if(table->keyHashes[i] == 0) // not in table
+        if(table->hashes[i] == 0) // not in table
             return NULL;
-        else if(i == table->numEntries - 1) // last entry in table
+        else if(i == table->size - 1) // last entry in table
             i = 0;
         else // try next entry
             i++;
@@ -54,20 +68,20 @@ void *hashFind(hashTable_t *table, unsigned int keyHash)
     return table->values[i];
 }
 
-void hashAdd(hashTable_t *table, void *ptr, unsigned int keyHash)
+void hashAdd(hashTable_t *table, void *ptr, unsigned int hash)
 {
     unsigned int i;
 
-    i = keyHash % table->numEntries;
+    i = hash % table->size;
 
-    while(table->keyHashes[i] != 0)
+    while(table->hashes[i] != 0)
     {
-        if(i == table->numEntries - 1) // last entry in table
+        if(i == table->size - 1) // last entry in table
             i = 0;
         else // try next entry
             i++;
     }
 
-    table->keyHashes[i] = keyHash;
+    table->hashes[i] = hash;
     table->values[i] = ptr;
 }
