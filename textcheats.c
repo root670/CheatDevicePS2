@@ -26,8 +26,8 @@ static int numCodeLines = 0;
 
 static u8 *tokens = NULL;
 
-int getToken(const char *line);
-int parseLine(const char *line);
+static int getToken(const char *line);
+static int parseLine(const char *line);
 
 static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines)
 {
@@ -158,7 +158,7 @@ int textCheatsClose()
 }
 
 // Determine token type for line.
-int getToken(const char *line)
+static int getToken(const char *line)
 {
     const char *c;
     int numDigits = 0, ret;
@@ -197,7 +197,7 @@ int getToken(const char *line)
 }
 
 // Parse line and process token.
-int parseLine(const char *line)
+static int parseLine(const char *line)
 {
     static unsigned int tokenOffset = 0;
     int token;
