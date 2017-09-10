@@ -149,23 +149,18 @@ static char *getDevicePath(char *str, device_t dev)
 // Determine save handler by filename.
 static saveHandler_t *getSaveHandler(const char *path)
 {
-    const char *end;
-    int len;
+    const char *extension;
     
     if(!path)
         return NULL;
     
-    len = strlen(path);
-    if(len < 5) // x.xxx
-        return NULL;
+    extension = getFileExtension(path);
     
-    end = path + len - 1;
-    
-    if(strncmp(end - 2, PSUHandler.extention, 3) == 0)
+    if(strcmp(extension, PSUHandler.extention) == 0)
         return &PSUHandler;
-    else if(strncmp(end - 2, CBSHandler.extention, 3) == 0)
+    else if(strcmp(extension, CBSHandler.extention) == 0)
         return &CBSHandler;
-    else if(strncmp(end - 2, ZIPHandler.extention, 3) == 0)
+    else if(strcmp(extension, ZIPHandler.extention) == 0)
         return &ZIPHandler;
     else
         return NULL;
@@ -234,6 +229,7 @@ gameSave_t *savesGetSaves(device_t dev)
             
             save->_handler = handler;
             strncpy(save->name, record.name, 100);
+            rtrim(save->name);
             snprintf(save->path, 64, "mass:%s", record.name);
             
             first = 0;
@@ -338,6 +334,7 @@ gameSave_t *savesGetSaves(device_t dev)
                     }
                     
                     strncpy(save->name, ascii, 100);
+                    rtrim(save->name);
                 }
                 else
                     continue; // invalid save

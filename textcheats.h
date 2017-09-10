@@ -7,13 +7,10 @@
 #define TEXTCHEATS_H
 
 #include "cheats.h"
-#include <stdio.h>
 
-// Open TXT cheat database. Returns number of games in cheat database.
-int textCheatsOpenDatabase(const char *path);
-// Free cheat file from memory.
-int textCheatsClose();
-// Get data structure of loaded cheat database. Returns null on error.
-cheatsGame_t *textCheatsGetCheatStruct();
+// Open TXT cheat database. Returns cheat data structure.
+cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead);
+// Save internal cheat database to TXT cheat database.
+int textCheatsSave(const char *path);
 
 #endif

@@ -443,7 +443,7 @@ const char *getFileExtension(const char *filename)
     if(c == filename)
         return NULL;
     else
-        return c;
+        return ++c;
 }
 
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)

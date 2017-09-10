@@ -7,6 +7,7 @@
 #include <libcdvd.h>
 #include <erl.h>
 #include <libpad.h>
+#include <tamtypes.h>
 
 #include "menus.h"
 #include "cheats.h"

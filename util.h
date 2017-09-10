@@ -2,6 +2,7 @@
  * Utilities
  * Miscellaneous helper functions.
  */
+ 
 #ifndef UTIL_H
 #define UTIL_H
 

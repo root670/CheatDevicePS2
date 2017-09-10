@@ -7,34 +7,32 @@
 #include <stdio.h>
 #include <time.h>
 #include <kernel.h>
+#include <tamtypes.h>
 
 #define DBVERSION 0x02
 
-typedef struct dbMasterHeader {
+typedef struct cdbMasterHeader {
     char magic[4];
     u8 version;
     u16 numTitles;
     char padding[9];
-} dbMasterHeader_t;
+} cdbMasterHeader_t;
 
-typedef struct dbCheat {
+typedef struct cdbCheat {
     char *title;
     u8 numCodeLines;
     u64 *codeEntries;
-} dbCheat_t;
+} cdbCheat_t;
 
-static int dbIsOpen = 0;
-static u8 *dbBuff = NULL;
-static u8 *dbTitleBuffer = NULL;
-static u8 *dbCheatsBuffer = NULL;
-static dbMasterHeader_t *dbHeader = NULL;
+static u8 *cdbTitleBuffer = NULL;
+static u8 *cdbCheatsBuffer = NULL;
 static cheatsGame_t *gamesHead = NULL;
 
-static int dbOpenBuffer(unsigned char *buff)
+static int cdbOpenBuffer(unsigned char *cdbBuff)
 {
     int ignoreFirst = 0;
-    unsigned short numCheats;
-    unsigned short numCodeLines;
+    u16 numCheats;
+    u16 numCodeLines;
     unsigned int cheatsOffset;
     u64 *codeLines = NULL;
     cheatsCheat_t *cheatsHead = NULL;
@@ -43,26 +41,22 @@ static int dbOpenBuffer(unsigned char *buff)
     
     printf("Loading buffer\n");
     cheatsGame_t *game;
-    dbBuff = buff;
-    dbIsOpen = 1;
-    dbHeader = (dbMasterHeader_t *)dbBuff;
+    cdbMasterHeader_t *cdbHeader = (cdbMasterHeader_t *)cdbBuff;
 
-    if(strncmp(dbHeader->magic, "CDB\0", 4) != 0)
+    if(strncmp(cdbHeader->magic, "CDB\0", 4) != 0)
     {
-        free(dbBuff);
-        dbIsOpen = 0;
+        free(cdbBuff);
 
         char error[255];
-        sprintf(error, "%s: invalid database format %c%c%c\n", __FUNCTION__, dbHeader->magic[0], dbHeader->magic[1], dbHeader->magic[2]);
+        sprintf(error, "%s: invalid database format %c%c%c\n", __FUNCTION__, cdbHeader->magic[0], cdbHeader->magic[1], cdbHeader->magic[2]);
         graphicsDrawText(50, 300, error, WHITE);
         graphicsRender();
         SleepThread();
     }
 
-    if(dbHeader->version > DBVERSION)
+    if(cdbHeader->version > DBVERSION)
     {
-        free(dbBuff);
-        dbIsOpen = 0;
+        free(cdbBuff);
 
         char error[255];
         sprintf(error, "%s: unsupported database version\n", __FUNCTION__);
@@ -71,37 +65,37 @@ static int dbOpenBuffer(unsigned char *buff)
         SleepThread();
     }
 
-    printf("magic %s\n", dbHeader->magic);
-    printf("version %d\n", dbHeader->version);
-    printf("numgames %d\n", dbHeader->numTitles);
+    printf("magic %s\n", cdbHeader->magic);
+    printf("version %d\n", cdbHeader->version);
+    printf("numgames %d\n", cdbHeader->numTitles);
 
-    dbTitleBuffer = dbBuff + 16;
+    cdbTitleBuffer = cdbBuff + 16;
 
-    game = calloc(dbHeader->numTitles, sizeof(cheatsGame_t));
+    game = calloc(cdbHeader->numTitles, sizeof(cheatsGame_t));
     gamesHead = game;
 
     int i, j;
-    for(i = 0; i < dbHeader->numTitles; i++)
+    for(i = 0; i < cdbHeader->numTitles; i++)
     {
-        int titlelen = *((u8 *)dbTitleBuffer);
+        int titlelen = *((u8 *)cdbTitleBuffer);
         if(titlelen>81)
             return 0;
 
-        dbTitleBuffer += 1;
-        strncpy(game->title, dbTitleBuffer, titlelen);
-        dbTitleBuffer += titlelen;
+        cdbTitleBuffer += 1;
+        strncpy(game->title, cdbTitleBuffer, titlelen);
+        cdbTitleBuffer += titlelen;
         
         // The values might not be aligned properly, so they're read byte-by-byte
-        numCheats = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
-        dbTitleBuffer += sizeof(u16);
+        numCheats = *cdbTitleBuffer | (*(cdbTitleBuffer+1) << 8);
+        cdbTitleBuffer += sizeof(u16);
 
-        numCodeLines = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8);
+        numCodeLines = *cdbTitleBuffer | (*(cdbTitleBuffer+1) << 8);
         codeLines = calloc(numCodeLines, sizeof(u64));
-        dbTitleBuffer += sizeof(u16);
+        cdbTitleBuffer += sizeof(u16);
         
-        cheatsOffset = *dbTitleBuffer | (*(dbTitleBuffer+1) << 8) | (*(dbTitleBuffer+2) << 16) | (*(dbTitleBuffer+3) << 24);
-        dbCheatsBuffer = dbBuff + cheatsOffset;
-        dbTitleBuffer += sizeof(u32);
+        cheatsOffset = *cdbTitleBuffer | (*(cdbTitleBuffer+1) << 8) | (*(cdbTitleBuffer+2) << 16) | (*(cdbTitleBuffer+3) << 24);
+        cdbCheatsBuffer = cdbBuff + cheatsOffset;
+        cdbTitleBuffer += sizeof(u32);
         
         cheatsArray = calloc(numCheats, sizeof(cheatsCheat_t));
         cheatsHead = &cheatsArray[0];
@@ -111,25 +105,25 @@ static int dbOpenBuffer(unsigned char *buff)
         /* Read each cheat */
         for(j = 0; j < numCheats; j++)
         {
-            titlelen = *dbCheatsBuffer;
+            titlelen = *cdbCheatsBuffer;
             if(titlelen>81)
             {
                 printf("ERROR READING DB: title length is too long!\n");
                 return 0;
             }
 
-            dbCheatsBuffer++;
-            strncpy(cheat->title, dbCheatsBuffer, titlelen-1);
+            cdbCheatsBuffer++;
+            strncpy(cheat->title, cdbCheatsBuffer, titlelen-1);
 
-            dbCheatsBuffer+= titlelen;
-            cheat->numCodeLines = *((u8 *)dbCheatsBuffer);
-            dbCheatsBuffer++;
+            cdbCheatsBuffer+= titlelen;
+            cheat->numCodeLines = *((u8 *)cdbCheatsBuffer);
+            cdbCheatsBuffer++;
 
             if(cheat->numCodeLines > 0)
             {
                 cheat->type = CHEATNORMAL;
                 cheat->codeLines = codeLines;
-                memcpy(codeLines, dbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
+                memcpy(codeLines, cdbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
 
                 if(j == 0 && cheat->numCodeLines == 1)
                 {
@@ -138,7 +132,7 @@ static int dbOpenBuffer(unsigned char *buff)
                         ignoreFirst = 1;
                 }
 
-                dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
+                cdbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
             }
             else
             {
@@ -166,7 +160,7 @@ static int dbOpenBuffer(unsigned char *buff)
             game->numCheats = numCheats;
         }
 
-        if(i+1 < dbHeader->numTitles)
+        if(i+1 < cdbHeader->numTitles)
         {
             game->next = game + 1;
             game = game->next;
@@ -178,19 +172,20 @@ static int dbOpenBuffer(unsigned char *buff)
     }
 
     printf("done loading db\n");
-    return dbHeader->numTitles;
+    return cdbHeader->numTitles;
 }
 
-int dbOpenDatabase(const char *path)
+cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames)
 {
     u8 *compressed, *decompressed;
     int compressedSize;
     unsigned long decompressedSize;
-    int numGames;
     FILE *dbFile;
 
     if(!path)
-        return 0;
+        return NULL;
+    if(!numGames)
+        return NULL;
     
     dbFile = fopen(path, "rb");
     if(!dbFile)
@@ -198,8 +193,6 @@ int dbOpenDatabase(const char *path)
         printf("%s: failed to open %s\n", __FUNCTION__, path);
         return 0;
     }
-    
-    dbIsOpen = 1;
     
     fseek(dbFile, 0, SEEK_END);
     compressedSize = ftell(dbFile);
@@ -214,33 +207,15 @@ int dbOpenDatabase(const char *path)
     uncompress(decompressed, &decompressedSize, compressed, compressedSize);
     realloc(decompressed, decompressedSize);
     free(compressed);
-    dbBuff = decompressed;
 
-    numGames = dbOpenBuffer(dbBuff);
+    *numGames = cdbOpenBuffer(decompressed);
 
-    return numGames;
+    free(decompressed);
+
+    return gamesHead;
 }
 
-int dbClose()
+int cdbSave(const char *path)
 {
-    if(dbIsOpen)
-    {
-        free(dbBuff);
-        dbTitleBuffer = NULL;
-        dbHeader = NULL;
-        gamesHead = NULL;
-        dbIsOpen = 0;
-
-        return 1;
-    }
-    else
-        return 0;
-}
-
-cheatsGame_t *dbGetCheatStruct()
-{
-    if(dbIsOpen)
-        return gamesHead;
-    else
-        return NULL;
+    return 1;
 }

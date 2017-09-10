@@ -25,11 +25,21 @@ static int numEnabledCodes = 0;
 
 extern unsigned char _engine_erl_start[];
 
+typedef struct cheatDatabaseHandler {
+    char name[28]; // cheat database format name
+    char extention[4]; // file extention
+    
+    cheatsGame_t* (*open)(const char *path, unsigned int *numGames);
+    int (*save)(const char *path);
+} cheatDatabaseHandler_t;
+
+static cheatDatabaseHandler_t CDBHandler = {"Binary Database (.cdb)", "cdb", cdbOpen, cdbSave};
+static cheatDatabaseHandler_t TXTHandler = {"Text File (.txt)", "txt", textCheatsOpen, textCheatsSave};
+
 int killCheats()
 {
     int first = 1;
     printf("\n ** Killing Cheats **\n");
-    dbClose();
 
     cheatsGame_t *game = gamesHead;
     while(game)
@@ -121,47 +131,46 @@ int cheatsLoadHistory()
     return 1;
 }
 
+// Determine cheat database handler by filename.
+static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
+{
+    const char *extension;
+    
+    if(!path)
+        return NULL;
+    
+    extension = getFileExtension(path);
+    
+    if(strcmp(extension, CDBHandler.extention) == 0)
+        return &CDBHandler;
+    else if(strcmp(extension, TXTHandler.extention) == 0)
+        return &TXTHandler;
+    else
+        return NULL;
+}
+
 // CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
-    const char *extension;
+    cheatDatabaseHandler_t *handler;
 
-    extension = getFileExtension(path);
-    
-    if(strncmp(extension, ".cdb", 4) == 0)
-        dbType = BINARY;
-    else if(strncmp(extension, ".txt", 4) == 0)
-        dbType = TEXT;
+    handler = getCheatDatabaseHandler(path);
+
+    if(handler)
+    {
+        gamesHead = handler->open(path, &numGames);
+        printf("loaded %d games\n", numGames);
+    }
     else
     {
         char error[255];
-        sprintf(error, "Unsupported cheat database filetype: \"%s\"!", extension);
+        sprintf(error, "Unsupported cheat database filetype: \"%s\"!", getFileExtension(path));
         char *items[] = {"OK"};
         displayPromptMenu(items, 1, error);
 
         // TODO: Use default empty database
         numGames = 0;
     }
-    
-    switch(dbType)
-    {
-        case TEXT:
-            numGames = textCheatsOpenDatabase(path);
-            gamesHead = textCheatsGetCheatStruct();
-            textCheatsClose();
-            break;
-
-        case BINARY:
-            numGames = dbOpenDatabase(path);
-            gamesHead = dbGetCheatStruct();
-            dbClose();
-            break;
-
-        default:
-            break;
-    }
-    
-    printf("loaded %d games\n", numGames);
 
     return numGames;
 }

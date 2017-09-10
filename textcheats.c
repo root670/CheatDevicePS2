@@ -20,18 +20,13 @@ static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheat = NULL;
 static u64 *codeLine = NULL;
 
-static int numGames = 0;
-static int numCheats = 0;
-static int numCodeLines = 0;
-
 static u8 *tokens = NULL;
 
 static void countTokens(const char *text, size_t length, int *numGames, int *numCheats, int *numCodeLines);
 static int getToken(const char *line);
 static int parseLine(const char *line);
 
-// Open TXT cheat database. Returns number of games in cheat file.
-int textCheatsOpenDatabase(const char *path)
+cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
 {
     FILE *txtFile;
     char *text;
@@ -41,9 +36,13 @@ int textCheatsOpenDatabase(const char *path)
     char line[255];
     unsigned int lineLen;
     size_t txtLen;
+
+    int numGames, numCheats, numCodeLines;
     
     if(!path)
-        return 0;
+        return NULL;
+    if(!numGamesRead)
+        return NULL;
     
     txtFile = fopen(path, "r");
     fseek(txtFile, 0, SEEK_END);
@@ -92,17 +91,13 @@ int textCheatsOpenDatabase(const char *path)
     
     free(buff);
     free(tokens);
-    
-    return numGames;
-}
 
-// Get data structure of loaded cheat file. Returns null on error.
-cheatsGame_t *textCheatsGetCheatStruct()
-{
+    *numGamesRead = numGames;
+    
     return gamesHead;
 }
-// Free cheat file from memory.
-int textCheatsClose()
+
+int textCheatsSave(const char *path)
 {
     return 1;
 }
@@ -117,6 +112,10 @@ static void countTokens(const char *text, size_t length, int *numGames, int *num
     unsigned int tokenOffset = 0;
     if(!text || !numGames || !numCheats || !numCodeLines)
         return;
+
+    *numGames = 0;
+    *numCheats = 0;
+    *numCodeLines = 0;
         
     while(text < endPtr)
     {
