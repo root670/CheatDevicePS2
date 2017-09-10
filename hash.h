@@ -21,4 +21,5 @@ void *hashFind(hashTable_t *table, unsigned int hash);
 void hashAdd(hashTable_t *table, void *ptr, unsigned int hash);
 // Get hash value for key
 unsigned int hashFunction(void *key, int len);
- #endif
+
+#endif

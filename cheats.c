@@ -11,6 +11,7 @@
 #include <string.h>
 #include <malloc.h>
 #include <erl.h>
+#include <floatlib.h>
 
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
@@ -220,17 +221,25 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         printf("%d cheats\n", game->numCheats);
         while(cheat != NULL)
         {
-            if(cheat->type == CHEATNORMAL)
-                item->type = NORMAL;
+            if(!cheat->skip)
+            {
+                if(cheat->type == CHEATNORMAL)
+                    item->type = NORMAL;
+                else
+                    item->type = HEADER;
+
+                item->text = calloc(1, strlen(cheat->title) + 1);
+                strcpy(item->text, cheat->title);
+
+                item->extra = (void *)cheat;
+
+                menuAppendItem(item);
+            }
             else
-                item->type = HEADER;
+            {
+                printf("SKIPPING A CHEAT!!!\n");
+            }
 
-            item->text = calloc(1, strlen(cheat->title) + 1);
-            strcpy(item->text, cheat->title);
-
-            item->extra = (void *)cheat;
-
-            menuAppendItem(item);
             cheat = cheat->next;
             item++;
         }
@@ -403,12 +412,15 @@ void SetupERL()
     printf("%08x %s\n", (u32)sym->address, name); \
     var = (typeof(var))sym->address
 
+    GET_SYMBOL(get_max_hooks, "get_max_hooks");
+    GET_SYMBOL(get_num_hooks, "get_num_hooks");
+    GET_SYMBOL(add_hook, "add_hook");
+    GET_SYMBOL(clear_hooks, "clear_hooks");
     GET_SYMBOL(get_max_codes, "get_max_codes");
     GET_SYMBOL(set_max_codes, "set_max_codes");
     GET_SYMBOL(get_num_codes, "get_num_codes");
     GET_SYMBOL(add_code, "add_code");
     GET_SYMBOL(clear_codes, "clear_codes");
-    GET_SYMBOL(syscallHook, "syscallHook");
 
     printf("Symbols loaded.\n");
 }
@@ -420,9 +432,11 @@ static void readCodes(cheatsCheat_t *cheats)
     int nextCodeCanBeHook = 1;
     cheatsCheat_t *cheat = cheats;
 
+    printf("readCodes(%x)\n", cheats);
+
     while(cheat)
     {
-        if(cheat->enabled)
+        if(cheat->enabled && !cheat->skip)
         {
             if(historyFile)
             {
@@ -439,7 +453,12 @@ static void readCodes(cheatsCheat_t *cheats)
                 if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
                 {
                     printf("hook: %08X %08X\n", addr, val);
-                    //add_hook(addr, val);
+                    add_hook(addr, val);
+                }
+                if((addr & 0xf0000000) == 0xf0000000)
+                {
+                    // ignore F-type enable codes
+                    continue;
                 }
                 else
                 {
@@ -458,6 +477,28 @@ static void readCodes(cheatsCheat_t *cheats)
     }
 }
 
+/* TODO: Only reads one enable cheat for now. */
+void readEnableCodes(cheatsCheat_t *enableCheats)
+{
+    int i;
+    u32 addr, val;
+    cheatsCheat_t *cheat = enableCheats;
+
+    printf("readEnableCodes(%x)\n", enableCheats);
+
+    for(i = 0; i < cheat->numCodeLines; ++i)
+    {
+        addr = (u32)*((u32 *)cheat->codeLines + 2*i);
+        val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
+
+        if((addr & 0xfe000000) == 0x90000000)
+        {
+            printf("hook: %08X %08X\n", addr, val);
+            add_hook(addr, val);
+        }
+    }
+}
+
 void cheatsInstallCodesForEngine()
 {
     if(activeGame != NULL)
@@ -471,6 +512,8 @@ void cheatsInstallCodesForEngine()
             fwrite(&gameHash, 4, 1, historyFile);
         }
 
+        printf("Reading enable cheats\n");
+        readEnableCodes(activeGame->enableCheats);
         printf("Reading cheats\n");
         readCodes(activeGame->cheats);
         printf("Done readin cheats\n");

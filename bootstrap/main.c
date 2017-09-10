@@ -29,9 +29,6 @@ int g_argc;
 char *g_argv[16];
 #define GS_BGCOLOUR *((vu32*)0x120000e0)
 
-#define MAKE_JAL(addr)  (u32)(0x0C000000 | (0x03FFFFFF & ((u32)addr >> 2)))
-u32 syscallHook;
-
 struct _lf_elf_load_arg {
     union
     {
@@ -157,20 +154,15 @@ void MyLoadElf(char *elfpath)
     FlushCache(2);
 
     args[0] = elfpath;
-    ee_kmode_enter();
-    *((u32 *)(0x800002FC)) = MAKE_JAL(syscallHook);
-    ee_kmode_exit();
     ExecPS2((u32*)boot_header.entry, 0, 1, args);
 }
 
 /*
 argv[0] = elf path
-argv[1] = syscallHook address
 */
 
 int main(int argc, char *argv[])
 {
-    sscanf(argv[1], "%X", &syscallHook);
     MyLoadElf((char *) argv[0]);
 
     return 0;

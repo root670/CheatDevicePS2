@@ -119,20 +119,34 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             cheat->numCodeLines = *((u8 *)cdbCheatsBuffer);
             cdbCheatsBuffer++;
 
+            int numHookLines = 0;
+            int line = 0;
             if(cheat->numCodeLines > 0)
             {
                 cheat->type = CHEATNORMAL;
                 cheat->codeLines = codeLines;
                 memcpy(codeLines, cdbCheatsBuffer, cheat->numCodeLines * sizeof(u64));
 
-                if(j == 0 && cheat->numCodeLines == 1)
+                /*
+                If cheat only contains 9-type hook codes:
+                -> don't display cheat in the menu
+                -> automatically enable cheat when launching game
+                -> engine will NOT look for a hook if 1 or more 9-type hook codes are found
+                */
+                while(line < cheat->numCodeLines && (cheat->codeLines[line] & 0xF0000000) == 0x90000000)
                 {
-                    u64 first = codeLines[0] & 0xF0000000;
-                    if(first == 0x90000000 || first == 0xF0000000)
-                        ignoreFirst = 1;
+                    numHookLines++;
+                    line++;
                 }
 
-                cdbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
+                if(numHookLines == cheat->numCodeLines)
+                {
+                    cheat->skip = 1;
+                    game->enableCheats = cheat;
+                    game->numCheats--;
+                }
+
+                dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
             }
             else
             {
@@ -149,16 +163,8 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             cheat = cheat->next;
         }
 
-        if(ignoreFirst)
-        {
-            game->cheats = cheatsHead->next;
-            game->numCheats = numCheats - 1;
-        }
-        else
-        {
-            game->cheats = cheatsHead;
-            game->numCheats = numCheats;
-        }
+        game->cheats = cheatsHead;
+        game->numCheats = numCheats;
 
         if(i+1 < cdbHeader->numTitles)
         {
@@ -200,7 +206,6 @@ cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames)
     compressed = malloc(compressedSize);
     fread(compressed, 1, compressedSize, dbFile);
     fclose(dbFile);
-    
 
     decompressedSize = 5*1024*1024; // 5MB
     decompressed = malloc(decompressedSize);

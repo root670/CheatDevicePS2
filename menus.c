@@ -12,6 +12,8 @@ static menuState_t menues[NUMMENUS];
 static menuState_t *activeMenu = NULL;
 static int initialized = 0;
 
+#define CHUNK_SIZE 1000
+
 int initMenus()
 {
     if(!initialized)
@@ -21,9 +23,10 @@ int initMenus()
         {
             menues[i].identifier = (menuID_t)i;
             menues[i].text = NULL;
-            menues[i].head = NULL;
-            menues[i].current = NULL;
-            menues[i].tail = NULL;
+            menues[i].items = calloc(CHUNK_SIZE, sizeof(menuItem_t *));
+            menues[i].currentItem = 0;
+            menues[i].numItems = 0;
+            menues[i].chunks = 1;
         }
 
         activeMenu = &menues[GAMEMENU];
@@ -58,21 +61,15 @@ int menuAppendItem(menuItem_t *item)
 {
     if(initialized)
     {
-        if(activeMenu->head != NULL)
+        if(activeMenu->numItems == (activeMenu->chunks * CHUNK_SIZE))
         {
-            activeMenu->tail->next = item;
-            item->prev = activeMenu->tail;
-            item->next = NULL;
-            activeMenu->tail = item;
+            activeMenu->chunks++;
+            printf("increasing menu size to %d chunks\n", activeMenu->chunks);
+            activeMenu->items = realloc(activeMenu->items, CHUNK_SIZE * sizeof(menuItem_t *) * activeMenu->chunks);
         }
-        else // first item
-        {
-            activeMenu->head = item;
-            activeMenu->tail = item;
-            activeMenu->current = activeMenu->head;
-            activeMenu->current->prev = NULL;
-            activeMenu->current->next = NULL;
-        }
+
+        activeMenu->items[activeMenu->numItems] = item;
+        activeMenu->numItems++;
 
         return 1;
     }
@@ -83,15 +80,23 @@ int menuAppendItem(menuItem_t *item)
 // Remove active item and sets previous item as the new active.
 int menuRemoveActiveItem()
 {
-    if(activeMenu->current != NULL)
-    {
-        menuItem_t *prev = activeMenu->current->prev;
-        menuItem_t *next = activeMenu->current->next;
-        free(activeMenu->current);
-        activeMenu->current = prev;
-        if(activeMenu->current)
-            activeMenu->current->next = next;
+    printf("menuRemoveActiveItem()\n");
+    int i;
 
+    if(activeMenu->numItems > 0)
+    {
+        free(activeMenu->items[activeMenu->currentItem]);
+        activeMenu->numItems--;
+
+        // shift up items after curentItem.
+        for(i = activeMenu->currentItem; i < activeMenu->numItems; i++)
+        {
+            activeMenu->items[i] = activeMenu->items[i+1];
+        }
+
+        if(activeMenu->currentItem > 0)
+            activeMenu->currentItem--;
+        
         return 1;
     }
     else
@@ -100,31 +105,44 @@ int menuRemoveActiveItem()
 
 int menuRemoveAllItems()
 {
-    menuItem_t *node = activeMenu->head;
-    
-    while(node)
+    printf("menuRemoveAllItems()\n");
+    int i;
+
+    for(i = 0; i < activeMenu->numItems; i++)
     {
-        menuItem_t *next = node->next;
-        if(node->text)
-            free(node->text);
-        
-        free(node);
-        node = next;
+        menuItem_t *item = activeMenu->items[i];
+
+        if(item->text)
+            free(item->text);
     }
 
-    activeMenu->head = NULL;
-    activeMenu->current = NULL;
+    if(activeMenu->identifier == CHEATMENU && activeMenu->items)
+        free(activeMenu->items[0]);
+
+    activeMenu->currentItem = 0;
+    activeMenu->numItems = 0;
+
     return 1;
 }
 
 int menuSetActiveItem(menuItem_t *item)
 {
+    printf("menuSetActiveItem()\n");
+    int i = 0;
     if(!item)
         return 0;
 
-    activeMenu->current = item;
+    for(i = 0; i < activeMenu->numItems; i++)
+    {
+        if(activeMenu->items[i] == item)
+        {
+            activeMenu->currentItem = i;
+            return 1;
+        }
+    }
 
-    return 1;
+    // didn't find the item
+    return 0;
 }
 
 menuID_t menuGetActive()
@@ -139,15 +157,14 @@ int menuSetActive(menuID_t id)
 
     activeMenu = &menues[id];
 
-    if(id == CHEATMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[GAMEMENU].current->text) != 0)) // Refresh cheat menu if a new game was chosen
+    if(id == CHEATMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text) != 0)) // Refresh cheat menu if a new game was chosen
     {
         menuRemoveAllItems();
-        activeMenu->text = menues[GAMEMENU].current->text;
-        //activeMenu->game = cheatsLoadCheatMenu(menues[GAMEMENU].current->text);
-        activeMenu->game = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].current->extra);
+        activeMenu->text = menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text;
+        activeMenu->game = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
     }
-
-    else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].current->text) != 0)) // Refresh code menu if a new cheat was chosen
+/*
+    else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text) != 0)) // Refresh code menu if a new cheat was chosen
     {
         if(menues[CHEATMENU].current->type == NORMAL)
         {
@@ -161,7 +178,7 @@ int menuSetActive(menuID_t id)
             // TODO: Open a folder containing cheats under the header. Would require creating closed folders beforehand.
         }
     }
-    
+   */ 
     else if(id == BOOTMENU)
     {
         const char **paths;
@@ -202,9 +219,9 @@ int menuSetActive(menuID_t id)
 
 int menuUp()
 {
-    if(activeMenu->current && activeMenu->current->prev)
+    if(activeMenu->currentItem > 0)
     {
-        activeMenu->current = activeMenu->current->prev;
+        activeMenu->currentItem--;
         return 1;
     }
     else
@@ -213,67 +230,93 @@ int menuUp()
 
 int menuDown()
 {
-    if(activeMenu->current && activeMenu->current->next)
+    if(activeMenu->numItems > 0)
     {
-        activeMenu->current = activeMenu->current->next;
-        return 1;
+        if(activeMenu->currentItem < activeMenu->numItems - 1)
+        {
+            activeMenu->currentItem++;
+            return 1;
+        }
     }
-    else
-        return 0;
+
+    return 0;
 }
 
 int menuUpAlpha()
 {
-    if(activeMenu->current && activeMenu->current->prev)
+    int idx;
+    char firstChar;
+
+    if(activeMenu->currentItem > 0)
     {
-        menuItem_t *item = activeMenu->current->prev;
-        activeMenu->current = item;
-        
-        char firstChar = activeMenu->current->text[0];
-        
-        while(item->prev && (item->prev->text[0] == firstChar))
-            item = item->prev;
-            
-        activeMenu->current = item;
+        activeMenu->currentItem--;
+        idx = activeMenu->currentItem;
+
+        firstChar = activeMenu->items[idx]->text[0];
+
+        while(idx > 0 && (activeMenu->items[idx - 1]->text[0] == firstChar))
+            idx--;
+
+        activeMenu->currentItem = idx;
         return 1;
     }
-    
+
+
     return 0;
 }
 
 int menuDownAlpha()
 {
-    if(activeMenu->current && activeMenu->current->next)
+    int idx;
+    char firstChar;
+
+    if(activeMenu->numItems > 0)
     {
-        char firstChar = activeMenu->current->text[0];
-        menuItem_t *item = activeMenu->current;
-        
-        while(item->next && (item->text[0] == firstChar))
-            item = item->next;
-        
-        activeMenu->current = item;
-        return 1;
+        if(activeMenu->currentItem < activeMenu->numItems - 1)
+        {
+            activeMenu->currentItem++;
+            idx = activeMenu->currentItem;
+
+            firstChar = activeMenu->items[idx]->text[0];
+
+            while(idx < (activeMenu->numItems - 1) && (activeMenu->items[idx]->text[0] == firstChar))
+                idx++;
+
+            activeMenu->currentItem = idx;
+            return 1;
+        }
     }
-    
+
     return 0;
 }
 
 void menuToggleItem()
 {
-    if(activeMenu->identifier == CHEATMENU && activeMenu->current && ((cheatsCheat_t *) activeMenu->current->extra)->type != CHEATHEADER)
+    void *extra;
+    char *text;
+    menutype_t type;
+
+    if(activeMenu->numItems > 0)
     {
-        cheatsSetActiveGame(activeMenu->game);
-        cheatsToggleCheat((cheatsCheat_t *) activeMenu->current->extra);
-    }
-    
-    if(activeMenu->identifier == BOOTMENU)
-    {
-        startgameExecute(activeMenu->current->text);
-    }
-    
-    if(activeMenu->identifier == SAVEMENU && activeMenu->current->type != HEADER)
-    {
-        savesCopySavePrompt((gameSave_t *) activeMenu->current->extra);
+        extra = activeMenu->items[activeMenu->currentItem]->extra;
+        text = activeMenu->items[activeMenu->currentItem]->text;
+        type = activeMenu->items[activeMenu->currentItem]->type;
+
+        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type != CHEATHEADER)
+        {
+            cheatsSetActiveGame(activeMenu->game);
+            cheatsToggleCheat((cheatsCheat_t *) extra);
+        }
+        
+        if(activeMenu->identifier == BOOTMENU)
+        {
+            startgameExecute(text);
+        }
+        
+        if(activeMenu->identifier == SAVEMENU && type != HEADER)
+        {
+            savesCopySavePrompt((gameSave_t *) extra);
+        }
     }
 }
 
@@ -282,17 +325,19 @@ void drawMenuItems()
     int yItems = 14;
     int yAbove = 7;
     int y = 76;
-    menuItem_t *item = activeMenu->current;
+    int idx = activeMenu->currentItem;
 
-    while(yAbove-- > 0 && item && item->prev)
-        item = item->prev;
+    while(yAbove-- > 0 && idx > 0)
+        idx--;
     
     /* Render visible items */
     int i;
     for(i = 0; i < yItems; ++i)
     {
-        if(item != NULL)
+        if(idx < activeMenu->numItems)
         {
+            menuItem_t *item = activeMenu->items[idx];
+
             if(item->type == NORMAL)
             {
                 if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
@@ -307,17 +352,23 @@ void drawMenuItems()
                 graphicsDrawText(50, y, item->text, GREEN);
             }
 
-            if(item == activeMenu->current)
+            if(idx == activeMenu->currentItem)
                 graphicsDrawPointer(28, y+5);
 
             y += 22;
-            item = item->next;
+            idx++;
         }
     }
 }
 
+char hud[1024];
+
 int menuRender()
 {
+    snprintf(hud, 1024, "identifier = %d\ncurrentItem = %d\nnumItems = %d\nchunks = %d", activeMenu->identifier, activeMenu->currentItem, activeMenu->numItems, activeMenu->chunks);
+
+    graphicsDrawText(425, 100, hud, WHITE);
+
     if(activeMenu->identifier == MAINMENU)
     {
         return 1;
