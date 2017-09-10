@@ -8,7 +8,7 @@
 
 #include "cheats.h"
 
-// Open TXT cheat database. Returns cheat data structure.
+// Open TXT cheat database. Returns cheat database structure.
 cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead);
 // Save internal cheat database to TXT cheat database.
 int textCheatsSave(const char *path);

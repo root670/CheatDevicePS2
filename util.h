@@ -6,6 +6,32 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#define READ_8(address) \
+*((unsigned char *)address)
+
+#define READ_16(address) ( \
+*((unsigned char *)address + 0) | \
+(*((unsigned char *)address + 1) << 8))
+
+#define READ_32(address) ( \
+(*((unsigned char *)address + 0) << 0) | \
+(*((unsigned char *)address + 1) << 8) | \
+(*((unsigned char *)address + 2) << 16) | \
+(*((unsigned char *)address + 3) << 24))
+
+#define WRITE_8(address, value) \
+*((unsigned char *)address) = (value & 0xff);
+
+#define WRITE_16(address, value) \
+*((unsigned char *)address + 0) = (value & 0x00ff); \
+*((unsigned char *)address + 1) = (value & 0xff00) >> 8;
+
+#define WRITE_32(address, value) \
+*((unsigned char *)address + 0) = (value & 0x000000ff); \
+*((unsigned char *)address + 1) = (value & 0x0000ff00) >> 8; \
+*((unsigned char *)address + 2) = (value & 0x00ff0000) >> 16; \
+*((unsigned char *)address + 3) = (value & 0xff000000) >> 24;
+
 // Reset the IOP and load initial modules.
 void loadModules();
 

@@ -8,7 +8,7 @@
 
 #include "cheats.h"
 
-// Open CDB cheat database. Returns number of games in cheat database.
+// Open CDB cheat database. Returns cheat database structure.
 cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames);
 // Save internal cheat database to CDB cheat database.
 int cdbSave(const char *path);

@@ -166,8 +166,7 @@ int cheatsOpenDatabase(const char* path)
     {
         char error[255];
         sprintf(error, "Unsupported cheat database filetype: \"%s\"!", getFileExtension(path));
-        char *items[] = {"OK"};
-        displayPromptMenu(items, 1, error);
+        displayError(error);
 
         // TODO: Use default empty database
         numGames = 0;
