@@ -105,7 +105,6 @@ int menuRemoveActiveItem()
 
 int menuRemoveAllItems()
 {
-    printf("menuRemoveAllItems()\n");
     int i;
 
     for(i = 0; i < activeMenu->numItems; i++)

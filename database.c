@@ -146,7 +146,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                     game->numCheats--;
                 }
 
-                dbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
+                cdbCheatsBuffer += cheat->numCodeLines * sizeof(u64);
             }
             else
             {
