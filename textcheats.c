@@ -33,7 +33,6 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     char *end;
     char *endPtr;
     char *buff;
-    char line[255];
     unsigned int lineLen;
     size_t txtLen;
 
@@ -49,7 +48,7 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     txtLen = ftell(txtFile);
     fseek(txtFile, 0, SEEK_SET);
     
-    buff = malloc(txtLen);
+    buff = calloc(txtLen + 1, 1);
     text = buff;
     endPtr = text + txtLen;
     fread(text, 1, txtLen, txtFile);
@@ -77,13 +76,12 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
         
         if(lineLen)
         {
-            strncpy(line, text, 255);
-            if(line[lineLen-1] == '\r')
-                line[lineLen-1] = '\0';
-            
-            line[lineLen] = '\0';
-            
-            parseLine(line);
+            // remove trailing whitespace;
+            char *c;
+            for(c = text + lineLen; isspace(*c); --c)
+                *c = '\0';
+
+            parseLine(text);
         }
         
         text += lineLen + 1;
@@ -112,10 +110,6 @@ static void countTokens(const char *text, size_t length, int *numGames, int *num
     unsigned int tokenOffset = 0;
     if(!text || !numGames || !numCheats || !numCodeLines)
         return;
-
-    *numGames = 0;
-    *numCheats = 0;
-    *numCodeLines = 0;
         
     while(text < endPtr)
     {
@@ -130,10 +124,11 @@ static void countTokens(const char *text, size_t length, int *numGames, int *num
         if(lineLen)
         {
             strncpy(line, text, 255);
-            if(line[lineLen-1] == '\r')
-                line[lineLen-1] = '\0';
-            
-            line[lineLen] = '\0';
+
+            // remove trailing whitespace;
+            char *c;
+            for(c = line + lineLen; isspace(*c); --c)
+                *c = '\0';
             
             token = getToken(line);
             tokens[tokenOffset++] = token;
@@ -192,7 +187,7 @@ static int getToken(const char *line)
     
     else
         ret = TOKEN_CHEAT;
-    
+
     return ret;
 }
 

@@ -483,6 +483,9 @@ void readEnableCodes(cheatsCheat_t *enableCheats)
     u32 addr, val;
     cheatsCheat_t *cheat = enableCheats;
 
+    if(!cheat)
+        return;
+
     printf("readEnableCodes(%x)\n", enableCheats);
 
     for(i = 0; i < cheat->numCodeLines; ++i)
