@@ -29,6 +29,9 @@ int initMenus()
             menues[i].chunks = 1;
         }
 
+        menues[GAMEMENU].isSorted = 1;
+        menues[SAVEMENU].isSorted = 1;
+
         activeMenu = &menues[GAMEMENU];
         initialized = 1;
         return 1;
@@ -37,7 +40,6 @@ int initMenus()
     return 0;
 }
 
-// free all menu items. free all menustates
 int killMenus()
 {
     int i;
@@ -57,7 +59,7 @@ int killMenus()
     return 0;
 }
 
-int menuAppendItem(menuItem_t *item)
+int menuInsertItem(menuItem_t *item)
 {
     if(initialized)
     {
@@ -68,7 +70,29 @@ int menuAppendItem(menuItem_t *item)
             activeMenu->items = realloc(activeMenu->items, CHUNK_SIZE * sizeof(menuItem_t *) * activeMenu->chunks);
         }
 
-        activeMenu->items[activeMenu->numItems] = item;
+        if(activeMenu->numItems == 0 || !activeMenu->isSorted)
+        {
+            activeMenu->items[activeMenu->numItems] = item;
+        }
+        else
+        {
+            // Insert item while maintaining alphabetical order
+            int i;
+            for(i = 0; i < activeMenu->numItems; i++)
+            {
+                if(strcmp(activeMenu->items[i]->text, item->text) > 0)
+                    break;
+            }
+
+            if(i < activeMenu->numItems)
+            {
+                // Shift items down by 1 position
+                memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->numItems - i));
+            }
+
+            activeMenu->items[i] = item;
+        }
+
         activeMenu->numItems++;
 
         return 1;
@@ -80,18 +104,20 @@ int menuAppendItem(menuItem_t *item)
 // Remove active item and sets previous item as the new active.
 int menuRemoveActiveItem()
 {
-    printf("menuRemoveActiveItem()\n");
     int i;
 
     if(activeMenu->numItems > 0)
     {
+        if(activeMenu->items[activeMenu->currentItem]->text)
+            free(activeMenu->items[activeMenu->currentItem]->text);
+        
         free(activeMenu->items[activeMenu->currentItem]);
         activeMenu->numItems--;
 
-        // shift up items after curentItem.
-        for(i = activeMenu->currentItem; i < activeMenu->numItems; i++)
+        if(activeMenu->numItems > 0)
         {
-            activeMenu->items[i] = activeMenu->items[i+1];
+            // Shift up items after curentItem.
+            memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * activeMenu->numItems);
         }
 
         if(activeMenu->currentItem > 0)
@@ -144,6 +170,54 @@ int menuSetActiveItem(menuItem_t *item)
     return 0;
 }
 
+int menuRenameActiveItem(const char *str)
+{
+    #if 0
+    menuItem_t *node;
+    const char * originalStr;
+
+    if(!activeMenu)
+        return 0;
+
+    node = activeMenu->items[activeMenu->currentItem];
+    originalStr = node->text;
+
+    // Insert item while maintaining alphabetical order
+    int i;
+    for(i = 0; i < activeMenu->numItems; i++)
+    {
+        if(strcmp(activeMenu->items[i]->text, str) > 0)
+            break;
+    }
+
+    if(i < activeMenu->numItems)
+    {
+        // Shift items down by 1 position
+        memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->numItems - i));
+    }
+
+    activeMenu->items[i] = node;
+    activeMenu->currentItem = i;
+
+    free(node->text);
+    node->text = calloc(1, strlen(str) + 1);
+    strcpy(node->text, str);
+    #endif
+
+    return 1;
+}
+
+void *menuGetActiveItemExtra()
+{
+    if(!activeMenu)
+        return NULL;
+
+    if(!activeMenu->items[activeMenu->currentItem])
+        return NULL;
+
+    return activeMenu->items[activeMenu->currentItem]->extra;
+}
+
 menuID_t menuGetActive()
 {
     return activeMenu->identifier;
@@ -192,14 +266,14 @@ int menuSetActive(menuID_t id)
         menuItem_t *discBoot = calloc(1, sizeof(menuItem_t));
         discBoot->type = NORMAL;
         discBoot->text = strdup("==Disc==");
-        menuAppendItem(discBoot);
+        menuInsertItem(discBoot);
         
         for(i = 0; i < numPaths; i++)
         {
             menuItem_t *item = calloc(1, sizeof(menuItem_t));
             item->type = NORMAL;
             item->text = strdup(paths[i]);
-            menuAppendItem(item);
+            menuInsertItem(item);
         }
     }
     

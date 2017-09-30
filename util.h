@@ -42,6 +42,10 @@ void handlePad();
 int displayPromptMenu(char **items, int numItems, const char *header);
 // Draw an error message in a prompt box.
 int displayError(const char *error);
+// Draw menu of options related to current menu
+void displayContextMenu(int menuID);
+// Get user input for a string
+int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt);
 
 // Replace illegal (reserved) characters in str with replacement. valid must point to a char array as large as str.
 void replaceIllegalChars(const char *str, char* valid, char replacement);

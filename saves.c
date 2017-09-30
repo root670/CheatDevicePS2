@@ -408,7 +408,7 @@ void savesLoadSaveMenu(device_t dev)
         menuItem_t *item = calloc(1, sizeof(menuItem_t));
         item->type = HEADER;
         item->text = strdup("Unable to access device.\n");
-        menuAppendItem(item);
+        menuInsertItem(item);
         return;
     }
     
@@ -420,7 +420,7 @@ void savesLoadSaveMenu(device_t dev)
         menuItem_t *item = calloc(1, sizeof(menuItem_t));
         item->type = HEADER;
         item->text = strdup("No saves on this device\n");
-        menuAppendItem(item);
+        menuInsertItem(item);
         return;
     }
     
@@ -430,7 +430,7 @@ void savesLoadSaveMenu(device_t dev)
         item->type = NORMAL;
         item->text = strdup(save->name);
         item->extra = save;
-        menuAppendItem(item);
+        menuInsertItem(item);
         
         gameSave_t *next = save->next;
         save = next;

@@ -70,7 +70,11 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game);
 int cheatsLoadCodeMenu(const char* game, const char* cheat);
 
 // Create a new game and add it to the game list
-int cheatsAddGame(const char* title);
+int cheatsAddGame();
+// Rename currently selected game from game list
+int cheatsRenameGame();
+// Delete currently selected game from the game list
+int cheatsDeleteGame();
 // TODO: Add a cheat to a game's cheat list
 int cheatsAddCheat(const char *title, cheatsCheat_t *cheat);
 
@@ -80,6 +84,8 @@ void cheatsDrawStats();
 int cheatsToggleCheat(cheatsCheat_t *cheat);
 // Check if a game is the active game.
 int cheatsIsActiveGame(const cheatsGame_t *game);
+// Disable all cheats and deactivate active game
+int cheatsDeactivateGame(cheatsGame_t *game);
 // Set the active game. If any cheats were enabled for the previously active
 // game, they will all be disabled.
 int cheatsSetActiveGame(cheatsGame_t *game);
