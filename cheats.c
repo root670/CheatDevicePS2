@@ -68,6 +68,29 @@ int killCheats()
     return 1;
 }
 
+static void populateGameHashTable()
+{
+    if(gameHashes != NULL)
+        hashDestroyTable(gameHashes);
+
+    gameHashes = hashNewTable(numGames);
+
+    cheatsGame_t *game = gamesHead;
+    
+    while(game != NULL)
+    {
+        int titleLen = strlen(game->title);
+
+        if(titleLen > 0)
+        {
+            unsigned int hash = hashFunction(game->title, titleLen);
+            hashAdd(gameHashes, game, hash);
+        }
+
+        game = game->next;
+    }
+}
+
 static void populateCheatHashTable()
 {
     if(!cheatHashes)
@@ -265,10 +288,18 @@ int cheatsAddGame()
         return 0;
     }
 
-    while(node++->next);
+    unsigned int hash = hashFunction(newGame->title, strlen(newGame->title));
+    if(hashFind(gameHashes, hash))
+    {
+        displayError("Game title already exists!");
+        free(newGame);
+        return 0;
+    }
+
+    while(node->next)
+        node++;
 
     node->next = newGame;
-
     numGames++;
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
@@ -280,22 +311,39 @@ int cheatsAddGame()
     menuInsertItem(item);
     menuSetActiveItem(item);
 
+    populateGameHashTable();
+
     return 1;
 }
 
 int cheatsRenameGame()
 {
+    char title[80];
+
     if(menuGetActive() != GAMEMENU)
         return 0;
 
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
-
-    if(displayInputMenu(selectedGame->title, 80, selectedGame->title, "Enter Game Title") == 0)
+    
+    if(displayInputMenu(title, 80, selectedGame->title, "Enter Game Title") == 0)
         return 0;
 
-    menuRenameActiveItem(selectedGame->title);
+    unsigned int hash = hashFunction(title, strlen(title));
+    
+    if(hashFind(gameHashes, hash))
+    {
+        displayError("Game title already exists!");
+        return 0;
+    }
+    else
+    {
+        strncpy(selectedGame->title, title, 80);
+        menuRenameActiveItem(selectedGame->title);
 
-    return 1;
+        populateGameHashTable();
+
+        return 1;
+    }
 }
 
 int cheatsDeleteGame()
@@ -313,6 +361,8 @@ int cheatsDeleteGame()
     menuRemoveActiveItem();
 
     numGames--;
+
+    populateGameHashTable();
 
     return 1;
 }
@@ -415,23 +465,26 @@ int cheatsDeactivateGame(cheatsGame_t *game)
 {
     if(game)
     {
-        cheatsCheat_t *cheat = activeGame->cheats;
+        cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
             cheat->enabled = 0;
             cheat = cheat->next;
         }
 
-        numEnabledCheats = 0;
-        numEnabledCodes = 0;
+        if(game == activeGame)
+        {
+            numEnabledCheats = 0;
+            numEnabledCodes = 0;
+        }
     }
 }
 
 int cheatsSetActiveGame(cheatsGame_t *game)
 {
     /* Disable all active cheats if a new game was selected */
-    if(activeGame != NULL && game != activeGame)
-        cheatsDeactivateGame(game);
+    if(game != activeGame)
+        cheatsDeactivateGame(activeGame);
 
     activeGame = game;
 

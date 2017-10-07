@@ -189,6 +189,16 @@ int menuRenameActiveItem(const char *str)
             break;
     }
 
+    if(abs(i - activeMenu->currentItem) == 1)
+    {
+        // Rename in place
+        free(node->text);
+        node->text = calloc(1, strlen(str) + 1);
+        strcpy(node->text, str);
+
+        return 1;
+    }
+
     if(i < activeMenu->currentItem)
     {
         // Shift items down

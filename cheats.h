@@ -84,7 +84,7 @@ void cheatsDrawStats();
 int cheatsToggleCheat(cheatsCheat_t *cheat);
 // Check if a game is the active game.
 int cheatsIsActiveGame(const cheatsGame_t *game);
-// Disable all cheats and deactivate active game
+// Disable all cheats and deactivate game
 int cheatsDeactivateGame(cheatsGame_t *game);
 // Set the active game. If any cheats were enabled for the previously active
 // game, they will all be disabled.
