@@ -152,7 +152,6 @@ int menuRemoveAllItems()
 
 int menuSetActiveItem(menuItem_t *item)
 {
-    printf("menuSetActiveItem()\n");
     int i = 0;
     if(!item)
         return 0;

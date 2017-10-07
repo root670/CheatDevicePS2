@@ -240,7 +240,7 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         cheatsCheat_t *cheat = game->cheats;
         menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
         menuItem_t *item = items;
-        printf("%d cheats\n", game->numCheats);
+
         while(cheat != NULL)
         {
             if(!cheat->skip)
@@ -256,10 +256,6 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
                 item->extra = (void *)cheat;
 
                 menuInsertItem(item);
-            }
-            else
-            {
-                printf("SKIPPING A CHEAT!!!\n");
             }
 
             cheat = cheat->next;
