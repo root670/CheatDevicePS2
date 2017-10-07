@@ -172,7 +172,6 @@ int menuSetActiveItem(menuItem_t *item)
 
 int menuRenameActiveItem(const char *str)
 {
-    #if 0
     menuItem_t *node;
     const char * originalStr;
 
@@ -182,7 +181,7 @@ int menuRenameActiveItem(const char *str)
     node = activeMenu->items[activeMenu->currentItem];
     originalStr = node->text;
 
-    // Insert item while maintaining alphabetical order
+    // Reposition item while maintaining alphabetical order
     int i;
     for(i = 0; i < activeMenu->numItems; i++)
     {
@@ -190,10 +189,21 @@ int menuRenameActiveItem(const char *str)
             break;
     }
 
-    if(i < activeMenu->numItems)
+    if(i < activeMenu->currentItem)
     {
-        // Shift items down by 1 position
-        memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->numItems - i));
+        // Shift items down
+        memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->currentItem - i));
+    }
+    else if(i > activeMenu->currentItem)
+    {
+        // Shift items up
+        memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * (i - activeMenu->currentItem - 1));
+    }
+
+    if(i == activeMenu->numItems)
+    {
+        // Renamed item went to end of list
+        i--;
     }
 
     activeMenu->items[i] = node;
@@ -202,7 +212,6 @@ int menuRenameActiveItem(const char *str)
     free(node->text);
     node->text = calloc(1, strlen(str) + 1);
     strcpy(node->text, str);
-    #endif
 
     return 1;
 }
