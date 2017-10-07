@@ -644,6 +644,12 @@ int displayPromptMenu(char **items, int numItems, const char *header)
             else
                 ++selectedItem;
         }
+
+        else if(pad_pressed & PAD_CIRCLE)
+        {
+            // Exit menu
+            return -1;
+        }
     } while(!(pad_pressed & PAD_CROSS));
     
     return selectedItem;

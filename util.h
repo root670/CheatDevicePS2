@@ -38,7 +38,8 @@ void loadModules();
 // Change the menu state in response to gamepad input.
 void handlePad();
 
-// Draw a simple text menu, handle gamepad input, then return the index of the chosen menu item.
+// Draw a simple text menu and handle gamepad input.
+// Returns the index of the chosen menu item or -1 if the user exited the menu by pressing circle.
 int displayPromptMenu(char **items, int numItems, const char *header);
 // Draw an error message in a prompt box.
 int displayError(const char *error);
