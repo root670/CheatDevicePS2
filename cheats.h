@@ -73,10 +73,15 @@ int cheatsLoadCodeMenu(const char* game, const char* cheat);
 int cheatsAddGame();
 // Rename currently selected game from game list
 int cheatsRenameGame();
-// Delete currently selected game from the game list
+// Delete currently selected game from game list
 int cheatsDeleteGame();
+
 // TODO: Add a cheat to a game's cheat list
-int cheatsAddCheat(const char *title, cheatsCheat_t *cheat);
+int cheatsAddCheat();
+// Rename currently selected cheat from cheat list
+int cheatsRenameCheat();
+// Delect currently selected cheat from cheat list
+int cheatsDeleteCheat();
 
 // Draw helper text.
 void cheatsDrawStats();

@@ -21,7 +21,7 @@ typedef struct menuState {
     menuID_t identifier;
     int isSorted;
     char *text;
-    cheatsGame_t *game; // Optional: Cheat menu uses this to associate entry with a game.
+    void *extra; // Optional: Associate additional data with the menu.
     
     menuItem_t **items;
     unsigned int currentItem;
@@ -34,6 +34,7 @@ int killMenus();
 
 int menuSetActive(menuID_t id);
 menuID_t menuGetActive();
+void *menuGetActiveExtra();
 
 int menuInsertItem(menuItem_t *item);
 int menuRemoveActiveItem();

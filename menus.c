@@ -104,20 +104,20 @@ int menuInsertItem(menuItem_t *item)
 // Remove active item and sets previous item as the new active.
 int menuRemoveActiveItem()
 {
-    int i;
-
     if(activeMenu->numItems > 0)
     {
         if(activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
-        free(activeMenu->items[activeMenu->currentItem]);
+        if(activeMenu->identifier != GAMEMENU)
+            free(activeMenu->items[activeMenu->currentItem]);
+        
         activeMenu->numItems--;
 
         if(activeMenu->numItems > 0)
         {
             // Shift up items after curentItem.
-            memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * activeMenu->numItems);
+            memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * (activeMenu->numItems - activeMenu->currentItem));
         }
 
         if(activeMenu->currentItem > 0)
@@ -172,51 +172,52 @@ int menuSetActiveItem(menuItem_t *item)
 int menuRenameActiveItem(const char *str)
 {
     menuItem_t *node;
-    const char * originalStr;
 
     if(!activeMenu)
         return 0;
 
     node = activeMenu->items[activeMenu->currentItem];
-    originalStr = node->text;
 
-    // Reposition item while maintaining alphabetical order
-    int i;
-    for(i = 0; i < activeMenu->numItems; i++)
+    if(activeMenu->isSorted)
     {
-        if(strcmp(activeMenu->items[i]->text, str) > 0)
-            break;
-    }
+        // Reposition item while maintaining alphabetical order
+        int i;
+        for(i = 0; i < activeMenu->numItems; i++)
+        {
+            if(strcmp(activeMenu->items[i]->text, str) > 0)
+                break;
+        }
 
-    if(abs(i - activeMenu->currentItem) == 1)
-    {
-        // Rename in place
-        free(node->text);
-        node->text = calloc(1, strlen(str) + 1);
-        strcpy(node->text, str);
+        if(abs(i - activeMenu->currentItem) == 1)
+        {
+            // Rename in place
+            free(node->text);
+            node->text = calloc(1, strlen(str) + 1);
+            strcpy(node->text, str);
 
-        return 1;
-    }
+            return 1;
+        }
 
-    if(i < activeMenu->currentItem)
-    {
-        // Shift items down
-        memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->currentItem - i));
-    }
-    else if(i > activeMenu->currentItem)
-    {
-        // Shift items up
-        memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * (i - activeMenu->currentItem - 1));
-    }
+        if(i < activeMenu->currentItem)
+        {
+            // Shift items down
+            memmove(&activeMenu->items[i + 1], &activeMenu->items[i], sizeof(menuItem_t *) * (activeMenu->currentItem - i));
+        }
+        else if(i > activeMenu->currentItem)
+        {
+            // Shift items up
+            memmove(&activeMenu->items[activeMenu->currentItem], &activeMenu->items[activeMenu->currentItem + 1], sizeof(menuItem_t *) * (i - activeMenu->currentItem - 1));
+        }
 
-    if(i == activeMenu->numItems)
-    {
-        // Renamed item went to end of list
-        i--;
-    }
+        if(i == activeMenu->numItems)
+        {
+            // Renamed item went to end of list
+            i--;
+        }
 
-    activeMenu->items[i] = node;
-    activeMenu->currentItem = i;
+        activeMenu->items[i] = node;
+        activeMenu->currentItem = i;
+    }
 
     free(node->text);
     node->text = calloc(1, strlen(str) + 1);
@@ -241,6 +242,11 @@ menuID_t menuGetActive()
     return activeMenu->identifier;
 }
 
+void *menuGetActiveExtra()
+{
+    return activeMenu->extra;
+}
+
 int menuSetActive(menuID_t id)
 {
     if( id > NUMMENUS-1 )
@@ -252,7 +258,7 @@ int menuSetActive(menuID_t id)
     {
         menuRemoveAllItems();
         activeMenu->text = menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text;
-        activeMenu->game = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
+        activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
     }
 /*
     else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text) != 0)) // Refresh code menu if a new cheat was chosen
@@ -395,7 +401,7 @@ void menuToggleItem()
 
         if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type != CHEATHEADER)
         {
-            cheatsSetActiveGame(activeMenu->game);
+            cheatsSetActiveGame(activeMenu->extra);
             cheatsToggleCheat((cheatsCheat_t *) extra);
         }
         

@@ -375,6 +375,20 @@ void displayContextMenu(int menuID)
     {
         char *items[] = {"Add Cheat", "Rename Cheat", "Edit Code Lines", "Delete Cheat", "Cancel"};
         ret = displayPromptMenu(items, 5, "Cheat Options");
+
+        if(ret == 0)
+            cheatsAddCheat();
+        else if(ret == 1)
+            cheatsRenameCheat();
+        else if(ret == 3)
+        {
+            char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete the cheat?");
+
+            if(choice == 0)
+                cheatsDeleteGame();
+        }
+
     }
 
     else if(menuID == CODEMENU)

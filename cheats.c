@@ -93,8 +93,10 @@ static void populateGameHashTable()
 
 static void populateCheatHashTable()
 {
-    if(!cheatHashes)
-        return;
+    if(cheatHashes != NULL)
+        hashDestroyTable(cheatHashes);
+
+    cheatHashes = hashNewTable(numCheats);
 
     cheatsCheat_t *cheat = activeGame->cheats;
 
@@ -133,7 +135,6 @@ int cheatsLoadHistory()
         if(lastGameMenu != NULL)
         {
             cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
-            cheatHashes = hashNewTable(activeGame->numCheats);
             populateCheatHashTable();
 
             for(i = 0; i < historyLength - 4; i+= 4)
@@ -293,7 +294,7 @@ int cheatsAddGame()
     }
 
     while(node->next)
-        node++;
+        node = node->next;
 
     node->next = newGame;
     numGames++;
@@ -350,6 +351,11 @@ int cheatsDeleteGame()
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
     cheatsDeactivateGame(selectedGame);
 
+    if(selectedGame == gamesHead)
+    {
+        gamesHead = selectedGame->next;
+    }
+
     // With binary databases, the game structs are allocated as one chunk,
     // so we will use a NULL title to denotate a deleted game.
     selectedGame->title[0] = '\0';
@@ -363,7 +369,74 @@ int cheatsDeleteGame()
     return 1;
 }
 
-int cheatsAddCheat(const char *title, cheatsCheat_t *cheat);
+int cheatsAddCheat()
+{
+    cheatsGame_t *game = menuGetActiveExtra();
+    cheatsCheat_t *newCheat = calloc(1, sizeof(cheatsCheat_t));
+    if(!newCheat)
+        return 0;
+
+    cheatsCheat_t *node = game->cheats;
+
+    if(displayInputMenu(newCheat->title, 80, NULL, "Enter Cheat Title") == 0)
+    {
+        free(newCheat);
+        return 0;
+    }
+
+    if(game->cheats == NULL)
+    {
+        game->cheats = newCheat;
+    }
+    else
+    {
+        cheatsCheat_t *node = game->cheats;
+
+        while(node->next)
+            node = node->next;
+
+        node->next = newCheat;
+    }
+
+    game->numCheats++;
+    numCheats++;
+
+    menuItem_t *item = calloc(1, sizeof(menuItem_t));
+    item->type = NORMAL;
+    item->text = calloc(1, strlen(newCheat->title) + 1);
+    item->extra = newCheat;
+    strcpy(item->text, newCheat->title);
+
+    menuInsertItem(item);
+    menuSetActiveItem(item);
+
+    node = game->cheats;
+
+    return 1;
+}
+
+int cheatsRenameCheat()
+{
+    char title[80];
+
+    if(menuGetActive() != CHEATMENU)
+        return 0;
+
+    cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
+    
+    if(displayInputMenu(title, 80, selectedCheat->title, "Enter Cheat Title") == 0)
+        return 0;
+
+    strncpy(selectedCheat->title, title, 80);
+    menuRenameActiveItem(selectedCheat->title);
+
+    return 1;
+}
+
+int cheatsDeleteCheat()
+{
+
+}
 
 int cheatsToggleCheat(cheatsCheat_t *cheat)
 {
