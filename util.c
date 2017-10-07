@@ -504,8 +504,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 return 0;
         }
 
-        else if(pad_pressed & PAD_CIRCLE)
+        else if(pad_pressed & PAD_R1)
         {
+            tmp[tmpLoc] = ' ';
             tmp[tmpLoc + 1] = '\0';
             tmpLoc++;
         }
