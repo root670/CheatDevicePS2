@@ -35,6 +35,9 @@ unsigned int hashFunction(void *key, int len)
     unsigned int h = 0;
     int i;
 
+    if(!key)
+        return 0;
+
     for (i = 0; i < len; i++)
     {
         h += p[i];
@@ -52,6 +55,9 @@ unsigned int hashFunction(void *key, int len)
 void *hashFind(hashTable_t *table, unsigned int hash)
 {
     unsigned int i;
+
+    if(!table)
+        return NULL;
 
     i = hash % table->size;
 

@@ -104,7 +104,7 @@ void loadModules()
 void handlePad()
 {
     u32 pad_rapid = 0;
-    static u32 old_pad = 0;
+    static u32 old_pad = 0xffff;
     static u32 pad_pressed;
     struct padButtonStatus padStat;
     int state;

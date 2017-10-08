@@ -75,6 +75,8 @@ int cheatsAddGame();
 int cheatsRenameGame();
 // Delete currently selected game from game list
 int cheatsDeleteGame();
+// Get number of games in the game list
+int cheatsGetNumGames();
 
 // Add a cheat to a game's cheat list
 int cheatsAddCheat();
@@ -82,6 +84,8 @@ int cheatsAddCheat();
 int cheatsRenameCheat();
 // Delect currently selected cheat from cheat list
 int cheatsDeleteCheat();
+// Get number of cheats in the cheat list
+int cheatsGetNumCheats();
 
 // Draw helper text.
 void cheatsDrawStats();

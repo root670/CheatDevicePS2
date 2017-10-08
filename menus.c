@@ -252,6 +252,9 @@ int menuSetActive(menuID_t id)
     if( id > NUMMENUS-1 )
         return 0;
 
+    if(id == CHEATMENU && cheatsGetNumGames() == 0)
+        return 0;
+
     activeMenu = &menues[id];
 
     if(id == CHEATMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text) != 0)) // Refresh cheat menu if a new game was chosen

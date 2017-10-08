@@ -23,9 +23,6 @@ int main(int argc, char *argv[])
         char error[255];
         sprintf(error, "Error loading cheat database \"%s\"!", settingsGetDatabasePath());
         displayError(error);
-
-        // Go back to OSD
-        LoadExecPS2("rom:OSDSYS", 0, NULL);
     }
     
     cheatsLoadGameMenu();

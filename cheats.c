@@ -16,8 +16,8 @@
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
 static cheatDatabaseType_t dbType;
-static hashTable_t *gameHashes;
-static hashTable_t *cheatHashes;
+static hashTable_t *gameHashes = NULL;
+static hashTable_t *cheatHashes = NULL;
 static FILE *historyFile;
 static int numGames = 0;
 static int numCheats = 0;
@@ -285,18 +285,26 @@ int cheatsAddGame()
         return 0;
     }
 
-    unsigned int hash = hashFunction(newGame->title, strlen(newGame->title));
-    if(hashFind(gameHashes, hash))
+    if(node == NULL)
     {
-        displayError("Game title already exists!");
-        free(newGame);
-        return 0;
+        gamesHead = newGame;
+    }
+    else
+    {
+        unsigned int hash = hashFunction(newGame->title, strlen(newGame->title));
+        if(hashFind(gameHashes, hash))
+        {
+            displayError("Game title already exists!");
+            free(newGame);
+            return 0;
+        }
+
+        while(node->next)
+            node = node->next;
+
+        node->next = newGame;
     }
 
-    while(node->next)
-        node = node->next;
-
-    node->next = newGame;
     numGames++;
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
@@ -367,6 +375,11 @@ int cheatsDeleteGame()
     populateGameHashTable();
 
     return 1;
+}
+
+int cheatsGetNumGames()
+{
+    return numGames;
 }
 
 int cheatsAddCheat()
@@ -450,6 +463,11 @@ int cheatsDeleteCheat()
     menuRemoveActiveItem();
 
     return 1;
+}
+
+int cheatsGetNumCheats()
+{
+    return numCheats;
 }
 
 int cheatsToggleCheat(cheatsCheat_t *cheat)
