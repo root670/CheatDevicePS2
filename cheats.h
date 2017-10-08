@@ -76,7 +76,7 @@ int cheatsRenameGame();
 // Delete currently selected game from game list
 int cheatsDeleteGame();
 
-// TODO: Add a cheat to a game's cheat list
+// Add a cheat to a game's cheat list
 int cheatsAddCheat();
 // Rename currently selected cheat from cheat list
 int cheatsRenameCheat();

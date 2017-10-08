@@ -386,7 +386,7 @@ void displayContextMenu(int menuID)
             int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete the cheat?");
 
             if(choice == 0)
-                cheatsDeleteGame();
+                cheatsDeleteCheat();
         }
 
     }

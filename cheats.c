@@ -435,7 +435,21 @@ int cheatsRenameCheat()
 
 int cheatsDeleteCheat()
 {
+    if(menuGetActive() != CHEATMENU)
+        return 0;
 
+    cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
+
+    if(selectedCheat->enabled)
+    {
+        cheatsToggleCheat(selectedCheat);
+    }
+
+    selectedCheat->skip = 1;
+    numCheats--;
+    menuRemoveActiveItem();
+
+    return 1;
 }
 
 int cheatsToggleCheat(cheatsCheat_t *cheat)
@@ -545,6 +559,7 @@ int cheatsDeactivateGame(cheatsGame_t *game)
         {
             numEnabledCheats = 0;
             numEnabledCodes = 0;
+            activeGame = NULL;
         }
     }
 }
