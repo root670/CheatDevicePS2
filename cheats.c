@@ -529,7 +529,7 @@ void cheatsDrawStats()
 
     if(activeMenu == GAMEMENU)
     {
-        if (x < 3000)
+        if (x < 2000)
             x+= 2;
         else
             x = 0;
@@ -562,7 +562,7 @@ int cheatsIsActiveGame(const cheatsGame_t *game)
     return game == activeGame;
 }
 
-int cheatsDeactivateGame(cheatsGame_t *game)
+void cheatsDeactivateGame(cheatsGame_t *game)
 {
     if(game)
     {
@@ -642,8 +642,6 @@ static void readCodes(cheatsCheat_t *cheats)
     int nextCodeCanBeHook = 1;
     cheatsCheat_t *cheat = cheats;
 
-    printf("readCodes(%x)\n", cheats);
-
     while(cheat)
     {
         if(cheat->enabled && !cheat->skip)
@@ -696,8 +694,6 @@ void readEnableCodes(cheatsCheat_t *enableCheats)
 
     if(!cheat)
         return;
-
-    printf("readEnableCodes(%x)\n", enableCheats);
 
     for(i = 0; i < cheat->numCodeLines; ++i)
     {

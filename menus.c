@@ -467,14 +467,8 @@ void drawMenuItems()
     }
 }
 
-char hud[1024];
-
 int menuRender()
 {
-    snprintf(hud, 1024, "identifier = %d\ncurrentItem = %d\nnumItems = %d\nchunks = %d", activeMenu->identifier, activeMenu->currentItem, activeMenu->numItems, activeMenu->chunks);
-
-    graphicsDrawText(425, 100, hud, WHITE);
-
     if(activeMenu->identifier == MAINMENU)
     {
         return 1;

@@ -604,7 +604,6 @@ int displayPromptMenu(char **items, int numItems, const char *header)
     int selectedItem = 0;
 
     float maxLength = 0;
-    int width = 0;
     
     if(!items || numItems <= 0 || !header)
         return 0;

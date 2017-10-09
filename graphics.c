@@ -380,7 +380,6 @@ int graphicsGetWidth(const char *str)
         return 0;
 
     char const *cptr = str;
-    char const *start = str;
     double lineWidth = 0;
     
     while(*cptr)
