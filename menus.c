@@ -425,7 +425,13 @@ void drawMenuItems()
     int yItems = 14;
     int yAbove = 7;
     int y = 76;
-    int idx = activeMenu->currentItem;
+    int idx;
+
+    /* Find top of viewport */
+    if((activeMenu->numItems - activeMenu->currentItem) >= yAbove)
+        idx = activeMenu->currentItem;
+    else
+        idx = activeMenu->numItems - yAbove;
 
     while(yAbove-- > 0 && idx > 0)
         idx--;
