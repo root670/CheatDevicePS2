@@ -109,7 +109,7 @@ int menuRemoveActiveItem()
         if(activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
-        if(activeMenu->identifier != GAMEMENU)
+        if(activeMenu->identifier != GAMEMENU || activeMenu->identifier != CHEATMENU)
             free(activeMenu->items[activeMenu->currentItem]);
         
         activeMenu->numItems--;
@@ -263,22 +263,19 @@ int menuSetActive(menuID_t id)
         activeMenu->text = menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text;
         activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
     }
-/*
     else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text) != 0)) // Refresh code menu if a new cheat was chosen
     {
-        if(menues[CHEATMENU].current->type == NORMAL)
+        if(menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->type == NORMAL)
         {
             menuRemoveAllItems();
-            activeMenu->text = menues[CHEATMENU].current->text;
-            // TODO: cheatsLoadCodeMenu(menues[GAMEMENU].current->text, menues[CHEATMENU].current->text);
+            activeMenu->text = menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text;
+            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->extra);
         }
         else
         {
             activeMenu = &menues[CHEATMENU]; // Header doesn't have any codes to see, so go back
-            // TODO: Open a folder containing cheats under the header. Would require creating closed folders beforehand.
         }
     }
-   */ 
     else if(id == BOOTMENU)
     {
         const char **paths;
@@ -428,7 +425,7 @@ void drawMenuItems()
     int idx;
 
     /* Find top of viewport */
-    if((activeMenu->numItems - activeMenu->currentItem) >= yAbove)
+    if((activeMenu->numItems - activeMenu->currentItem) >= yAbove || (activeMenu->numItems < 8))
         idx = activeMenu->currentItem;
     else
         idx = activeMenu->numItems - yAbove;

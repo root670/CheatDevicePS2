@@ -66,8 +66,8 @@ int cheatsLoadGameMenu();
    Game object is returned so the menu manager can associate the created menu
    with a game. */
 cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game);
-// TODO: Create a menu with a cheat's code lines
-int cheatsLoadCodeMenu(const char* game, const char* cheat);
+// Create a menu with a cheat's code lines
+cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t* cheat);
 
 // Create a new game and add it to the game list
 int cheatsAddGame();
@@ -86,6 +86,13 @@ int cheatsRenameCheat();
 int cheatsDeleteCheat();
 // Get number of cheats in the cheat list
 int cheatsGetNumCheats();
+
+// Add a code line to a cheat
+int cheatsAddCodeLine();
+// Edit currently selected code line
+int cheatsEditCodeLine();
+// Delete currently selected code line
+int cheatsDeleteCodeLine();
 
 // Draw helper text.
 void cheatsDrawStats();

@@ -270,7 +270,36 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
     return NULL;
 }
 
-int cheatsLoadCodeMenu(const char* game, const char* cheat);
+cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat)
+{
+    if(cheat)
+    {
+        /* Build the menu */
+        menuItem_t *items = calloc(cheat->numCodeLines, sizeof(menuItem_t));
+        menuItem_t *item = items;
+
+        int i;
+        for(i = 0; i < cheat->numCodeLines; i++)
+        {
+            u32 addr = (u32)*((u32 *)cheat->codeLines + 2*i);
+            u32 val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
+
+            item->text = malloc(18);
+            snprintf(item->text, 18, "%08X %08X", addr, val);
+
+            item->type = NORMAL;
+            item->extra = (void *)(cheat->codeLines + i);
+
+            menuInsertItem(item);
+
+            item++;
+        }
+
+        return cheat;
+    }
+
+    return NULL;
+}
 
 int cheatsAddGame()
 {

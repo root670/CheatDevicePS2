@@ -225,13 +225,25 @@ void handlePad()
         if(pad_pressed & PAD_CIRCLE)
             menuSetActive(CHEATMENU);
 
-        else if(pad_pressed & PAD_SQUARE);
-        // add a code line. open keyboard to key-in the code
+        else if(pad_pressed & PAD_SQUARE)
+        {
+            displayContextMenu(CODEMENU);
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
+        }
 
-        else if(pad_pressed & PAD_TRIANGLE);
-        // delete a code line. ask the user for confirmation.
+        if(pad_rapid & PAD_R1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuDown();
+        }
 
-        // TODO: goto code edit menu (show keyboard etc), open mini menu
+        else if(pad_rapid & PAD_L1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuUp();
+        }
     }
 
     else if(currentMenu == ABOUTMENU)
@@ -373,13 +385,15 @@ void displayContextMenu(int menuID)
 
     else if(menuID == CHEATMENU)
     {
-        char *items[] = {"Add Cheat", "Rename Cheat", "Edit Code Lines", "Delete Cheat", "Cancel"};
-        ret = displayPromptMenu(items, 5, "Cheat Options");
+        char *items[] = {"Add Cheat", "Rename Cheat", "Edit Code Lines", "Delete Cheat", "Edit Enable Cheat", "Cancel"};
+        ret = displayPromptMenu(items, 6, "Cheat Options");
 
         if(ret == 0)
             cheatsAddCheat();
         else if(ret == 1)
             cheatsRenameCheat();
+        else if(ret == 2)
+            menuSetActive(CODEMENU);
         else if(ret == 3)
         {
             char *items2[] = {"Yes", "No"};
