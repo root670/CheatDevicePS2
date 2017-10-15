@@ -40,9 +40,13 @@ void graphicsDrawPromptBoxBlack(int width, int height);
 // Draw a quad
 void graphicsDrawQuad(int x, int y, int xsize, int ysize, graphicsColor_t color);
 
-
 // Get total width of characters in string
 int graphicsGetWidth(const char *str);
+
+// Get display width in pixels
+int graphicsGetDisplayWidth();
+// Get display height in pixels
+int graphicsGetDisplayHeight();
 
 // Cover the entire screen with black
 void graphicsClearScreen(int r, int g, int b);

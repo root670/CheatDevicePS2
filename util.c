@@ -376,7 +376,7 @@ void displayContextMenu(int menuID)
         else if(ret == 2)
         {
             char *items2[] = {"Yes", "No"};
-            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete the game?");
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
 
             if(choice == 0)
                 cheatsDeleteGame();
@@ -397,7 +397,7 @@ void displayContextMenu(int menuID)
         else if(ret == 3)
         {
             char *items2[] = {"Yes", "No"};
-            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete the cheat?");
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this cheat?");
 
             if(choice == 0)
                 cheatsDeleteCheat();
@@ -409,6 +409,19 @@ void displayContextMenu(int menuID)
     {
         char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
         ret = displayPromptMenu(items, 4, "Code Options");
+
+        if(ret == 0)
+            cheatsAddCodeLine();
+        else if(ret == 1)
+            cheatsEditCodeLine();
+        else if(ret == 2)
+        {
+            char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
+
+            if(choice == 0)
+                cheatsDeleteCodeLine();
+        }
     }
 
     else if(menuID == BOOTMENU)
@@ -605,6 +618,148 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         graphicsRender();
 
     } while(!(pad_pressed & PAD_CIRCLE));
+
+    return 0;
+}
+
+char *codeKeyboardChars = "0123" \
+                          "4567" \
+                          "89AB" \
+                          "CDEF";
+#define CODE_KEYBOARD_COLUMNS 4
+#define CODE_KEYBOARD_ROWS 4
+#define CODE_KEYBOARD_ACCEPT_ROW CODE_KEYBOARD_ROWS
+#define CODE_KEYBOARD_CANCEL_ROW CODE_KEYBOARD_ACCEPT_ROW + 1
+
+int displayCodeEditMenu(u64 *code)
+{
+    struct padButtonStatus padStat;
+    int state;
+    u32 old_pad = PAD_CROSS;
+    u32 pad_pressed = 0;
+    u32 pad_rapid = 0;
+    static u32 time_held = 0;
+    int row = 0;
+    int column = 0;
+    char codeString[18];
+    int codeLoc = 0;
+
+    if(!code)
+        return 0;
+
+    u32 addr = (u32)*((u32 *) code);
+    u32 val = (u32)*((u32 *) (code + 1));
+
+    snprintf(codeString, 18, "%08X %08X", addr, val);
+
+    do
+    {
+        graphicsDrawPromptBoxBlack(300, 220);
+
+        state = padGetState(0, 0);
+        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
+            state = padGetState(0, 0);
+    
+        padRead(0, 0, &padStat);
+    
+        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
+        old_pad = 0xFFFF ^ padStat.btns;
+
+        // pad_rapid will have an initial delay when a button is held
+        if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
+        {
+            if(time_held++ > 18 && time_held % 6 == 0) // don't go too fast!
+                pad_rapid = (0xFFFF ^ padStat.btns);
+            else
+                pad_rapid = pad_pressed;
+        }
+        else
+            time_held = 0;
+
+        if(pad_pressed & PAD_CROSS)
+        {
+            if(row < CODE_KEYBOARD_ROWS && column < CODE_KEYBOARD_COLUMNS)
+            {
+                codeString[codeLoc] = codeKeyboardChars[row*CODE_KEYBOARD_COLUMNS + column];
+                codeLoc++;
+            }
+            else if(row == CODE_KEYBOARD_ACCEPT_ROW)
+            {
+                // copy to code
+            }
+        }
+
+        if(pad_rapid & PAD_UP)
+        {
+            if(row > 0)
+                row--;
+            else
+                row = CODE_KEYBOARD_CANCEL_ROW;
+        }
+        
+        else if(pad_rapid & PAD_DOWN)
+        {
+            if(row < CODE_KEYBOARD_ROWS + 1)
+                row++;
+            else
+                row = 0;
+        }
+
+        else if(pad_rapid & PAD_LEFT)
+        {
+            if(row < CODE_KEYBOARD_ROWS)
+            {
+                if(column > 0)
+                    column--;
+                else
+                    column = CODE_KEYBOARD_COLUMNS - 1;
+            }
+        }
+
+        else if(pad_rapid & PAD_RIGHT)
+        {
+            if(row < CODE_KEYBOARD_ROWS)
+            {
+                if(column < CODE_KEYBOARD_COLUMNS - 1)
+                    column++;
+                else
+                    column = 0;
+            }
+        }
+
+        int i, j, color;
+        for(i = 0; i < CODE_KEYBOARD_ROWS; i++)
+        {
+            for(j = 0; j < CODE_KEYBOARD_COLUMNS; j++)
+            {
+                if(i == row && j == column)
+                {
+                    // 320 - 25*2
+                    // 224 - 25*2
+                    color = YELLOW;
+                    graphicsDrawQuad(270 + j*25, 175 + i*25, 25, 25, BLUE);
+                }
+                else
+                {
+                    color = WHITE;
+                }
+
+                graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - 45 + j*25, 175 + i*25, codeKeyboardChars[i*CODE_KEYBOARD_COLUMNS + j], color);
+            }
+        }
+
+        if(row == CODE_KEYBOARD_ACCEPT_ROW)
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + CODE_KEYBOARD_ROWS*25, 200, 22, BLUE);
+        else if(row == CODE_KEYBOARD_CANCEL_ROW)
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + (CODE_KEYBOARD_ROWS+1)*25, 200, 22, BLUE);
+
+        graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, "Accept", (row == CODE_KEYBOARD_ACCEPT_ROW) ? YELLOW : WHITE);
+        graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, "Cancel", (row == CODE_KEYBOARD_CANCEL_ROW) ? YELLOW : WHITE);
+
+        graphicsRender();
+
+
+    } while (!(pad_pressed & PAD_CIRCLE));
 
     return 0;
 }

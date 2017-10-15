@@ -396,6 +396,16 @@ int graphicsGetWidth(const char *str)
     return lineWidth;
 }
 
+int graphicsGetDisplayWidth()
+{
+    return gsGlobal->Width;
+}
+
+int graphicsGetDisplayHeight()
+{
+    return gsGlobal->Height;
+}
+
 void graphicsDrawAboutPage()
 {
     static int x = 20;

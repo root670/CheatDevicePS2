@@ -494,6 +494,39 @@ int cheatsDeleteCheat()
     return 1;
 }
 
+// Add a code line to a cheat
+int cheatsAddCodeLine()
+{
+
+}
+
+// Edit currently selected code line
+int cheatsEditCodeLine()
+{
+    char newCodeLine[18];
+
+    if(menuGetActive() != CODEMENU)
+        return 0;
+
+    u64 *selectedCode = menuGetActiveItemExtra();
+
+    if(displayCodeEditMenu(selectedCode) == 0)
+        return 0;
+    
+    u32 addr = (u32)*((u32 *)selectedCode);
+    u32 val = (u32)*((u32 *)selectedCode + 1);
+    snprintf(newCodeLine, 18, "%08X %08X", addr, val);
+    menuRenameActiveItem(newCodeLine);
+
+    return 1;
+}
+
+// Delete currently selected code line
+int cheatsDeleteCodeLine()
+{
+
+}
+
 int cheatsGetNumCheats()
 {
     return numCheats;
