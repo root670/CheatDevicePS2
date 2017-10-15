@@ -210,8 +210,10 @@ void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
     {
         if(*cptr == '\n')
         {
-            cptr++;
+            *cptr = '\0';
             graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]);
+            *cptr = '\n';
+            cptr++;
             lineWidth = 0;
             start = cptr;
             y += 22;
@@ -380,12 +382,18 @@ int graphicsGetWidth(const char *str)
         return 0;
 
     char const *cptr = str;
+    double maxWidth = 0;
     double lineWidth = 0;
     
     while(*cptr)
     {
         if(*cptr == '\n')
-            break;
+        {
+            if(lineWidth > maxWidth)
+                maxWidth = lineWidth;
+            cptr++;
+            lineWidth = 0;
+        }
 
         int char_codepoint = *cptr++;
         stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
@@ -393,7 +401,36 @@ int graphicsGetWidth(const char *str)
         lineWidth += cdata->advance;
     }
 
-    return lineWidth;
+    if(lineWidth > maxWidth)
+        maxWidth = lineWidth;
+
+    return maxWidth;
+}
+
+int graphicsGetNumLines(const char *str)
+{
+    if(!str)
+        return 0;
+
+    char const *cptr = str;
+    int numLines = 0;
+
+    while(*cptr)
+    {
+        if(numLines == 0)
+        {
+            numLines++;
+        }
+        if(*cptr == '\n')
+        {
+            numLines++;
+        }
+
+        cptr++;
+    }
+
+    printf("numLines = %d\n", numLines);
+    return numLines;
 }
 
 int graphicsGetDisplayWidth()

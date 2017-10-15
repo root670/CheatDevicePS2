@@ -93,6 +93,8 @@ int cheatsAddCodeLine();
 int cheatsEditCodeLine();
 // Delete currently selected code line
 int cheatsDeleteCodeLine();
+// Get number of code lines in the cheat
+int cheatsGetNumCodeLines();
 
 // Draw helper text.
 void cheatsDrawStats();

@@ -241,13 +241,17 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         cheatsCheat_t *cheat = game->cheats;
         menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
         menuItem_t *item = items;
+        numCheats = 0;
 
         while(cheat != NULL)
         {
             if(!cheat->skip)
             {
                 if(cheat->type == CHEATNORMAL)
+                {
+                    numCheats++;
                     item->type = NORMAL;
+                }
                 else
                     item->type = HEADER;
 
@@ -263,7 +267,6 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
             item++;
         }
 
-        numCheats = game->numCheats;
         return game;
     }
 
@@ -358,6 +361,9 @@ int cheatsRenameGame()
         return 0;
 
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
+
+    if(!selectedGame)
+        return 0;
     
     if(displayInputMenu(title, 80, selectedGame->title, "Enter Game Title") == 0)
         return 0;
@@ -465,6 +471,9 @@ int cheatsRenameCheat()
         return 0;
 
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
+
+    if(!selectedCheat)
+        return 0;
     
     if(displayInputMenu(title, 80, selectedCheat->title, "Enter Cheat Title") == 0)
         return 0;
@@ -488,7 +497,8 @@ int cheatsDeleteCheat()
     }
 
     selectedCheat->skip = 1;
-    numCheats--;
+    if(selectedCheat->type == NORMAL)
+        numCheats--;
     menuRemoveActiveItem();
 
     return 1;
@@ -500,7 +510,6 @@ int cheatsAddCodeLine()
 
 }
 
-// Edit currently selected code line
 int cheatsEditCodeLine()
 {
     char newCodeLine[18];
@@ -509,6 +518,9 @@ int cheatsEditCodeLine()
         return 0;
 
     u64 *selectedCode = menuGetActiveItemExtra();
+
+    if(!selectedCode)
+        return 0;
 
     if(displayCodeEditMenu(selectedCode) == 0)
         return 0;
@@ -527,6 +539,18 @@ int cheatsDeleteCodeLine()
 
 }
 
+int cheatsGetNumCodeLines()
+{
+    if(menuGetActive() != CODEMENU)
+        return 0;
+
+    cheatsCheat_t *cheat = (cheatsCheat_t *)menuGetActiveExtra();
+    if(!cheat)
+        return 0;
+
+    return cheat->numCodeLines;
+}
+
 int cheatsGetNumCheats()
 {
     return numCheats;
@@ -541,6 +565,12 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
             if((numEnabledCodes + cheat->numCodeLines) >= 250)
             {
                 displayError("Too many codes enabled. Try disabling some.");
+                return 0;
+            }
+            else if(cheat->numCodeLines == 0)
+            {
+                displayError("This cheat doesn't contain any code lines.\nPlease add some on the next screen.");
+                menuSetActive(CODEMENU);
                 return 0;
             }
             
@@ -576,7 +606,13 @@ void cheatsDrawStats()
                 snprintf(active_cheats, 32, "%i active cheat", numEnabledCheats);
             else
                 snprintf(active_cheats, 32, "%i active cheats", numEnabledCheats);
+            
             graphicsDrawText(482, 25, active_cheats, WHITE);
+
+            if(!activeGame->enableCheats)
+                graphicsDrawText(482, 47, "Auto Hook", WHITE);
+            else
+                graphicsDrawText(482, 47, "Normal Hook", WHITE);
         }
     }
     

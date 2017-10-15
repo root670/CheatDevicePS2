@@ -110,6 +110,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             cdbCheatsOffset++;
 
             int numHookLines = 0;
+            int numIgnoredLines = 0;
             int line = 0;
             if(cheat->numCodeLines > 0)
             {
@@ -122,10 +123,16 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                 -> don't display cheat in the menu
                 -> automatically enable cheat when launching game
                 -> engine will NOT look for a hook if 1 or more 9-type hook codes are found
+
+                If cheat only contains F-type codes, don't display it in the menu
                 */
-                while(line < cheat->numCodeLines && (cheat->codeLines[line] & 0xF0000000) == 0x90000000)
+                while(line < cheat->numCodeLines)
                 {
-                    numHookLines++;
+                    if((cheat->codeLines[line] & 0xF0000000) == 0x90000000)
+                        numHookLines++;
+                    else if((cheat->codeLines[line] & 0xF0000000) == 0xF0000000)
+                        numIgnoredLines++;
+
                     line++;
                 }
 
@@ -135,6 +142,11 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                     game->enableCheats = cheat;
                     game->numCheats--;
                 }
+                else if(numIgnoredLines == cheat->numCodeLines)
+                {
+                    cheat->skip = 1;
+                    game->numCheats--;
+                }
 
                 cdbCheatsOffset += cheat->numCodeLines * sizeof(u64);
             }
@@ -142,6 +154,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             {
                 cheat->type = CHEATHEADER;
                 cheat->codeLines = NULL;
+                game->numCheats--;
             }
 
             if(j+1 < numCheats)

@@ -231,6 +231,15 @@ void handlePad()
             old_pad |= PAD_CROSS | PAD_CIRCLE;
         }
 
+        else if(pad_pressed & PAD_CROSS)
+        {
+            if(cheatsGetNumCodeLines() > 0)
+            {
+                cheatsEditCodeLine();
+                old_pad |= PAD_CROSS | PAD_CIRCLE;
+            }
+        }
+
         if(pad_rapid & PAD_R1)
         {
             int i;
@@ -407,20 +416,31 @@ void displayContextMenu(int menuID)
 
     else if(menuID == CODEMENU)
     {
-        char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
-        ret = displayPromptMenu(items, 4, "Code Options");
-
-        if(ret == 0)
-            cheatsAddCodeLine();
-        else if(ret == 1)
-            cheatsEditCodeLine();
-        else if(ret == 2)
+        if(cheatsGetNumCodeLines() > 0)
         {
-            char *items2[] = {"Yes", "No"};
-            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
+            char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
+            ret = displayPromptMenu(items, 4, "Code Options");
 
-            if(choice == 0)
-                cheatsDeleteCodeLine();
+            if(ret == 0)
+                cheatsAddCodeLine();
+            else if(ret == 1)
+                cheatsEditCodeLine();
+            else if(ret == 2)
+            {
+                char *items2[] = {"Yes", "No"};
+                int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
+
+                if(choice == 0)
+                    cheatsDeleteCodeLine();
+            }
+        }
+        else
+        {
+            char *items[] = {"Add Line", "Cancel"};
+            ret = displayPromptMenu(items, 2, "Code Options");
+
+            if(ret == 0)
+                cheatsAddCodeLine();
         }
     }
 
@@ -648,13 +668,14 @@ int displayCodeEditMenu(u64 *code)
         return 0;
 
     u32 addr = (u32)*((u32 *) code);
-    u32 val = (u32)*((u32 *) (code + 1));
+    u32 val = (u32)*((u32 *)code + 1);
 
     snprintf(codeString, 18, "%08X %08X", addr, val);
 
     do
     {
         graphicsDrawPromptBoxBlack(300, 220);
+
 
         state = padGetState(0, 0);
         while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
@@ -681,11 +702,26 @@ int displayCodeEditMenu(u64 *code)
             if(row < CODE_KEYBOARD_ROWS && column < CODE_KEYBOARD_COLUMNS)
             {
                 codeString[codeLoc] = codeKeyboardChars[row*CODE_KEYBOARD_COLUMNS + column];
-                codeLoc++;
+
+                if(codeLoc == 7)
+                {
+                    // Skip past space in the center
+                    codeLoc += 2;
+                }
+                else if(codeLoc < 16)
+                {
+                    codeLoc++;
+                }
             }
             else if(row == CODE_KEYBOARD_ACCEPT_ROW)
             {
-                // copy to code
+                // Update code value
+                sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
+                return 1;
+            }
+            else if(row == CODE_KEYBOARD_CANCEL_ROW)
+            {
+                return 0;
             }
         }
 
@@ -748,6 +784,9 @@ int displayCodeEditMenu(u64 *code)
             }
         }
 
+        graphicsDrawTextCentered(125, "Edit code line", GREEN);
+        graphicsDrawTextCentered(150, codeString, WHITE);
+
         if(row == CODE_KEYBOARD_ACCEPT_ROW)
             graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + CODE_KEYBOARD_ROWS*25, 200, 22, BLUE);
         else if(row == CODE_KEYBOARD_CANCEL_ROW)
@@ -773,11 +812,13 @@ int displayPromptMenu(char **items, int numItems, const char *header)
     int selectedItem = 0;
 
     float maxLength = 0;
+    int numHeaderLines;
     
     if(!items || numItems <= 0 || !header)
         return 0;
     
     maxLength = graphicsGetWidth(header);
+    numHeaderLines = graphicsGetNumLines(header);
 
     for(i = 0; i < numItems; i++)
     {
@@ -800,9 +841,9 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
         old_pad = 0xFFFF ^ padStat.btns;
         
-        graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + 1) * 22 + 20);
-        graphicsDrawTextCentered(224 - numItems*11 - 16, header, GREEN);
-        y = 224 - numItems*11 + 11;
+        graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
+        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, header, GREEN);
+        y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
         for(i = 0; i < numItems; i++)
         {
             if(i == selectedItem)
