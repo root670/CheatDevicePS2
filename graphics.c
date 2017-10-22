@@ -22,6 +22,10 @@ static GSTEXTURE savemanager;
 static GSTEXTURE flashdrive;
 static GSTEXTURE memorycard1;
 static GSTEXTURE memorycard2;
+static GSTEXTURE buttonCross;
+static GSTEXTURE buttonCircle;
+static GSTEXTURE buttonTriangle;
+static GSTEXTURE buttonSquare;
 static stb_fontchar fontdata[STB_SOMEFONT_NUM_CHARS];
 static int initialized = 0;
 static int callbackId;
@@ -44,6 +48,14 @@ extern u8  _memorycard1_png_start[];
 extern int _memorycard1_png_size;
 extern u8  _memorycard2_png_start[];
 extern int _memorycard2_png_size;
+extern u8  _buttonCross_png_start[];
+extern int _buttonCross_png_size;
+extern u8  _buttonCircle_png_start[];
+extern int _buttonCircle_png_size;
+extern u8  _buttonTriangle_png_start[];
+extern int _buttonTriangle_png_size;
+extern u8  _buttonSquare_png_start[];
+extern int _buttonSquare_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
@@ -123,6 +135,10 @@ int initGraphics()
         graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 0);
         graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 0);
         graphicsLoadPNG(&memorycard2, _memorycard2_png_start, _memorycard2_png_size, 0);
+        graphicsLoadPNG(&buttonCross, _buttonCross_png_start, _buttonCross_png_size, 0);
+        graphicsLoadPNG(&buttonCircle, _buttonCircle_png_start, _buttonCircle_png_size, 0);
+        graphicsLoadPNG(&buttonTriangle, _buttonTriangle_png_start, _buttonTriangle_png_size, 0);
+        graphicsLoadPNG(&buttonSquare, _buttonSquare_png_start, _buttonSquare_png_size, 0);
 
         return 1;
     }
@@ -156,8 +172,11 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 {
     char const *cptr = txt;
+    char special[16];
     float cx = x;
     float cy = y;
+
+    memset(special, '\0', 16);
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
@@ -170,17 +189,75 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             cptr++;
             continue;
         }
-        int char_codepoint = *cptr++;
-        stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
-        
-        if(cx < 700 && cx > -100)
+        else if(*cptr == '{')
         {
-            gsKit_prim_sprite_texture(gsGlobal, &font, cx + cdata->x0f, cy + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
-                                                   cx + cdata->x1f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
-                                                   1, color);
+            // Read special sequence. A special sequence is surrounded by curly
+            // braces and will be replaced by a texture when drawn.
+            // For example, {CROSS} will be drawn as a cross button symbol
+            cptr++;
+            int i = 0;
+            GSTEXTURE *specialTexture = NULL;
+
+            while(*cptr && *cptr != '}' && i < 16)
+            {
+                special[i] = *cptr;
+                cptr++;
+                i++;
+            }
+
+            // Skip over ending character
+            if(*cptr == '}')
+            {
+                cptr++;
+            }
+
+            if(strncmp(special, "CROSS", 16) == 0)
+            {
+                specialTexture = &buttonCross;
+            }
+            else if(strncmp(special, "CIRCLE", 16) == 0)
+            {
+                specialTexture = &buttonCircle;
+            }
+            else if(strncmp(special, "TRIANGLE", 16) == 0)
+            {
+                specialTexture = &buttonTriangle;
+            }
+            else if(strncmp(special, "SQUARE", 16) == 0)
+            {
+                specialTexture = &buttonSquare;
+            }
+
+            if(specialTexture != NULL)
+            {
+                gsKit_prim_sprite_texture(gsGlobal, specialTexture,
+                                                    cx,
+                                                    cy + 6,
+                                                    0,
+                                                    0,
+                                                    cx + specialTexture->Width,
+                                                    cy + 6 + specialTexture->Height,
+                                                    specialTexture->Width,
+                                                    specialTexture->Height,
+                                                    1,
+                                                    0x80808080);
+                cx += specialTexture->Width;
+            }
         }
-        
-        cx += cdata->advance;
+        else
+        {
+            int char_codepoint = *cptr++;
+            stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
+            
+            if(cx < 700 && cx > -100)
+            {
+                gsKit_prim_sprite_texture(gsGlobal, &font, cx + cdata->x0f, cy + cdata->y0f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s0f, cdata->t0f*STB_SOMEFONT_BITMAP_HEIGHT,
+                                                       cx + cdata->x1f, cy + cdata->y1f, STB_SOMEFONT_BITMAP_WIDTH*cdata->s1f, cdata->t1f*STB_SOMEFONT_BITMAP_HEIGHT,
+                                                       1, color);
+            }
+
+            cx += cdata->advance;
+        }
     }
 
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
@@ -472,7 +549,7 @@ void graphicsDrawAboutPage()
         ticker_x+= 2;
     else
         ticker_x = 0;
-    graphicsDrawText(640 - ticker_x, 405, "Press CIRCLE to return to the game list.", WHITE);
+    graphicsDrawText(640 - ticker_x, 405, "Press {CIRCLE} to return to the game list.", WHITE);
 }
 
 void graphicsRenderNow()

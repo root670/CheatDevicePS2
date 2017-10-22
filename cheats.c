@@ -631,12 +631,12 @@ void cheatsDrawStats()
             x+= 2;
         else
             x = 0;
-        char msg[150];
-        snprintf(msg, 150, "%d games available. "
-                           "Press X to view a game's cheats. "
-                           "Press SQUARE for option menu. "
-                           "Press CIRCLE for main menu. "
-                           "Press SELECT to view credits screen."
+        char msg[200];
+        snprintf(msg, 200, "%d games available. "
+                           "Press {CROSS} to view a game's cheats. "
+                           "Press {SQUARE} for option menu. "
+                           "Press {CIRCLE} for main menu. "
+                           "Press {SELECT} to view credits screen."
                            , numGames);
         graphicsDrawText(640 - x, 405, msg, WHITE);
     }
@@ -649,9 +649,9 @@ void cheatsDrawStats()
             x = 0;
         char msg[150];
         snprintf(msg, 150, "%d cheats available. "
-                           "Press X to enable or disable a cheat. "
-                           "Press SQUARE for option menu. "
-                           "Press CIRCLE to return to game list."
+                           "Press {CROSS} to enable or disable a cheat. "
+                           "Press {SQUARE} for option menu. "
+                           "Press {CIRCLE} to return to game list."
                            , numCheats);
         graphicsDrawText(640 - x, 405, msg, WHITE);
     }
@@ -663,8 +663,8 @@ void cheatsDrawStats()
         else
             x = 0;
         char msg[100];
-        snprintf(msg, 100, "Press CIRCLE to return to cheat list. "
-                           "Press SQUARE for option menu.");
+        snprintf(msg, 100, "Press {CIRCLE} to return to cheat list. "
+                           "Press {SQUARE} for option menu.");
         graphicsDrawText(640 - x, 405, msg, WHITE);
     }
 }

@@ -40,6 +40,10 @@ OBJS += savemanager_png.o
 OBJS += flashdrive_png.o
 OBJS += memorycard1_png.o
 OBJS += memorycard2_png.o
+OBJS += buttonCross_png.o
+OBJS += buttonCircle_png.o
+OBJS += buttonTriangle_png.o
+OBJS += buttonSquare_png.o
 
 # Engine
 OBJS += engine_erl.o
@@ -90,6 +94,10 @@ endif
 	bin2o resources/flashdrive.png flashdrive_png.o _flashdrive_png
 	bin2o resources/memorycard1.png memorycard1_png.o _memorycard1_png
 	bin2o resources/memorycard2.png memorycard2_png.o _memorycard2_png
+	bin2o resources/buttonCross.png buttonCross_png.o _buttonCross_png
+	bin2o resources/buttonCircle.png buttonCircle_png.o _buttonCircle_png
+	bin2o resources/buttonTriangle.png buttonTriangle_png.o _buttonTriangle_png
+	bin2o resources/buttonSquare.png buttonSquare_png.o _buttonSquare_png
 	
 	# Engine
 	cd engine && $(MAKE)
