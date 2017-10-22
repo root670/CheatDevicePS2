@@ -627,30 +627,44 @@ void cheatsDrawStats()
 
     if(activeMenu == GAMEMENU)
     {
-        if (x < 2000)
+        if (x < 2300)
             x+= 2;
         else
             x = 0;
         char msg[150];
         snprintf(msg, 150, "%d games available. "
                            "Press X to view a game's cheats. "
+                           "Press SQUARE for option menu. "
                            "Press CIRCLE for main menu. "
-                           "Press SELECT to view the credits screen."
+                           "Press SELECT to view credits screen."
                            , numGames);
         graphicsDrawText(640 - x, 405, msg, WHITE);
     }
 
-    if(activeMenu == CHEATMENU)
+    else if(activeMenu == CHEATMENU)
     {
-        if (x < 1700)
+        if (x < 2200)
             x+= 2;
         else
             x = 0;
         char msg[150];
         snprintf(msg, 150, "%d cheats available. "
                            "Press X to enable or disable a cheat. "
-                           "Press CIRCLE to return to the game list."
+                           "Press SQUARE for option menu. "
+                           "Press CIRCLE to return to game list."
                            , numCheats);
+        graphicsDrawText(640 - x, 405, msg, WHITE);
+    }
+
+    else if(activeMenu == CODEMENU)
+    {
+        if(x < 1500)
+            x += 2;
+        else
+            x = 0;
+        char msg[100];
+        snprintf(msg, 100, "Press CIRCLE to return to cheat list. "
+                           "Press SQUARE for option menu.");
         graphicsDrawText(640 - x, 405, msg, WHITE);
     }
 }
