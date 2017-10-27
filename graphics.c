@@ -187,6 +187,92 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
     upng_free(pngTexture);
 }
 
+/*
+Get special texture from text sequence.
+str should be a char string starting with '{' and containing a matching
+'}' somewhere in it. The first curly-brace enclosed substring (ex: {CIRCLE})
+will be considered. If a valid sequence is found, the pointer to the position
+after the matching '}' is returned and texture points to the associated texture
+object. Otherwise NULL is returned.
+*/
+static char* getSpecialTexture(const char *str, GSTEXTURE** texture)
+{
+    char const *cptr = str;
+    char special[17];
+    int i = 0;
+    GSTEXTURE *specialTexture = NULL;
+    special[0] = '\0';
+
+    if(!cptr)
+        return NULL;
+
+    if(cptr[0] != '{')
+        return NULL;
+    else
+        cptr++;
+
+    while(*cptr && *cptr != '}' && i < 16)
+    {
+        special[i] = *cptr;
+        special[i + 1] = '\0';
+        cptr++;
+        i++;
+    }
+
+    if(*cptr == '}')
+    {
+        // Skip over ending character
+        cptr++;
+    }
+    else
+    {
+        // Missing ending character
+        return NULL;
+    }
+
+    if(strncmp(special, "CROSS", 16) == 0)
+    {
+        specialTexture = &buttonCross;
+    }
+    else if(strncmp(special, "CIRCLE", 16) == 0)
+    {
+        specialTexture = &buttonCircle;
+    }
+    else if(strncmp(special, "TRIANGLE", 16) == 0)
+    {
+        specialTexture = &buttonTriangle;
+    }
+    else if(strncmp(special, "SQUARE", 16) == 0)
+    {
+        specialTexture = &buttonSquare;
+    }
+    else if(strncmp(special, "L1", 16) == 0)
+    {
+        specialTexture = &buttonL1;
+    }
+    else if(strncmp(special, "L2", 16) == 0)
+    {
+        specialTexture = &buttonL2;
+    }
+    else if(strncmp(special, "R1", 16) == 0)
+    {
+        specialTexture = &buttonR1;
+    }
+    else if(strncmp(special, "R2", 16) == 0)
+    {
+        specialTexture = &buttonR2;
+    }
+    else
+    {
+        // Unrecognized identifier.
+        return NULL;
+    }
+
+    *texture = specialTexture;
+    return cptr;
+
+}
+
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 {
     char const *cptr = txt;
@@ -212,72 +298,12 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             // Read special sequence. A special sequence is surrounded by curly
             // braces and will be replaced by a texture when drawn.
             // For example, {CROSS} will be drawn as a cross button symbol
-            const char *startChar = cptr;
-            cptr++;
-            special[0] = '\0';
-            int i = 0;
-            GSTEXTURE *specialTexture = NULL;
 
-            while(*cptr && *cptr != '}' && i < 16)
-            {
-                special[i] = *cptr;
-                special[i + 1] = '\0';
-                cptr++;
-                i++;
-            }
+            const char *ret;
+            GSTEXTURE *specialTexture;
+            ret = getSpecialTexture(cptr, &specialTexture);
 
-            // Skip over ending character
-            if(*cptr == '}')
-            {
-                cptr++;
-            }
-            else
-            {
-                // Missing ending character
-                cptr = startChar;
-                goto regularPrint;
-            }
-
-            if(strncmp(special, "CROSS", 16) == 0)
-            {
-                specialTexture = &buttonCross;
-            }
-            else if(strncmp(special, "CIRCLE", 16) == 0)
-            {
-                specialTexture = &buttonCircle;
-            }
-            else if(strncmp(special, "TRIANGLE", 16) == 0)
-            {
-                specialTexture = &buttonTriangle;
-            }
-            else if(strncmp(special, "SQUARE", 16) == 0)
-            {
-                specialTexture = &buttonSquare;
-            }
-            else if(strncmp(special, "L1", 16) == 0)
-            {
-                specialTexture = &buttonL1;
-            }
-            else if(strncmp(special, "L2", 16) == 0)
-            {
-                specialTexture = &buttonL2;
-            }
-            else if(strncmp(special, "R1", 16) == 0)
-            {
-                specialTexture = &buttonR1;
-            }
-            else if(strncmp(special, "R2", 16) == 0)
-            {
-                specialTexture = &buttonR2;
-            }
-            else
-            {
-                // Unrecognized identifier.
-                cptr = startChar;
-                goto regularPrint;
-            }
-
-            if(specialTexture != NULL)
+            if(ret != NULL)
             {
                 gsKit_prim_sprite_texture(gsGlobal, specialTexture,
                                                     cx,
@@ -291,6 +317,11 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
                                                     1,
                                                     0x80808080);
                 cx += specialTexture->Width;
+                cptr = ret;
+            }
+            else
+            {
+                goto regularPrint;
             }
         }
         else
@@ -349,6 +380,20 @@ void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
             y += 22;
             continue;
         }
+        else if(*cptr == '{')
+        {
+            // Read special sequence
+            const char *ret;
+            GSTEXTURE *specialTexture;
+            ret = getSpecialTexture(cptr, &specialTexture);
+
+            if(ret != NULL)
+            {
+                lineWidth += specialTexture->Width;
+                cptr = ret;
+            }
+        }
+
         int char_codepoint = *cptr++;
         stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
         lineWidth += cdata->advance;
@@ -524,10 +569,24 @@ int graphicsGetWidth(const char *str)
             cptr++;
             lineWidth = 0;
         }
+        else if(*cptr == '{')
+        {
+            // Read special sequence
+            const char *ret;
+            GSTEXTURE *specialTexture;
+            ret = getSpecialTexture(cptr, &specialTexture);
+
+            if(ret != NULL)
+            {
+                lineWidth += specialTexture->Width;
+                cptr = ret;
+                continue;
+            }
+        }
 
         int char_codepoint = *cptr++;
         stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
-        
+    
         lineWidth += cdata->advance;
     }
 

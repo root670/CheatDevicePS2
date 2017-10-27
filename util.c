@@ -493,7 +493,11 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
     do
     {
         if(tmp)
-            width = graphicsGetWidth(tmp) + 20;
+        {
+            int newWidth = graphicsGetWidth(tmp) + 20;
+            if(newWidth > width)
+                width = newWidth;
+        }
 
         if(width < 345)
             width = 345;
