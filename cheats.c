@@ -618,6 +618,7 @@ void cheatsDrawStats()
     
     static menuID_t activeMenu = -1;
     static int x = 0;
+    char msg[200];
     
     menuID_t oldMenu = activeMenu;
     activeMenu = menuGetActive();
@@ -627,46 +628,44 @@ void cheatsDrawStats()
 
     if(activeMenu == GAMEMENU)
     {
-        if (x < 2300)
+        if (x < 1700)
             x+= 2;
         else
             x = 0;
-        char msg[200];
-        snprintf(msg, 200, "%d games available. "
-                           "Press {CROSS} to view a game's cheats. "
-                           "Press {SQUARE} for option menu. "
-                           "Press {CIRCLE} for main menu. "
-                           "Press {SELECT} to view credits screen."
-                           , numGames);
-        graphicsDrawText(640 - x, 405, msg, WHITE);
+
+        snprintf(msg, 200, "{CROSS} Cheat List     "
+                           "{SQUARE} Options     "
+                           "{CIRCLE} Main Menu     "
+                           "{L1}/{R1} Page Up/Down     "
+                           "{L2}/{R2} Alphabetical Up/Down");
     }
 
     else if(activeMenu == CHEATMENU)
     {
-        if (x < 2200)
+        if (x < 1500)
             x+= 2;
         else
             x = 0;
-        char msg[150];
-        snprintf(msg, 150, "%d cheats available. "
-                           "Press {CROSS} to enable or disable a cheat. "
-                           "Press {SQUARE} for option menu. "
-                           "Press {CIRCLE} to return to game list."
-                           , numCheats);
-        graphicsDrawText(640 - x, 405, msg, WHITE);
+
+        snprintf(msg, 150, "{CROSS} Enable/Disable Cheat     "
+                           "{SQUARE} Options     "
+                           "{CIRCLE} Game List    "
+                           "{L1}/{R1} Page Up/Down");
     }
 
     else if(activeMenu == CODEMENU)
     {
-        if(x < 1500)
+        if(x < 1200)
             x += 2;
         else
             x = 0;
-        char msg[100];
-        snprintf(msg, 100, "Press {CIRCLE} to return to cheat list. "
-                           "Press {SQUARE} for option menu.");
-        graphicsDrawText(640 - x, 405, msg, WHITE);
+
+        snprintf(msg, 100, "{CROSS} Edit Code Line     "
+                           "{SQUARE} Options     "
+                           "{CIRCLE} Cheat Menu");
     }
+
+    graphicsDrawText(640 - x, 405, msg, WHITE);
 }
 
 int cheatsIsActiveGame(const cheatsGame_t *game)
