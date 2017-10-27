@@ -26,6 +26,10 @@ static GSTEXTURE buttonCross;
 static GSTEXTURE buttonCircle;
 static GSTEXTURE buttonTriangle;
 static GSTEXTURE buttonSquare;
+static GSTEXTURE buttonL1;
+static GSTEXTURE buttonL2;
+static GSTEXTURE buttonR1;
+static GSTEXTURE buttonR2;
 static stb_fontchar fontdata[STB_SOMEFONT_NUM_CHARS];
 static int initialized = 0;
 static int callbackId;
@@ -56,6 +60,14 @@ extern u8  _buttonTriangle_png_start[];
 extern int _buttonTriangle_png_size;
 extern u8  _buttonSquare_png_start[];
 extern int _buttonSquare_png_size;
+extern u8  _buttonL1_png_start[];
+extern int _buttonL1_png_size;
+extern u8  _buttonL2_png_start[];
+extern int _buttonL2_png_size;
+extern u8  _buttonR1_png_start[];
+extern int _buttonR1_png_size;
+extern u8  _buttonR2_png_start[];
+extern int _buttonR2_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
@@ -128,17 +140,21 @@ int initGraphics()
         graphicsRenderNow();
 
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
-        graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 0);
-        graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 0);
-        graphicsLoadPNG(&cogs, _cogs_png_start, _cogs_png_size, 0);
-        graphicsLoadPNG(&savemanager, _savemanager_png_start, _savemanager_png_size, 0);
-        graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 0);
-        graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 0);
-        graphicsLoadPNG(&memorycard2, _memorycard2_png_start, _memorycard2_png_size, 0);
+        graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 1);
+        graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 1);
+        graphicsLoadPNG(&cogs, _cogs_png_start, _cogs_png_size, 1);
+        graphicsLoadPNG(&savemanager, _savemanager_png_start, _savemanager_png_size, 1);
+        graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 1);
+        graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 1);
+        graphicsLoadPNG(&memorycard2, _memorycard2_png_start, _memorycard2_png_size, 1);
         graphicsLoadPNG(&buttonCross, _buttonCross_png_start, _buttonCross_png_size, 0);
         graphicsLoadPNG(&buttonCircle, _buttonCircle_png_start, _buttonCircle_png_size, 0);
         graphicsLoadPNG(&buttonTriangle, _buttonTriangle_png_start, _buttonTriangle_png_size, 0);
         graphicsLoadPNG(&buttonSquare, _buttonSquare_png_start, _buttonSquare_png_size, 0);
+        graphicsLoadPNG(&buttonL1, _buttonL1_png_start, _buttonL1_png_size, 0);
+        graphicsLoadPNG(&buttonL2, _buttonL2_png_start, _buttonL2_png_size, 0);
+        graphicsLoadPNG(&buttonR1, _buttonR1_png_start, _buttonR1_png_size, 0);
+        graphicsLoadPNG(&buttonR2, _buttonR2_png_start, _buttonR2_png_size, 0);
 
         return 1;
     }
@@ -172,11 +188,11 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 {
     char const *cptr = txt;
-    char special[16];
+    char special[17];
     float cx = x;
     float cy = y;
 
-    memset(special, '\0', 16);
+    memset(special, '\0', 17);
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
@@ -194,13 +210,16 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             // Read special sequence. A special sequence is surrounded by curly
             // braces and will be replaced by a texture when drawn.
             // For example, {CROSS} will be drawn as a cross button symbol
+            const char *startChar = cptr;
             cptr++;
+            special[0] = '\0';
             int i = 0;
             GSTEXTURE *specialTexture = NULL;
 
             while(*cptr && *cptr != '}' && i < 16)
             {
                 special[i] = *cptr;
+                special[i + 1] = '\0';
                 cptr++;
                 i++;
             }
@@ -209,6 +228,12 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             if(*cptr == '}')
             {
                 cptr++;
+            }
+            else
+            {
+                // Missing ending character
+                cptr = startChar;
+                goto regularPrint;
             }
 
             if(strncmp(special, "CROSS", 16) == 0)
@@ -226,6 +251,28 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             else if(strncmp(special, "SQUARE", 16) == 0)
             {
                 specialTexture = &buttonSquare;
+            }
+            else if(strncmp(special, "L1", 16) == 0)
+            {
+                specialTexture = &buttonL1;
+            }
+            else if(strncmp(special, "L2", 16) == 0)
+            {
+                specialTexture = &buttonL2;
+            }
+            else if(strncmp(special, "R1", 16) == 0)
+            {
+                specialTexture = &buttonR1;
+            }
+            else if(strncmp(special, "R2", 16) == 0)
+            {
+                specialTexture = &buttonR2;
+            }
+            else
+            {
+                // Unrecognized identifier.
+                cptr = startChar;
+                goto regularPrint;
             }
 
             if(specialTexture != NULL)
@@ -246,6 +293,7 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
         }
         else
         {
+regularPrint: ;
             int char_codepoint = *cptr++;
             stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
             

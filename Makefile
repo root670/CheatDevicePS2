@@ -44,6 +44,10 @@ OBJS += buttonCross_png.o
 OBJS += buttonCircle_png.o
 OBJS += buttonTriangle_png.o
 OBJS += buttonSquare_png.o
+OBJS += buttonL1_png.o
+OBJS += buttonL2_png.o
+OBJS += buttonR1_png.o
+OBJS += buttonR2_png.o
 
 # Engine
 OBJS += engine_erl.o
@@ -98,6 +102,10 @@ endif
 	bin2o resources/buttonCircle.png buttonCircle_png.o _buttonCircle_png
 	bin2o resources/buttonTriangle.png buttonTriangle_png.o _buttonTriangle_png
 	bin2o resources/buttonSquare.png buttonSquare_png.o _buttonSquare_png
+	bin2o resources/buttonL1.png buttonL1_png.o _buttonL1_png
+	bin2o resources/buttonL2.png buttonL2_png.o _buttonL2_png
+	bin2o resources/buttonR1.png buttonR1_png.o _buttonR1_png
+	bin2o resources/buttonR2.png buttonR2_png.o _buttonR2_png
 	
 	# Engine
 	cd engine && $(MAKE)
