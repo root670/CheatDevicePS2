@@ -4,7 +4,6 @@
 #include "settings.h"
 #include "saves.h"
 #include "startgame.h"
-#include "version.h"
 #include <stdio.h>
 #include <malloc.h>
 
@@ -306,11 +305,6 @@ int menuSetActive(menuID_t id)
         activeMenu->text = strdup("Save Manager");
     }
 
-    else if(id == ABOUTMENU)
-    {
-        activeMenu->text = GIT_VERSION;
-    }
-
     return 1;
 }
 
@@ -477,12 +471,6 @@ int menuRender()
     else if(activeMenu->identifier != GAMEMENU)
     {
         graphicsDrawTextCentered(47, activeMenu->text, WHITE);
-    }
-
-    if(activeMenu->identifier == ABOUTMENU)
-    {
-        graphicsDrawAboutPage();
-        return 1;
     }
 
     drawMenuItems();

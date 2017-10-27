@@ -1,6 +1,8 @@
 #include "graphics.h"
 #include "stb_font.h"
 #include "libraries/upng.h"
+#include "version.h"
+#include "cheats.h"
 #include <time.h>
 #include <graph.h>
 #include <stdio.h>
@@ -573,31 +575,13 @@ int graphicsGetDisplayHeight()
 
 void graphicsDrawAboutPage()
 {
-    static int x = 20;
-    static int y = 100;
-    static int v_x = 2;
-    static int v_y = 2;
+    char msg[200];
 
-    if(x == 420) // right
-        v_x = -2;
-    else if(x == 20) // left
-        v_x = 2;
-    if(y == 310) // bottom
-        v_y = -2;
-    else if(y == 80) // top
-        v_y = 2;
+    snprintf(msg, 200, "Cheat Device\n" GIT_VERSION 
+                       "\nCompiled " __DATE__ " " __TIME__
+                       "\n\nTotal Games: %d", cheatsGetNumGames());
 
-    x += v_x;
-    y += v_y;
-    
-    graphicsDrawText(x, y, "Cheat Device\nBy Wesley Castro\nhttp://wescastro.com", WHITE);
-    
-    static int ticker_x = 0;
-    if (ticker_x < 1100)
-        ticker_x+= 2;
-    else
-        ticker_x = 0;
-    graphicsDrawText(640 - ticker_x, 405, "Press {CIRCLE} to return to the game list.", WHITE);
+    displayError(msg);
 }
 
 void graphicsRenderNow()

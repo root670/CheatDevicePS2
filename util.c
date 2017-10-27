@@ -158,7 +158,10 @@ void handlePad()
         }
 
         else if(pad_pressed & PAD_SELECT)
-            menuSetActive(ABOUTMENU);
+        {
+            graphicsDrawAboutPage();
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
+        }
 
         else if(pad_pressed & PAD_SQUARE)
         {
@@ -255,12 +258,6 @@ void handlePad()
         }
     }
 
-    else if(currentMenu == ABOUTMENU)
-    {
-        if(pad_pressed & PAD_CIRCLE)
-            menuSetActive(GAMEMENU);
-    }
-
     else if(currentMenu == MAINMENU)
     {
         graphicsDrawMainMenu(selected);
@@ -272,6 +269,12 @@ void handlePad()
                 menuSetActive(GAMEMENU);
             if(selected == 2) // save manager (device menu)
                 menuSetActive(SAVEDEVICEMENU);
+        }
+
+        else if(pad_pressed & PAD_SELECT)
+        {
+            graphicsDrawAboutPage();
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
         }
 
         else if(pad_pressed & PAD_CIRCLE)
