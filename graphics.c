@@ -129,8 +129,8 @@ int initGraphics()
         unsigned int i;
         for(i = 0; i < 256; ++i)
         {
-            u8 alpha = (i > 0x80) ? 0x80 : i;
-            font.Clut[i] = i | (i << 8) | (i << 16) | (alpha << 24);
+            u8 alpha = (i * 128) / 255;
+            font.Clut[i] = GS_SETREG_RGBA(0xFF, 0xFF, 0xFF, alpha);
         }
 
         STB_SOMEFONT_CREATE(fontdata, (unsigned char(*)[])font.Mem, STB_SOMEFONT_BITMAP_HEIGHT);
@@ -172,14 +172,37 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
 
     tex->Width = upng_get_width(pngTexture);
     tex->Height = upng_get_height(pngTexture);
+    u8 *imageBuffer = upng_get_buffer(pngTexture);
     
     if(upng_get_format(pngTexture) == UPNG_RGB8)
+    {
         tex->PSM = GS_PSM_CT24;
+    }
     else if(upng_get_format(pngTexture) == UPNG_RGBA8)
+    {
         tex->PSM = GS_PSM_CT32;
 
+        // Convert alpha value range to [0, 80]
+        int i;
+        for(i = 0; i < tex->Width * tex->Height; i++)
+        {
+            u8 alpha = imageBuffer[i * 4 + 3];
+
+            if(alpha == 0xFF)
+            {
+                alpha = 0x80;
+            }
+            else
+            {
+                alpha = alpha >> 1;
+            }
+
+            imageBuffer[i * 4 + 3] = alpha;
+        }
+    }
+
     tex->Mem = memalign(128, gsKit_texture_size_ee(tex->Width, tex->Height, tex->PSM));
-    memcpy(tex->Mem, upng_get_buffer(pngTexture), gsKit_texture_size_ee(tex->Width, tex->Height, tex->PSM));
+    memcpy(tex->Mem, imageBuffer, gsKit_texture_size_ee(tex->Width, tex->Height, tex->PSM));
     tex->Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(tex->Width, tex->Height, tex->PSM), GSKIT_ALLOC_USERBUFFER);
     tex->Filter = (linear_filtering) ? GS_FILTER_LINEAR : GS_FILTER_NEAREST;
     gsKit_texture_upload(gsGlobal, tex);
@@ -305,17 +328,26 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
 
             if(ret != NULL)
             {
+                u64 graphicColor;
+                if(color == graphicsColorTable[YELLOW])
+                {
+                    graphicColor = color;
+                }
+                else
+                {
+                    graphicColor = 0x80808080;
+                }
                 gsKit_prim_sprite_texture(gsGlobal, specialTexture,
                                                     cx,
-                                                    cy + 6,
+                                                    cy + 4,
                                                     0,
                                                     0,
                                                     cx + specialTexture->Width,
-                                                    cy + 6 + specialTexture->Height,
+                                                    cy + 4 + specialTexture->Height,
                                                     specialTexture->Width,
                                                     specialTexture->Height,
                                                     1,
-                                                    0x80808080);
+                                                    graphicColor);
                 cx += specialTexture->Width;
                 cptr = ret;
             }
