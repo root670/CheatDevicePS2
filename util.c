@@ -397,15 +397,15 @@ void displayContextMenu(int menuID)
 
     else if(menuID == CHEATMENU)
     {
-        char *items[] = {"Add Cheat", "Rename Cheat", "Edit Code Lines", "Delete Cheat", "Edit Enable Cheat", "Cancel"};
+        char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Edit Enable Cheat", "Cancel"};
         ret = displayPromptMenu(items, 6, "Cheat Options");
 
         if(ret == 0)
             cheatsAddCheat();
         else if(ret == 1)
-            cheatsRenameCheat();
-        else if(ret == 2)
             menuSetActive(CODEMENU);
+        else if(ret == 2)
+            cheatsRenameCheat();
         else if(ret == 3)
         {
             char *items2[] = {"Yes", "No"};
@@ -681,7 +681,7 @@ int displayCodeEditMenu(u64 *code)
 
     do
     {
-        graphicsDrawPromptBoxBlack(300, 220);
+        graphicsDrawPromptBoxBlack(285, 220);
 
 
         state = padGetState(0, 0);
@@ -729,6 +729,45 @@ int displayCodeEditMenu(u64 *code)
             else if(row == CODE_KEYBOARD_CANCEL_ROW)
             {
                 return 0;
+            }
+        }
+
+        else if(pad_pressed & PAD_L1)
+        {
+            if(codeLoc > 0)
+            {
+                if(codeLoc == 9)
+                {
+                    codeLoc -= 2;
+                }
+                else
+                {
+                    codeLoc--;
+                }
+            }
+            else
+            {
+                codeLoc = 16;
+            }
+        }
+
+        else if(pad_pressed & PAD_R1)
+        {
+            if(codeLoc < 16)
+            {
+                if(codeLoc == 7)
+                {
+                    // Skip past center space
+                    codeLoc += 2;
+                }
+                else
+                {
+                    codeLoc++;
+                }
+            }
+            else
+            {
+                codeLoc = 0;
             }
         }
 
@@ -791,8 +830,17 @@ int displayCodeEditMenu(u64 *code)
             }
         }
 
-        graphicsDrawTextCentered(125, "Edit code line", GREEN);
-        graphicsDrawTextCentered(150, codeString, WHITE);
+        graphicsDrawTextCentered(125, "Edit Code Line", GREEN);
+
+        for(i = 0; i < 17; i++)
+        {
+            if(i == codeLoc)
+            {
+                graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, BLUE);
+            }
+
+            graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], WHITE);
+        }
 
         if(row == CODE_KEYBOARD_ACCEPT_ROW)
             graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + CODE_KEYBOARD_ROWS*25, 200, 22, BLUE);
