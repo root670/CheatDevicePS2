@@ -423,6 +423,7 @@ void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
             {
                 lineWidth += specialTexture->Width;
                 cptr = ret;
+                continue;
             }
         }
 
