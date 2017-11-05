@@ -275,6 +275,13 @@ int menuSetActive(menuID_t id)
             activeMenu = &menues[CHEATMENU]; // Header doesn't have any codes to see, so go back
         }
     }
+    else if(id == ENABLECODEMENU)
+    {
+        menuRemoveAllItems();
+        activeMenu->text = strdup("Enable Cheat");
+        cheatsGame_t *game = (cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra;
+        activeMenu->extra = cheatsLoadCodeMenu(&game->enableCheat);
+    }
     else if(id == BOOTMENU)
     {
         const char **paths;
@@ -470,7 +477,10 @@ int menuRender()
     }
     else if(activeMenu->identifier != GAMEMENU)
     {
-        graphicsDrawTextCentered(47, activeMenu->text, WHITE);
+        if(activeMenu->text != NULL)
+        {
+            graphicsDrawTextCentered(47, activeMenu->text, WHITE);
+        }
     }
 
     drawMenuItems();

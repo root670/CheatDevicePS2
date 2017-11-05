@@ -136,6 +136,7 @@ void handlePad()
     if(currentMenu == GAMEMENU ||
        currentMenu == CHEATMENU ||
        currentMenu == CODEMENU ||
+       currentMenu == ENABLECODEMENU ||
        currentMenu == BOOTMENU ||
        currentMenu == SAVEMENU)
     {
@@ -231,6 +232,41 @@ void handlePad()
         else if(pad_pressed & PAD_SQUARE)
         {
             displayContextMenu(CODEMENU);
+            old_pad |= PAD_CROSS | PAD_CIRCLE;
+        }
+
+        else if(pad_pressed & PAD_CROSS)
+        {
+            if(cheatsGetNumCodeLines() > 0)
+            {
+                cheatsEditCodeLine();
+                old_pad |= PAD_CROSS | PAD_CIRCLE;
+            }
+        }
+
+        if(pad_rapid & PAD_R1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuDown();
+        }
+
+        else if(pad_rapid & PAD_L1)
+        {
+            int i;
+            for(i = 0; i < 10; i++)
+                menuUp();
+        }
+    }
+
+    else if(currentMenu == ENABLECODEMENU)
+    {
+        if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(CHEATMENU);
+
+        else if(pad_pressed & PAD_SQUARE)
+        {
+            displayContextMenu(ENABLECODEMENU);
             old_pad |= PAD_CROSS | PAD_CIRCLE;
         }
 
@@ -414,10 +450,14 @@ void displayContextMenu(int menuID)
             if(choice == 0)
                 cheatsDeleteCheat();
         }
+        else if(ret == 4)
+        {
+            menuSetActive(ENABLECODEMENU);
+        }
 
     }
 
-    else if(menuID == CODEMENU)
+    else if(menuID == CODEMENU || menuID == ENABLECODEMENU)
     {
         if(cheatsGetNumCodeLines() > 0)
         {
