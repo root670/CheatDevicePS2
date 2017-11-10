@@ -11,6 +11,11 @@
 typedef enum { TEXT, BINARY } cheatDatabaseType_t;
 typedef enum { CHEATNORMAL, CHEATHEADER, CHEATMASTERCODE } cheatTitleType_t;
 
+// Memory constraints
+#define MAX_GAMES   1700
+#define MAX_CHEATS  175000
+#define MAX_CODES   250000
+
 /*
 Cheats are stored top-down like this:
 Cheat Database --> Game --> Cheat --> Code

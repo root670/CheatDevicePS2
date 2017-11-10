@@ -18,6 +18,7 @@ OBJS += libraries/minizip/zip.o
 OBJS += libraries/minizip/unzip.o
 
 # Main
+OBJS += objectpool.o
 OBJS += hash.o
 OBJS += util.o
 OBJS += startgame.o

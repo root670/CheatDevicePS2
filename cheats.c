@@ -547,7 +547,7 @@ int cheatsEditCodeLine()
 {
     char newCodeLine[18];
 
-    if(menuGetActive() != CODEMENU && menuGetActive() != ENABLECODEMENU)
+    if(menuGetActive() != CODEMENU)
         return 0;
 
     u64 *selectedCode = menuGetActiveItemExtra();

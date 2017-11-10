@@ -1,0 +1,15 @@
+"Test Game"
+Definitelly an Enable Cheat!
+90123456 00000001
+Partial Enable Cheat
+90123456 00000001
+11111111 11111111
+Partial Enable Cheat 2
+11111111 11111111
+90123456 00000001
+Full Enable Cheat 2
+90123456 00000001
+Some buttons: {CROSS} {CIRCLE} {TRIANGLE} {SQUARE}
+12345678 12345678
+Shoulder buttons: {L1} {L2} {R1} {R2}
+12345678 12345678

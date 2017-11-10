@@ -1,0 +1,46 @@
+//"No hook code"
+"A"
+Unlock All Songs
+20276160 FFFFFFFF
+Max Meter P1
+105570A2 000003E8
+Quick Score Gain P1
+105570B0 0000FFFF
+Max Score P1
+205570B0 3B9AC9FF
+
+//"F-type hook code"
+"B"
+Enable Code (Must Be On)
+F01BA54A 58A5AF15
+Unlock All Songs
+20276160 FFFFFFFF
+Max Meter P1
+105570A2 000003E8
+Quick Score Gain P1
+105570B0 0000FFFF
+Max Score P1
+205570B0 3B9AC9FF
+
+//"9-type hook code"
+"C"
+Enable Code (Must Be On)
+90106FB8 0C041B96
+Unlock All Songs
+20276160 FFFFFFFF
+Max Meter P1
+105570A2 000003E8
+Quick Score Gain P1
+105570B0 0000FFFF
+Max Score P1
+205570B0 3B9AC9FF
+
+//"9-type with additional lines"
+
+"D"
+All in one code!
+90106FB8 0C041B96
+20276160 FFFFFFFF
+105570A2 000003E8
+105570B0 0000FFFF
+205570B0 3B9AC9FF

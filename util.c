@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <loadfile.h>
-#include <tamtypes.h>
 #include <iopcontrol.h>
 #include <libpad.h>
 #include <sifrpc.h>

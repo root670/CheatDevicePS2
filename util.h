@@ -6,6 +6,8 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <tamtypes.h>
+
 #define READ_8(address) \
 *((unsigned char *)address)
 
@@ -47,6 +49,8 @@ int displayError(const char *error);
 void displayContextMenu(int menuID);
 // Get user input for a string
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt);
+// Get user input for a code line
+int displayCodeEditMenu(u64 *code);
 
 // Replace illegal (reserved) characters in str with replacement. valid must point to a char array as large as str.
 void replaceIllegalChars(const char *str, char* valid, char replacement);
