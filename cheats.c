@@ -174,60 +174,6 @@ static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
         return NULL;
 }
 
-/*
-Search though each game's cheats to find 9-type hooks and add them to
-game->enableCheat.
-*/
-void setEnableCheat()
-{
-    cheatsGame_t *game = gamesHead;
-
-    while(game)
-    {
-        cheatsCheat_t *cheat = game->cheats;
-
-        while(cheat)
-        {
-            int numHookLines = 0;
-            int numIgnoredLines = 0;
-            int line = 0;
-
-            while(line < cheat->numCodeLines)
-            {
-                if((cheat->codeLines[line] & 0xF0000000) == 0x90000000)
-                    numHookLines++;
-                else
-                    break;
-
-                line++;
-            }
-
-            if(numHookLines == cheat->numCodeLines)
-            {
-                cheat->skip = 1;
-                if(game->enableCheat.codeLines == NULL)
-                {
-                    printf("Allocating %d bytes for first enable code for %s\n", cheat->numCodeLines * sizeof(u64), game->title);
-                    game->enableCheat.codeLines = calloc(cheat->numCodeLines, sizeof(u64));
-                }
-                else
-                {
-                    printf(">>>>>> Reallocating code lines for additional enable codes %s\n", game->title);
-                    int newSize = (game->enableCheat.numCodeLines + cheat->numCodeLines) * sizeof(u64);
-                    game->enableCheat.codeLines = realloc(game->enableCheat.codeLines, newSize);
-                }
-                memcpy(game->enableCheat.codeLines + game->enableCheat.numCodeLines, cheat->codeLines, cheat->numCodeLines * sizeof(u64));
-                game->enableCheat.numCodeLines += cheat->numCodeLines;
-                game->numCheats--;
-            }
-
-            cheat = cheat->next;
-        }
-
-        game = game->next;
-    }
-}
-
 // CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
@@ -239,8 +185,6 @@ int cheatsOpenDatabase(const char* path)
     {
         gamesHead = handler->open(path, &numGames);
         printf("loaded %d games\n", numGames);
-
-        setEnableCheat();
     }
     else
     {
@@ -317,10 +261,10 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
                 item->extra = (void *)cheat;
 
                 menuInsertItem(item);
-                item++;
             }
 
             cheat = cheat->next;
+            item++;
         }
 
         return game;
@@ -630,7 +574,7 @@ int cheatsDeleteCodeLine()
 
 int cheatsGetNumCodeLines()
 {
-    if(menuGetActive() != CODEMENU && menuGetActive() != ENABLECODEMENU)
+    if(menuGetActive() != CODEMENU)
         return 0;
 
     cheatsCheat_t *cheat = (cheatsCheat_t *)menuGetActiveExtra();
@@ -698,7 +642,7 @@ void cheatsDrawStats()
             
             graphicsDrawText(482, 25, active_cheats, WHITE);
 
-            if(activeGame->enableCheat.numCodeLines == 0)
+            if(!activeGame->enableCheats)
                 graphicsDrawText(482, 47, "Auto Hook", WHITE);
             else
                 graphicsDrawText(482, 47, "Normal Hook", WHITE);
@@ -742,7 +686,7 @@ void cheatsDrawStats()
                            "{L1}/{R1} Page Up/Down");
     }
 
-    else if(activeMenu == CODEMENU || activeMenu == ENABLECODEMENU)
+    else if(activeMenu == CODEMENU)
     {
         if(x < 1200)
             x += 2;
@@ -880,18 +824,20 @@ static void readCodes(cheatsCheat_t *cheats)
     }
 }
 
-void readEnableCodes(cheatsCheat_t *enableCheat)
+/* TODO: Only reads one enable cheat for now. */
+void readEnableCodes(cheatsCheat_t *enableCheats)
 {
     int i;
     u32 addr, val;
+    cheatsCheat_t *cheat = enableCheats;
 
-    if(!enableCheat)
+    if(!cheat)
         return;
 
-    for(i = 0; i < enableCheat->numCodeLines; ++i)
+    for(i = 0; i < cheat->numCodeLines; ++i)
     {
-        addr = (u32)*((u32 *)enableCheat->codeLines + 2*i);
-        val = (u32)*((u32 *)enableCheat->codeLines + 2*i + 1);
+        addr = (u32)*((u32 *)cheat->codeLines + 2*i);
+        val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
 
         if((addr & 0xfe000000) == 0x90000000)
         {
@@ -915,7 +861,7 @@ void cheatsInstallCodesForEngine()
         }
 
         printf("Reading enable cheats\n");
-        readEnableCodes(&activeGame->enableCheat);
+        readEnableCodes(activeGame->enableCheats);
         printf("Reading cheats\n");
         readCodes(activeGame->cheats);
         printf("Done readin cheats\n");
