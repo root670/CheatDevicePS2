@@ -14,9 +14,7 @@
 #define TOKEN_START     TOKEN_TITLE
 
 static cheatsGame_t *gamesHead = NULL;
-static cheatsCheat_t *cheatsHead = NULL;
 static u64 *codesHead = NULL;
-static int usedCheats = 0;
 static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheat = NULL;
 static u64 *codeLine = NULL;

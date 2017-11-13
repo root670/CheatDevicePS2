@@ -16,7 +16,6 @@
 
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
-static cheatDatabaseType_t dbType;
 static hashTable_t *gameHashes = NULL;
 static hashTable_t *cheatHashes = NULL;
 static FILE *historyFile;
@@ -40,31 +39,10 @@ static cheatDatabaseHandler_t TXTHandler = {"Text File (.txt)", "txt", textCheat
 
 int killCheats()
 {
-    int first = 1;
     printf("\n ** Killing Cheats **\n");
 
-    cheatsGame_t *game = gamesHead;
-    while(game)
-    {
-        cheatsGame_t *next = game->next;
-
-        if(game->cheats != NULL) {
-            if(first && dbType == BINARY) // Binary DB allocates cheats structs and code lines once.
-            {
-                free(game->cheats);
-                free(game->cheats->codeLines);
-                first = 0;
-            }
-
-            free(game->cheats->codeLines);
-            free(game->cheats);
-        }
-
-        game = next;
-    }
-    
+    objectPoolKill();
     hashDestroyTable(gameHashes);
-    free(gamesHead);
 
     return 1;
 }
@@ -591,7 +569,7 @@ int cheatsEditCodeLine()
 // Delete currently selected code line
 int cheatsDeleteCodeLine()
 {
-
+    return 0;
 }
 
 int cheatsGetNumCodeLines()

@@ -3,6 +3,7 @@
 #include "libraries/upng.h"
 #include "version.h"
 #include "cheats.h"
+#include "util.h"
 #include <time.h>
 #include <graph.h>
 #include <stdio.h>
@@ -218,7 +219,7 @@ will be considered. If a valid sequence is found, the pointer to the position
 after the matching '}' is returned and texture points to the associated texture
 object. Otherwise NULL is returned.
 */
-static char* getSpecialTexture(const char *str, GSTEXTURE** texture)
+static const char* getSpecialTexture(const char *str, GSTEXTURE** texture)
 {
     char const *cptr = str;
     char special[17];
@@ -627,32 +628,6 @@ int graphicsGetWidth(const char *str)
         maxWidth = lineWidth;
 
     return maxWidth;
-}
-
-int graphicsGetNumLines(const char *str)
-{
-    if(!str)
-        return 0;
-
-    char const *cptr = str;
-    int numLines = 0;
-
-    while(*cptr)
-    {
-        if(numLines == 0)
-        {
-            numLines++;
-        }
-        if(*cptr == '\n')
-        {
-            numLines++;
-        }
-
-        cptr++;
-    }
-
-    printf("numLines = %d\n", numLines);
-    return numLines;
 }
 
 int graphicsGetDisplayWidth()

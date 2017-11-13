@@ -34,7 +34,6 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
     u16 numCodeLines;
     u64 *codeLines = NULL;
     cheatsCheat_t *cheatsHead = NULL;
-    cheatsCheat_t *cheatsArray = NULL;
     cheatsCheat_t *cheat = NULL;
     u8 *cdbOffset = NULL;
     u8 *cdbCheatsOffset = NULL;

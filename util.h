@@ -52,6 +52,8 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 // Get user input for a code line
 int displayCodeEditMenu(u64 *code);
 
+// Get number of lines in str.
+int getNumLines(const char *str);
 // Replace illegal (reserved) characters in str with replacement. valid must point to a char array as large as str.
 void replaceIllegalChars(const char *str, char* valid, char replacement);
 // Remove trailing whitespace from str.

@@ -872,7 +872,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         return 0;
     
     maxLength = graphicsGetWidth(header);
-    numHeaderLines = graphicsGetNumLines(header);
+    numHeaderLines = getNumLines(header);
 
     for(i = 0; i < numItems; i++)
     {
@@ -937,6 +937,31 @@ int displayError(const char *error)
 {
     char *items[] = {"OK"};
     return displayPromptMenu(items, 1, error);
+}
+
+int getNumLines(const char *str)
+{
+    if(!str)
+        return 0;
+
+    char const *cptr = str;
+    int numLines = 0;
+
+    while(*cptr)
+    {
+        if(numLines == 0)
+        {
+            numLines++;
+        }
+        if(*cptr == '\n')
+        {
+            numLines++;
+        }
+
+        cptr++;
+    }
+
+    return numLines;
 }
 
 void replaceIllegalChars(const char *str, char* valid, char replacement)

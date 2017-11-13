@@ -2,6 +2,7 @@
 #include "cheats.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 #define POOLSIZE_GAME     MAX_GAMES * sizeof(cheatsGame_t)
 #define POOLSIZE_CHEAT    MAX_CHEATS * sizeof(cheatsCheat_t)
@@ -103,12 +104,40 @@ int objectPoolRelease(objectPoolType_t type, void *ptr)
     {
         memset(ptr, 0, pools[type].objectSize);
         
-        printf("objectPoolRelease: Adding %08X to freelist\n", ptr);
+        printf("objectPoolRelease: Adding %p to freelist\n", ptr);
         freeList_t *temp = malloc(sizeof(freeList_t));
         temp->ptr = ptr;
         temp->next = pools[type].freeList;
         pools[type].freeList = temp;
     }
 
+    return 1;
+}
+
+int objectPoolKill()
+{
+    if(!initialized)
+        return 0;
+
+    free(pools[OBJECTPOOLTYPE_GAME].memory);
+    free(pools[OBJECTPOOLTYPE_CHEAT].memory);
+
+    while(pools[OBJECTPOOLTYPE_GAME].freeList != NULL)
+    {
+        freeList_t *next = pools[OBJECTPOOLTYPE_GAME].freeList->next;
+        free(pools[OBJECTPOOLTYPE_GAME].freeList);
+        pools[OBJECTPOOLTYPE_GAME].freeList = next;
+    }
+    
+    while(pools[OBJECTPOOLTYPE_CHEAT].freeList != NULL)
+    {
+        freeList_t *next = pools[OBJECTPOOLTYPE_CHEAT].freeList->next;
+        free(pools[OBJECTPOOLTYPE_CHEAT].freeList);
+        pools[OBJECTPOOLTYPE_CHEAT].freeList = next;
+    }
+
+    memset(pools, 0, sizeof(objectPool_t) * 2);
+
+    initialized = 0;
     return 1;
 }

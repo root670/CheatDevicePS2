@@ -24,5 +24,7 @@ typedef struct objectPool objectPool_t;
 void* objectPoolAllocate(objectPoolType_t type);
 // Releases memory associated with an object
 int objectPoolRelease(objectPoolType_t type, void *ptr);
+// Free all pool memory
+int objectPoolKill();
 
 #endif // OBJECTPOOL_H
