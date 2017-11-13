@@ -10,6 +10,8 @@
 static menuState_t menues[NUMMENUS];
 static menuState_t *activeMenu = NULL;
 static int initialized = 0;
+static char *menuTitleSaveMenu = "Save Manager";
+static char *menuTitleBootMenu = "Boot Paths";
 
 #define CHUNK_SIZE 1000
 
@@ -108,7 +110,7 @@ int menuRemoveActiveItem()
         if(activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
-        if(activeMenu->identifier != GAMEMENU || activeMenu->identifier != CHEATMENU)
+        if(activeMenu->identifier != GAMEMENU && activeMenu->identifier != CHEATMENU)
             free(activeMenu->items[activeMenu->currentItem]);
         
         activeMenu->numItems--;
@@ -140,8 +142,10 @@ int menuRemoveAllItems()
             free(item->text);
     }
 
-    if(activeMenu->identifier == CHEATMENU && activeMenu->items)
+    if(activeMenu->identifier == CHEATMENU && activeMenu->items[0])
+    {
         free(activeMenu->items[0]);
+    }
 
     activeMenu->currentItem = 0;
     activeMenu->numItems = 0;
@@ -280,7 +284,7 @@ int menuSetActive(menuID_t id)
         const char **paths;
         int numPaths;
         
-        activeMenu->text = strdup("Boot paths");
+        activeMenu->text = menuTitleBootMenu;
         
         paths = settingsGetBootPaths(&numPaths);
         int i;
@@ -302,7 +306,7 @@ int menuSetActive(menuID_t id)
     
     else if (id == SAVEDEVICEMENU)
     {
-        activeMenu->text = strdup("Save Manager");
+        activeMenu->text = menuTitleSaveMenu;
     }
 
     return 1;
@@ -393,7 +397,7 @@ void menuToggleItem()
         text = activeMenu->items[activeMenu->currentItem]->text;
         type = activeMenu->items[activeMenu->currentItem]->type;
 
-        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type != CHEATHEADER)
+        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type == CHEATNORMAL)
         {
             cheatsSetActiveGame(activeMenu->extra);
             cheatsToggleCheat((cheatsCheat_t *) extra);
@@ -439,8 +443,12 @@ void drawMenuItems()
             {
                 if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
                     graphicsDrawText(50, y, item->text, YELLOW);
-                else if(activeMenu->identifier == GAMEMENU && cheatsIsActiveGame((cheatsGame_t *) item->extra))
+                else if(activeMenu->identifier == GAMEMENU &&
+                        cheatsIsActiveGame((cheatsGame_t *) item->extra) &&
+                        cheatsGetNumEnabledCheats() > 0)
+                {
                     graphicsDrawText(50, y, item->text, YELLOW);
+                }
                 else
                     graphicsDrawText(50, y, item->text, WHITE);
             }

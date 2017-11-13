@@ -12,7 +12,7 @@ typedef enum { TEXT, BINARY } cheatDatabaseType_t;
 typedef enum { CHEATNORMAL, CHEATHEADER, CHEATMASTERCODE } cheatTitleType_t;
 
 // Memory constraints
-#define MAX_GAMES   1700
+#define MAX_GAMES   1600
 #define MAX_CHEATS  175000
 #define MAX_CODES   250000
 
@@ -30,19 +30,12 @@ Cheat Database --> Game --> Cheat --> Code
 
 typedef struct cheatsCheat {
     char title[81];
-    cheatTitleType_t type;
-    int numCodeLines;
+    u8 type;
+    u16 numCodeLines;
     u64 *codeLines;
 
     char enabled;
 
-    /*
-    set skip = 1 if:
-    -> cheat has been marked for deletion
-    OR
-    -> cheat is used as an enable cheat
-    */
-    int skip;
     struct cheatsCheat *next;
 } cheatsCheat_t;
 
@@ -50,7 +43,6 @@ typedef struct cheatsGame {
     char title[81];
     unsigned int numCheats;
     cheatsCheat_t *cheats;
-    cheatsCheat_t *enableCheats;
 
     struct cheatsGame *next;
 } cheatsGame_t;
@@ -91,6 +83,8 @@ int cheatsRenameCheat();
 int cheatsDeleteCheat();
 // Get number of cheats in the cheat list
 int cheatsGetNumCheats();
+// Get number of enabled cheats in the cheat list
+int cheatsGetNumEnabledCheats();
 
 // Add a code line to a cheat
 int cheatsAddCodeLine();

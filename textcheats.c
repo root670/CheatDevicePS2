@@ -1,6 +1,7 @@
 #include "textcheats.h"
 #include "cheats.h"
 #include "graphics.h"
+#include "objectpool.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -57,9 +58,7 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     tokens = malloc(512 * 1024); // 512 KB
     
     countTokens(text, txtLen, &numGames, &numCheats, &numCodeLines);
-    
-    gamesHead = calloc(numGames, sizeof(cheatsGame_t));
-    cheatsHead = calloc(numCheats, sizeof(cheatsCheat_t));
+
     codesHead = calloc(numCodeLines, sizeof(u64));
     codeLine = codesHead;
     
@@ -194,6 +193,7 @@ static int getToken(const char *line)
 // Parse line and process token.
 static int parseLine(const char *line)
 {
+    cheatsGame_t *newGame;
     static unsigned int tokenOffset = 0;
     int token;
     
@@ -202,15 +202,18 @@ static int parseLine(const char *line)
     switch(token)
     {
         case TOKEN_TITLE: // Create new game
+            newGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
+
             if(!game)
             {
                 // First game
+                gamesHead = newGame;
                 game = gamesHead;
             }
             else
             {
-                game->next = game + 1;
-                game++;
+                game->next = newGame;
+                game = newGame;
             }
             
             strncpy(game->title, line+1, 81);
@@ -222,23 +225,23 @@ static int parseLine(const char *line)
             if(!game)
                 return 0;
 
+            cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
+
             if(game->cheats == NULL)
             {
-                // Game's first cheat following enable cheat
-                game->cheats = &cheatsHead[usedCheats++];
+                game->cheats = newCheat;
                 cheat = game->cheats;
-                game->numCheats++;
             }
             else
             {
-                cheat->next = &cheatsHead[usedCheats++];
+                cheat->next = newCheat;
                 cheat = cheat->next;
-                game->numCheats++;
             }
             
             strncpy(cheat->title, line, 81);
             cheat->type = CHEATHEADER;
             cheat->next = NULL;
+            game->numCheats++;
             break;
             
         case TOKEN_CODE: // Add code to cheat

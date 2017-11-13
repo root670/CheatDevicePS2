@@ -3,6 +3,7 @@
 #include "graphics.h"
 #include "zlib.h"
 #include "util.h"
+#include "objectpool.h"
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
@@ -29,7 +30,6 @@ static cheatsGame_t *gamesHead = NULL;
 
 static int cdbOpenBuffer(unsigned char *cdbBuff)
 {
-    int ignoreFirst = 0;
     u16 numCheats;
     u16 numCodeLines;
     u64 *codeLines = NULL;
@@ -63,7 +63,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
 
     cdbOffset = cdbBuff + 16;
 
-    game = calloc(cdbHeader->numTitles, sizeof(cheatsGame_t));
+    game = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
     gamesHead = game;
 
     int i, j;
@@ -86,12 +86,10 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
         
         cdbCheatsOffset = cdbBuff + READ_32(cdbOffset);
         cdbOffset += sizeof(u32);
-        
-        cheatsArray = calloc(numCheats, sizeof(cheatsCheat_t));
-        cheatsHead = &cheatsArray[0];
+
+        cheatsHead = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
         cheat = cheatsHead;
-        
-        ignoreFirst = 0;
+
         /* Read each cheat */
         for(j = 0; j < numCheats; j++)
         {
@@ -114,7 +112,6 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             int line = 0;
             if(cheat->numCodeLines > 0)
             {
-                cheat->type = CHEATNORMAL;
                 cheat->codeLines = codeLines;
                 memcpy(codeLines, cdbCheatsOffset, cheat->numCodeLines * sizeof(u64));
 
@@ -137,16 +134,9 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                 }
 
                 if(numHookLines == cheat->numCodeLines)
-                {
-                    cheat->skip = 1;
-                    game->enableCheats = cheat;
-                    game->numCheats--;
-                }
-                else if(numIgnoredLines == cheat->numCodeLines)
-                {
-                    cheat->skip = 1;
-                    game->numCheats--;
-                }
+                    cheat->type = CHEATMASTERCODE;
+                else
+                    cheat->type = CHEATNORMAL;
 
                 cdbCheatsOffset += cheat->numCodeLines * sizeof(u64);
             }
@@ -158,7 +148,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             }
 
             if(j+1 < numCheats)
-                cheat->next = &cheatsHead[j+1];
+                cheat->next = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
             else
                 cheat->next = NULL;
 
@@ -171,7 +161,7 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
 
         if(i+1 < cdbHeader->numTitles)
         {
-            game->next = game + 1;
+            game->next = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
             game = game->next;
         }
         else

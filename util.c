@@ -396,8 +396,8 @@ void displayContextMenu(int menuID)
 
     else if(menuID == CHEATMENU)
     {
-        char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Edit Enable Cheat", "Cancel"};
-        ret = displayPromptMenu(items, 6, "Cheat Options");
+        char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
+        ret = displayPromptMenu(items, 5, "Cheat Options");
 
         if(ret == 0)
             cheatsAddCheat();
