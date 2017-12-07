@@ -21,5 +21,9 @@ int settingsSave();
 const char* settingsGetDatabasePath();
 // Get string array containing numPaths boot paths.
 const char **settingsGetBootPaths(int *numPaths);
+void settingsLoadBootMenu();
+
+// Rename currently selected boot path.
+void settingsRenameBootPath();
 
 #endif

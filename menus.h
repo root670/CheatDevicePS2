@@ -41,6 +41,7 @@ int menuRemoveActiveItem();
 int menuRemoveAllItems();
 int menuSetActiveItem(menuItem_t *item);
 int menuRenameActiveItem(const char *str);
+const char *menuGetActiveItemText();
 void *menuGetActiveItemExtra();
 
 int menuUp();

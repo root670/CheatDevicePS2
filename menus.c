@@ -110,7 +110,7 @@ int menuRemoveActiveItem()
         if(activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
-        if(activeMenu->identifier != GAMEMENU && activeMenu->identifier != CHEATMENU)
+        if(activeMenu->identifier != GAMEMENU && activeMenu->identifier != CHEATMENU && activeMenu->identifier != BOOTMENU)
             free(activeMenu->items[activeMenu->currentItem]);
         
         activeMenu->numItems--;
@@ -240,6 +240,17 @@ void *menuGetActiveItemExtra()
     return activeMenu->items[activeMenu->currentItem]->extra;
 }
 
+const char *menuGetActiveItemText()
+{
+    if(!activeMenu)
+        return NULL;
+    
+    if(!activeMenu->items[activeMenu->currentItem])
+        return NULL;
+
+    return activeMenu->items[activeMenu->currentItem]->text;
+}
+
 menuID_t menuGetActive()
 {
     return activeMenu->identifier;
@@ -281,27 +292,9 @@ int menuSetActive(menuID_t id)
     }
     else if(id == BOOTMENU)
     {
-        const char **paths;
-        int numPaths;
-        
         activeMenu->text = menuTitleBootMenu;
-        
-        paths = settingsGetBootPaths(&numPaths);
-        int i;
-        
-        /* Disc boot; default option */
-        menuItem_t *discBoot = calloc(1, sizeof(menuItem_t));
-        discBoot->type = NORMAL;
-        discBoot->text = strdup("==Disc==");
-        menuInsertItem(discBoot);
-        
-        for(i = 0; i < numPaths; i++)
-        {
-            menuItem_t *item = calloc(1, sizeof(menuItem_t));
-            item->type = NORMAL;
-            item->text = strdup(paths[i]);
-            menuInsertItem(item);
-        }
+        menuRemoveAllItems();
+        settingsLoadBootMenu();
     }
     
     else if (id == SAVEDEVICEMENU)
@@ -405,6 +398,7 @@ void menuToggleItem()
         
         if(activeMenu->identifier == BOOTMENU)
         {
+            settingsSave();
             startgameExecute(text);
         }
         

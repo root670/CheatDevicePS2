@@ -448,8 +448,11 @@ void displayContextMenu(int menuID)
 
     else if(menuID == BOOTMENU)
     {
-        char *items[] = {"Add Path", "Edit Path", "Cancel"};
-        ret = displayPromptMenu(items, 3, "Boot Options");
+        char *items[] = {"Edit Path", "Cancel"};
+        ret = displayPromptMenu(items, 2, "Boot Options");
+
+        if(ret == 0)
+            settingsRenameBootPath();
     }
 }
 

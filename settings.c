@@ -1,5 +1,7 @@
 #include "settings.h"
 #include "libraries/ini.h"
+#include "util.h"
+#include "menus.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -12,6 +14,7 @@ typedef struct
 static int initialized = 0;
 static struct ini_info *ini;
 settings_t settings;
+static char *diskBootStr = "==Disk==";
 
 int initSettings()
 {
@@ -153,4 +156,51 @@ const char **settingsGetBootPaths(int *numPaths)
         return (const char**) settings.bootPaths;
     }
     return NULL;
+}
+
+void settingsLoadBootMenu()
+{
+    const char **paths;
+    int numPaths;
+    
+    paths = settingsGetBootPaths(&numPaths);
+    
+    menuItem_t *items = calloc(numPaths + 1, sizeof(menuItem_t));
+    /* Disc boot; default option */
+    items[0].type = NORMAL;
+    items[0].text = diskBootStr;
+    menuInsertItem(&items[0]);
+    
+    int i;
+    for(i = 1; i < numPaths + 1; i++)
+    {
+        items[i].type = NORMAL;
+        items[i].text = strdup(paths[i-1]);
+        items[i].extra = (void *)&paths[i-1];
+        menuInsertItem(&items[i]);
+    }
+}
+
+void settingsRenameBootPath()
+{
+    char newPath[80];
+
+    if(initialized)
+    {
+        if(menuGetActive() != BOOTMENU)
+            return;
+
+        char **bootPath = (char **)menuGetActiveItemExtra();
+        if(!bootPath)
+            return;
+        
+        if(displayInputMenu(newPath, sizeof(newPath), menuGetActiveItemText(), "Edit Boot Path") == 0)
+            return;
+
+        free(*bootPath);
+        bootPath = strdup(newPath);
+        menuRenameActiveItem(newPath);
+        menuRemoveAllItems();
+        settingsLoadBootMenu();
+    }
 }
