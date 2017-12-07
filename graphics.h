@@ -52,6 +52,8 @@ int graphicsGetDisplayHeight();
 void graphicsClearScreen(int r, int g, int b);
 // Draw the background graphic
 void graphicsDrawBackground();
+// Draw the last x rows of the background graphic
+void graphicsDrawBackgroundBottom(unsigned int rows);
 
 // Wait for the next vsync, then render.
 void graphicsRenderNow();

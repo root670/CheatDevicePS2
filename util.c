@@ -479,6 +479,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
     int column = 0;
     int upper = 0;
     float width = 0;
+    int tickerX = 0;
 
     tmp[0] = '\0';
 
@@ -641,6 +642,18 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, "Accept", (row == ACCEPT_ROW) ? YELLOW : WHITE);
         graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, "Cancel", (row == CANCEL_ROW) ? YELLOW : WHITE);
 
+        // Draw help ticker
+        graphicsDrawBackgroundBottom(80);
+        if(tickerX < 1300)
+            tickerX += 2;
+        else
+            tickerX = 0;
+
+        char *helpText = "{R1} Space     "
+                         "{R2} Toggle Upper/Lower Case     "
+                         "{SQUARE} Backspace";
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
+
         graphicsRender();
 
     } while(!(pad_pressed & PAD_CIRCLE));
@@ -669,6 +682,7 @@ int displayCodeEditMenu(u64 *code)
     int column = 0;
     char codeString[18];
     int codeLoc = 0;
+    int tickerX = 0;
 
     if(!code)
         return 0;
@@ -681,7 +695,6 @@ int displayCodeEditMenu(u64 *code)
     do
     {
         graphicsDrawPromptBoxBlack(285, 220);
-
 
         state = padGetState(0, 0);
         while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
@@ -848,6 +861,17 @@ int displayCodeEditMenu(u64 *code)
 
         graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, "Accept", (row == CODE_KEYBOARD_ACCEPT_ROW) ? YELLOW : WHITE);
         graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, "Cancel", (row == CODE_KEYBOARD_CANCEL_ROW) ? YELLOW : WHITE);
+
+        // Draw help ticker
+        graphicsDrawBackgroundBottom(80);
+        if(tickerX < 1000)
+            tickerX += 2;
+        else
+            tickerX = 0;
+
+        char *helpText = "{L1}/{R1} Move Cursor     "
+                         "{CROSS} Set Value";
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
 
         graphicsRender();
 

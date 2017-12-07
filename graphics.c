@@ -568,6 +568,24 @@ void graphicsDrawBackground()
                                         );
 }
 
+void graphicsDrawBackgroundBottom(unsigned int rows)
+{
+    //gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+    gsKit_prim_sprite_texture(gsGlobal, &bg,
+                                        0,                            // X1
+                                        bg.Height - rows,             // Y1
+                                        0,                            // U1
+                                        bg.Height - rows,             // V1
+                                        bg.Width,                     // X2
+                                        bg.Height,                    // Y2
+                                        bg.Width,                     // U2
+                                        bg.Height,                    // V2
+                                        1,                            // Z
+                                        0x80808080                    // RGBAQ
+                                        );
+    //gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
 void graphicsDrawPointer(int x, int y)
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
