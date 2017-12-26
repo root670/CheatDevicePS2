@@ -14,7 +14,7 @@ typedef struct
 static int initialized = 0;
 static struct ini_info *ini;
 settings_t settings;
-static char *diskBootStr = "==Disk==";
+static char *diskBootStr = "==Disc==";
 
 int initSettings()
 {
