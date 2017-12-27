@@ -576,8 +576,8 @@ void graphicsDrawBackgroundBottom(unsigned int rows)
                                         bg.Height - rows,             // Y1
                                         0,                            // U1
                                         bg.Height - rows,             // V1
-                                        bg.Width,                     // X2
-                                        bg.Height,                    // Y2
+                                        graphicsGetDisplayWidth(),      // X2
+                                        graphicsGetDisplayHeight(),   // Y2
                                         bg.Width,                     // U2
                                         bg.Height,                    // V2
                                         1,                            // Z
