@@ -198,7 +198,7 @@ void settingsRenameBootPath()
             return;
 
         free(*bootPath);
-        bootPath = strdup(newPath);
+        *bootPath = strdup(newPath);
         menuRenameActiveItem(newPath);
         menuRemoveAllItems();
         settingsLoadBootMenu();

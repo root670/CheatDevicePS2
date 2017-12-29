@@ -195,8 +195,7 @@ int menuRenameActiveItem(const char *str)
         {
             // Rename in place
             free(node->text);
-            node->text = calloc(1, strlen(str) + 1);
-            strcpy(node->text, str);
+            node->text = strdup(str);
 
             return 1;
         }
@@ -223,8 +222,7 @@ int menuRenameActiveItem(const char *str)
     }
 
     free(node->text);
-    node->text = calloc(1, strlen(str) + 1);
-    strcpy(node->text, str);
+    node->text = strdup(str);
 
     return 1;
 }

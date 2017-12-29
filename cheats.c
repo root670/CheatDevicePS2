@@ -194,8 +194,7 @@ int cheatsLoadGameMenu()
         while(node)
         {
             item->type = NORMAL;
-            item->text = calloc(1, strlen(node->title) + 1);
-            strcpy(item->text, node->title);
+            item->text = strdup(node->title);
             item->extra = node;
 
             hash = hashFunction(item->text, strlen(item->text));
@@ -232,9 +231,7 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
             else
                 item->type = HEADER;
 
-            item->text = calloc(1, strlen(cheat->title) + 1);
-            strcpy(item->text, cheat->title);
-
+            item->text = strdup(cheat->title);
             item->extra = (void *)cheat;
 
             menuInsertItem(item);
@@ -320,9 +317,8 @@ int cheatsAddGame()
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
     item->type = NORMAL;
-    item->text = calloc(1, strlen(newGame->title) + 1);
+    item->text = strdup(newGame->title);
     item->extra = newGame;
-    strcpy(item->text, newGame->title);
 
     menuInsertItem(item);
     menuSetActiveItem(item);
@@ -436,9 +432,8 @@ int cheatsAddCheat()
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
     item->type = NORMAL;
-    item->text = calloc(1, strlen(newCheat->title) + 1);
+    item->text = strdup(newCheat->title);
     item->extra = newCheat;
-    strcpy(item->text, newCheat->title);
 
     menuInsertItem(item);
     menuSetActiveItem(item);

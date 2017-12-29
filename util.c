@@ -4,6 +4,7 @@
 #include "startgame.h"
 #include "saves.h"
 #include "cheats.h"
+#include "settings.h"
 #include <stdio.h>
 #include <ctype.h>
 #include <loadfile.h>
