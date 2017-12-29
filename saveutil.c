@@ -42,7 +42,7 @@ static void rc4Crypt(unsigned char *buf, size_t bufLen, const unsigned char *per
     unsigned char j = 0;
     unsigned char k = 0;
     unsigned char temp;
-    unsigned char *s = malloc(256);
+    unsigned char s[256];
     
     memcpy(s, perm, 256);
     
@@ -57,8 +57,6 @@ static void rc4Crypt(unsigned char *buf, size_t bufLen, const unsigned char *per
         
         buf[i] ^= s[(s[j] + s[k]) & 0xFF];
     }
-    
-    free(s);
 }
 
 void cbsCrypt(unsigned char *buf, size_t bufLen)
