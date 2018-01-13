@@ -2,6 +2,7 @@
 #include "libraries/ini.h"
 #include "util.h"
 #include "menus.h"
+#include "graphics.h"
 #include <string.h>
 #include <stdio.h>
 
@@ -203,4 +204,22 @@ void settingsRenameBootPath()
         menuRemoveAllItems();
         settingsLoadBootMenu();
     }
+}
+
+void settingsDrawBootMenuTicker()
+{
+    static int x = 0;
+    const char *msg = "{CROSS} Boot     "
+                "{SQUARE} Options     "
+                "{CIRCLE} Main Menu";
+
+    if(menuGetActive() != BOOTMENU)
+        return;
+
+    if (x < 1200)
+        x+= 2;
+    else
+        x = 0;
+
+    graphicsDrawText(640 - x, 405, msg, WHITE);
 }

@@ -637,6 +637,18 @@ int cheatsGetNumCodeLines()
     return cheat->numCodeLines;
 }
 
+int cheatsGetNumCheats()
+{
+    if(menuGetActive() != CHEATMENU)
+        return 0;
+    
+    cheatsGame_t *game = (cheatsGame_t *)menuGetActiveExtra();
+    if(!game)
+        return 0;
+
+    return game->numCheats;
+}
+
 int cheatsGetNumEnabledCheats()
 {
     return numEnabledCheats;

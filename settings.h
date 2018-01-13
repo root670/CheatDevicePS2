@@ -25,5 +25,7 @@ void settingsLoadBootMenu();
 
 // Rename currently selected boot path.
 void settingsRenameBootPath();
+// Draw help text for the boot menu.
+void settingsDrawBootMenuTicker();
 
 #endif

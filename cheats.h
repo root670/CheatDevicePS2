@@ -85,6 +85,8 @@ int cheatsAddCheat();
 int cheatsRenameCheat();
 // Delect currently selected cheat from cheat list
 int cheatsDeleteCheat();
+// Get number of cheats in the cheat list 
+int cheatsGetNumCheats();
 // Get number of enabled cheats in the cheat list
 int cheatsGetNumEnabledCheats();
 

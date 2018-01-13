@@ -494,6 +494,11 @@ int menuRender()
         }
     }
 
+    if(activeMenu->identifier == BOOTMENU)
+    {
+        settingsDrawBootMenuTicker();
+    }
+
     drawMenuItems();
 
     return 1;
