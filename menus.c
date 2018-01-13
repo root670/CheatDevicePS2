@@ -385,6 +385,17 @@ int menuDownAlpha()
     return 0;
 }
 
+int menuGoToBottom()
+{
+    if(activeMenu->numItems > 0)
+    {
+        activeMenu->currentItem = activeMenu->numItems - 1;
+        return 1;
+    }
+
+    return 0;
+}
+
 void menuToggleItem()
 {
     void *extra;

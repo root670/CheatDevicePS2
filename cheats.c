@@ -560,19 +560,12 @@ int cheatsAddCodeLine()
 
     *src = newCode;
     lastSelectedCode = newCode;
-
-    u32 addr = (u32)*((u32 *)&newCode);
-    u32 val = (u32)*((u32 *)&newCode + 1);
-    snprintf(newCodeLine, 18, "%08X %08X", addr, val);
-    item = calloc(1, sizeof(menuItem_t));
-    item->type = NORMAL;
-    item->text = strdup(newCodeLine);
-    item->extra = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
-    menuInsertItem(item);
-    menuSetActiveItem(item);
-
     cheat->numCodeLines++;
     game->codeLinesUsed++;
+
+    menuRemoveAllItems();
+    cheatsLoadCodeMenu(cheat, game);
+    menuGoToBottom();
 
     return 1;
 }

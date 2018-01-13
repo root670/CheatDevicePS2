@@ -49,6 +49,7 @@ int menuUp();
 int menuDown();
 int menuUpAlpha();
 int menuDownAlpha();
+int menuGoToBottom();
 void menuToggleItem();
 
 int menuRender();
