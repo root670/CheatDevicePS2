@@ -414,7 +414,6 @@ void displayContextMenu(int menuID)
             if(choice == 0)
                 cheatsDeleteCheat();
         }
-
     }
 
     else if(menuID == CODEMENU)

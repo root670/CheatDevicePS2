@@ -14,10 +14,8 @@
 #define TOKEN_START     TOKEN_TITLE
 
 static cheatsGame_t *gamesHead = NULL;
-static u64 *codesHead = NULL;
 static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheat = NULL;
-static u64 *codeLine = NULL;
 
 static u8 *tokens = NULL;
 
@@ -56,9 +54,6 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     tokens = malloc(512 * 1024); // 512 KB
     
     countTokens(text, txtLen, &numGames, &numCheats, &numCodeLines);
-
-    codesHead = calloc(numCodeLines, sizeof(u64));
-    codeLine = codesHead;
     
     while(text < endPtr)
     {
@@ -107,6 +102,10 @@ static void countTokens(const char *text, size_t length, int *numGames, int *num
     unsigned int tokenOffset = 0;
     if(!text || !numGames || !numCheats || !numCodeLines)
         return;
+
+    *numGames = 0;
+    *numCheats = 0;
+    *numCodeLines = 0;
         
     while(text < endPtr)
     {
@@ -210,6 +209,12 @@ static int parseLine(const char *line)
             }
             else
             {
+                if(game->codeLinesUsed > 0)
+                {
+                    game->codeLinesCapacity = game->codeLinesUsed;
+                    game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
+                }
+                
                 game->next = newGame;
                 game = newGame;
             }
@@ -246,13 +251,27 @@ static int parseLine(const char *line)
             if(!game || !cheat)
                 return 0;
             
-            if(!cheat->codeLines)
-                cheat->codeLines = codeLine;
+            if(!game->codeLines)
+            {
+                game->codeLinesCapacity = 1;
+                game->codeLines = calloc(game->codeLinesCapacity, sizeof(u64));
+            }
+            else if(game->codeLinesUsed == game->codeLinesCapacity)
+            {
+                game->codeLinesCapacity *= 2;
+                game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
+            }
             
+            if(cheat->numCodeLines == 0)
+            {
+                cheat->codeLinesOffset = game->codeLinesUsed;
+            }
+            
+            u64 *codeLine = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
             sscanf(line, "%08X %08X", (u32 *)codeLine, ((u32 *)codeLine + 1));
             cheat->type = CHEATNORMAL;
             cheat->numCodeLines++;
-            codeLine++;
+            game->codeLinesUsed++;
             break;
             
         default:

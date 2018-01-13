@@ -20,9 +20,9 @@ static hashTable_t *gameHashes = NULL;
 static hashTable_t *cheatHashes = NULL;
 static FILE *historyFile;
 static int numGames = 0;
-static int numCheats = 0;
 static int numEnabledCheats = 0;
 static int numEnabledCodes = 0;
+static u64 lastSelectedCode = 0;
 
 extern unsigned char _engine_erl_start[];
 
@@ -70,18 +70,18 @@ static void populateGameHashTable()
     }
 }
 
-static void populateCheatHashTable()
+static void populateCheatHashTable(int numEntries)
 {
     if(cheatHashes != NULL)
         hashDestroyTable(cheatHashes);
 
-    cheatHashes = hashNewTable(numCheats);
+    cheatHashes = hashNewTable(numEntries);
 
     cheatsCheat_t *cheat = activeGame->cheats;
 
     while(cheat != NULL)
     {
-        unsigned int hash = hashFunction(cheat->codeLines, cheat->numCodeLines * 8);
+        unsigned int hash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
         hashAdd(cheatHashes, cheat, hash);
 
         cheat = cheat->next;
@@ -113,8 +113,9 @@ int cheatsLoadHistory()
 
         if(lastGameMenu != NULL)
         {
-            cheatsSetActiveGame((cheatsGame_t *) lastGameMenu->extra);
-            populateCheatHashTable();
+            cheatsGame_t *game =(cheatsGame_t *) lastGameMenu->extra;
+            cheatsSetActiveGame(game);
+            populateCheatHashTable(game->numCheats);
 
             for(i = 0; i < historyLength - 4; i+= 4)
             {
@@ -163,7 +164,6 @@ int cheatsOpenDatabase(const char* path)
     if(handler)
     {
         gamesHead = handler->open(path, &numGames);
-        printf("loaded %d games\n", numGames);
     }
     else
     {
@@ -171,7 +171,6 @@ int cheatsOpenDatabase(const char* path)
         sprintf(error, "Unsupported cheat database filetype: \"%s\"!", getFileExtension(path));
         displayError(error);
 
-        // TODO: Use default empty database
         numGames = 0;
     }
 
@@ -219,15 +218,11 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         cheatsCheat_t *cheat = game->cheats;
         menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
         menuItem_t *item = items;
-        numCheats = 0;
 
         while(cheat != NULL)
         {
             if(cheat->type == CHEATNORMAL || cheat->type == CHEATMASTERCODE)
-            {
-                numCheats++;
                 item->type = NORMAL;
-            }
             else
                 item->type = HEADER;
 
@@ -246,9 +241,9 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
     return NULL;
 }
 
-cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat)
+cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
 {
-    if(cheat)
+    if(cheat && game)
     {
         /* Build the menu */
         menuItem_t *items = calloc(cheat->numCodeLines, sizeof(menuItem_t));
@@ -257,14 +252,15 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat)
         int i;
         for(i = 0; i < cheat->numCodeLines; i++)
         {
-            u32 addr = (u32)*((u32 *)cheat->codeLines + 2*i);
-            u32 val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
+            u64 *code = game->codeLines + cheat->codeLinesOffset + i;
+            u32 addr = (u32)*((u32 *)code);
+            u32 val  = (u32)*((u32 *)code + 1);
 
             item->text = malloc(18);
             snprintf(item->text, 18, "%08X %08X", addr, val);
 
             item->type = NORMAL;
-            item->extra = (void *)(cheat->codeLines + i);
+            item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
 
             menuInsertItem(item);
 
@@ -324,7 +320,6 @@ int cheatsAddGame()
     menuSetActiveItem(item);
 
     populateGameHashTable();
-
     return 1;
 }
 
@@ -373,6 +368,14 @@ int cheatsDeleteGame()
     {
         gamesHead = selectedGame->next;
     }
+    else
+    {
+        cheatsGame_t *game = gamesHead;
+        while(game->next != selectedGame)
+            game = game->next;
+        
+        game->next = selectedGame->next;
+    }
 
     cheatsCheat_t *cheat = selectedGame->cheats;
     while(cheat != NULL)
@@ -381,6 +384,9 @@ int cheatsDeleteGame()
         objectPoolRelease(OBJECTPOOLTYPE_CHEAT, cheat);
         cheat = next;
     }
+
+    if(selectedGame->codeLines != NULL)
+        free(selectedGame->codeLines);
 
     objectPoolRelease(OBJECTPOOLTYPE_GAME, selectedGame);
     menuRemoveActiveItem();
@@ -428,7 +434,7 @@ int cheatsAddCheat()
     }
 
     game->numCheats++;
-    numCheats++;
+    newCheat->codeLinesOffset = game->codeLinesUsed;
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
     item->type = NORMAL;
@@ -476,7 +482,7 @@ int cheatsDeleteCheat()
         cheatsToggleCheat(selectedCheat);
 
     if(selectedCheat->type == NORMAL)
-        numCheats--;
+        selectedGame->numCheats--;
 
     if(selectedCheat == selectedGame->cheats)
     {
@@ -492,16 +498,29 @@ int cheatsDeleteCheat()
         cheat->next = selectedCheat->next;
     }
 
+    cheatsCheat_t *cheat = selectedCheat->next;
+    while(cheat != NULL)
+    {
+        cheat->codeLinesOffset -= selectedCheat->numCodeLines;
+        cheat = cheat->next;
+    }
+
+    u64 *dst = selectedGame->codeLines + selectedCheat->codeLinesOffset;
+    u64 *src = dst + selectedCheat->numCodeLines;
+    size_t copyLength = selectedGame->codeLinesUsed - (selectedCheat->codeLinesOffset + selectedCheat->numCodeLines);
+    memmove(dst, src, copyLength * sizeof(u64));
+
+    selectedGame->codeLinesUsed -= selectedCheat->numCodeLines;
+
     objectPoolRelease(OBJECTPOOLTYPE_CHEAT, selectedCheat);
     menuRemoveActiveItem();
-    selectedGame->numCheats--;
 
     return 1;
 }
 
 int cheatsAddCodeLine()
 {
-    u64 newCode;
+    u64 newCode = lastSelectedCode;
     char newCodeLine[18];
     menuItem_t *item;
 
@@ -512,28 +531,48 @@ int cheatsAddCodeLine()
         return 0;
 
     cheatsCheat_t *cheat = menuGetActiveExtra();
-    if(cheat->codeLines == NULL)
+    cheatsGame_t *game = menuGetExtra(CHEATMENU);
+    if(!game)
+        return 0;
+
+    if(!game->codeLines)
     {
-        cheat->codeLines = calloc(1, sizeof(u64));
+        game->codeLinesCapacity = 1;
+        game->codeLines = calloc(1, sizeof(u64));
     }
-    else
+    else if (game->codeLinesUsed == game->codeLinesCapacity)
     {
-        cheat->codeLines = realloc(cheat->codeLines, (cheat->numCodeLines + 1) * sizeof(u64));
+        game->codeLinesCapacity *= 2;
+        game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
     }
 
-    memcpy(cheat->codeLines + cheat->numCodeLines, &newCode, sizeof(u64));
+    cheatsCheat_t *cheatNext = cheat->next;
+    while(cheatNext != NULL)
+    {
+        cheatNext->codeLinesOffset++;
+        cheatNext = cheatNext->next;
+    }
+
+    // Shift all code lines down 1 line
+    u64 *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
+    u64 *dst = src + 1;
+    memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(u64));
+
+    *src = newCode;
+    lastSelectedCode = newCode;
 
     u32 addr = (u32)*((u32 *)&newCode);
     u32 val = (u32)*((u32 *)&newCode + 1);
     snprintf(newCodeLine, 18, "%08X %08X", addr, val);
-
     item = calloc(1, sizeof(menuItem_t));
     item->type = NORMAL;
     item->text = strdup(newCodeLine);
-    item->extra = cheat->codeLines + cheat->numCodeLines;
+    item->extra = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
     menuInsertItem(item);
     menuSetActiveItem(item);
+
     cheat->numCodeLines++;
+    game->codeLinesUsed++;
 
     return 1;
 }
@@ -550,11 +589,13 @@ int cheatsEditCodeLine()
     if(!selectedCode)
         return 0;
 
+    lastSelectedCode = *selectedCode;
+
     if(displayCodeEditMenu(selectedCode) == 0)
         return 0;
     
     u32 addr = (u32)*((u32 *)selectedCode);
-    u32 val = (u32)*((u32 *)selectedCode + 1);
+    u32 val  = (u32)*((u32 *)selectedCode + 1);
     snprintf(newCodeLine, 18, "%08X %08X", addr, val);
     menuRenameActiveItem(newCodeLine);
 
@@ -564,6 +605,30 @@ int cheatsEditCodeLine()
 // Delete currently selected code line
 int cheatsDeleteCodeLine()
 {
+    if(menuGetActive() != CODEMENU)
+        return 0;
+
+    cheatsCheat_t *cheat = menuGetActiveExtra();
+    cheatsGame_t *game = menuGetExtra(CHEATMENU);
+    if(!game)
+        return 0;
+
+    cheatsCheat_t *cheatNext = cheat->next;
+    while(cheatNext != NULL)
+    {
+        cheatNext->codeLinesOffset--;
+        cheatNext = cheatNext->next;
+    }
+
+    // Shift all code lines up 1 line
+    u64 *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
+    u64 *dst = src - 1;
+    memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(u64));
+
+    cheat->numCodeLines--;
+    game->codeLinesUsed--;
+    menuRemoveActiveItem();
+
     return 0;
 }
 
@@ -577,11 +642,6 @@ int cheatsGetNumCodeLines()
         return 0;
 
     return cheat->numCodeLines;
-}
-
-int cheatsGetNumCheats()
-{
-    return numCheats;
 }
 
 int cheatsGetNumEnabledCheats()
@@ -824,14 +884,15 @@ static void readCodes(cheatsCheat_t *cheats)
             if(historyFile)
             {
                 // Save cheat's hash
-                unsigned int cheatHash = hashFunction(cheat->codeLines, cheat->numCodeLines * 8);
+                unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
                 fwrite(&cheatHash, 4, 1, historyFile);
             }
 
             for(i = 0; i < cheat->numCodeLines; ++i)
             {
-                addr = (u32)*((u32 *)cheat->codeLines + 2*i);
-                val = (u32)*((u32 *)cheat->codeLines + 2*i + 1);
+                u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
+                addr = (u32)*((u32 *)code);
+                val  = (u32)*((u32 *)code + 1);
 
                 if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
                 {

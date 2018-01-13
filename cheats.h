@@ -30,19 +30,23 @@ Cheat Database --> Game --> Cheat --> Code
 
 typedef struct cheatsCheat {
     char title[81];
-    u8 type;
-    u16 numCodeLines;
-    u64 *codeLines;
+    u8 type:7;
+    u8 enabled:1;
 
-    char enabled;
+    u8 numCodeLines;
+    u16 codeLinesOffset;
 
     struct cheatsCheat *next;
 } cheatsCheat_t;
 
 typedef struct cheatsGame {
     char title[81];
-    unsigned int numCheats;
+    u16 numCheats;
     cheatsCheat_t *cheats;
+
+    u64 *codeLines;
+    u32 codeLinesCapacity;
+    u32 codeLinesUsed;
 
     struct cheatsGame *next;
 } cheatsGame_t;
@@ -64,7 +68,7 @@ int cheatsLoadGameMenu();
    with a game. */
 cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
-cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t* cheat);
+cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
 
 // Create a new game and add it to the game list
 int cheatsAddGame();
@@ -81,8 +85,6 @@ int cheatsAddCheat();
 int cheatsRenameCheat();
 // Delect currently selected cheat from cheat list
 int cheatsDeleteCheat();
-// Get number of cheats in the cheat list
-int cheatsGetNumCheats();
 // Get number of enabled cheats in the cheat list
 int cheatsGetNumEnabledCheats();
 

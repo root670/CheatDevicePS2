@@ -35,6 +35,7 @@ int killMenus();
 int menuSetActive(menuID_t id);
 menuID_t menuGetActive();
 void *menuGetActiveExtra();
+void *menuGetExtra(menuID_t id);
 
 int menuInsertItem(menuItem_t *item);
 int menuRemoveActiveItem();

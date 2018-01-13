@@ -31,8 +31,6 @@ static cheatsGame_t *gamesHead = NULL;
 static int cdbOpenBuffer(unsigned char *cdbBuff)
 {
     u16 numCheats;
-    u16 numCodeLines;
-    u64 *codeLines = NULL;
     cheatsCheat_t *cheatsHead = NULL;
     cheatsCheat_t *cheat = NULL;
     u8 *cdbOffset = NULL;
@@ -79,8 +77,8 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
         numCheats = READ_16(cdbOffset);
         cdbOffset += sizeof(u16);
 
-        numCodeLines = READ_16(cdbOffset);
-        codeLines = calloc(numCodeLines, sizeof(u64));
+        game->codeLinesCapacity = READ_16(cdbOffset);
+        game->codeLines = calloc(game->codeLinesCapacity, sizeof(u64));
         cdbOffset += sizeof(u16);
         
         cdbCheatsOffset = cdbBuff + READ_32(cdbOffset);
@@ -106,28 +104,20 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             cheat->numCodeLines = READ_8(cdbCheatsOffset);
             cdbCheatsOffset++;
 
+            cheat->codeLinesOffset = game->codeLinesUsed;
+
             int numHookLines = 0;
-            int numIgnoredLines = 0;
             int line = 0;
             if(cheat->numCodeLines > 0)
             {
-                cheat->codeLines = codeLines;
-                memcpy(codeLines, cdbCheatsOffset, cheat->numCodeLines * sizeof(u64));
+                u64 *codeLine = game->codeLines + cheat->codeLinesOffset;
+                memcpy(codeLine, cdbCheatsOffset, cheat->numCodeLines * sizeof(u64));
 
-                /*
-                If cheat only contains 9-type hook codes:
-                -> don't display cheat in the menu
-                -> automatically enable cheat when launching game
-                -> engine will NOT look for a hook if 1 or more 9-type hook codes are found
-
-                If cheat only contains F-type codes, don't display it in the menu
-                */
                 while(line < cheat->numCodeLines)
                 {
-                    if((cheat->codeLines[line] & 0xF0000000) == 0x90000000)
+                    u64 *code = codeLine + line;
+                    if((code[line] & 0xF0000000) == 0x90000000)
                         numHookLines++;
-                    else if((cheat->codeLines[line] & 0xF0000000) == 0xF0000000)
-                        numIgnoredLines++;
 
                     line++;
                 }
@@ -138,11 +128,11 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                     cheat->type = CHEATNORMAL;
 
                 cdbCheatsOffset += cheat->numCodeLines * sizeof(u64);
+                game->codeLinesUsed += cheat->numCodeLines;
             }
             else
             {
                 cheat->type = CHEATHEADER;
-                cheat->codeLines = NULL;
                 game->numCheats--;
             }
 
@@ -151,7 +141,6 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
             else
                 cheat->next = NULL;
 
-            codeLines += cheat->numCodeLines;
             cheat = cheat->next;
         }
 

@@ -259,6 +259,14 @@ void *menuGetActiveExtra()
     return activeMenu->extra;
 }
 
+void *menuGetExtra(menuID_t id)
+{
+    if(id > NUMMENUS-1)
+        return NULL;
+
+    return menues[id].extra;
+}
+
 int menuSetActive(menuID_t id)
 {
     if( id > NUMMENUS-1 )
@@ -281,7 +289,8 @@ int menuSetActive(menuID_t id)
         {
             menuRemoveAllItems();
             activeMenu->text = menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text;
-            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->extra);
+            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->extra,
+            (cheatsGame_t *) menues[CHEATMENU].extra);
         }
         else
         {
@@ -393,14 +402,12 @@ void menuToggleItem()
             cheatsSetActiveGame(activeMenu->extra);
             cheatsToggleCheat((cheatsCheat_t *) extra);
         }
-        
-        if(activeMenu->identifier == BOOTMENU)
+        else if(activeMenu->identifier == BOOTMENU)
         {
             settingsSave();
             startgameExecute(text);
         }
-        
-        if(activeMenu->identifier == SAVEMENU && type != HEADER)
+        else if(activeMenu->identifier == SAVEMENU && type != HEADER)
         {
             savesCopySavePrompt((gameSave_t *) extra);
         }
