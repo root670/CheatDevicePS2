@@ -200,7 +200,7 @@ cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames)
     return gamesHead;
 }
 
-int cdbSave(const char *path)
+int cdbSave(const char *path, const cheatsGame_t *games)
 {
     return 1;
 }

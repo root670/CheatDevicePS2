@@ -31,7 +31,7 @@ typedef struct cheatDatabaseHandler {
     char extention[4]; // file extention
     
     cheatsGame_t* (*open)(const char *path, unsigned int *numGames);
-    int (*save)(const char *path);
+    int (*save)(const char *path, const cheatsGame_t *games);
 } cheatDatabaseHandler_t;
 
 static cheatDatabaseHandler_t CDBHandler = {"Binary Database (.cdb)", "cdb", cdbOpen, cdbSave};
@@ -177,7 +177,17 @@ int cheatsOpenDatabase(const char* path)
     return numGames;
 }
 
-int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
+int cheatsSaveDatabase(const char* path)
+{
+    cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
+
+    if(handler)
+    {
+        return handler->save(path, gamesHead);
+    }
+
+    return 0;
+}
 
 int cheatsLoadGameMenu()
 {

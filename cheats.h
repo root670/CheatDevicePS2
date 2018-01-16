@@ -55,8 +55,8 @@ int killCheats();
 
 // Open a cheat database and load cheats.
 int cheatsOpenDatabase(const char* path);
-// TODO: Save all cheats to a file.
-int cheatsSaveDatabase(const char* path, cheatDatabaseType_t t);
+// Save cheat database to a file.
+int cheatsSaveDatabase(const char* path);
 // Re-enable previously used cheats
 int cheatsLoadHistory();
 

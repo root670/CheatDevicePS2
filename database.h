@@ -11,6 +11,6 @@
 // Open CDB cheat database. Returns cheat database structure.
 cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames);
 // Save internal cheat database to CDB cheat database.
-int cdbSave(const char *path);
+int cdbSave(const char *path, const cheatsGame_t *games);
 
 #endif

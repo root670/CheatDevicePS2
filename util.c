@@ -300,10 +300,7 @@ void handlePad()
     else if(currentMenu == BOOTMENU)
     {
         if(pad_pressed & PAD_CROSS)
-        {
-            cheatsInstallCodesForEngine();
             menuToggleItem();
-        }
         
         else if(pad_pressed & PAD_CIRCLE)
         {
