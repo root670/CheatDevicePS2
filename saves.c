@@ -184,7 +184,7 @@ static saveHandler_t *promptSaveHandler()
 
 gameSave_t *savesGetSaves(device_t dev)
 {
-    mcTable mcDir[64] __attribute__((aligned(64)));
+    sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
     gameSave_t *saves;
     gameSave_t *save;
     saveHandler_t *handler;
@@ -259,9 +259,9 @@ gameSave_t *savesGetSaves(device_t dev)
         int i;
         for(i = 0; i < ret; i++)
         {
-            if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+            if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
             {
-                char *path = getDevicePath(mcDir[i].name, dev);
+                char *path = getDevicePath(mcDir[i].EntryName, dev);
                 strncpy(save->path, path, 64);
                 free(path);
                 
@@ -441,7 +441,7 @@ void savesLoadSaveMenu(device_t dev)
 static int createPSU(gameSave_t *save, device_t src)
 {
     FILE *psuFile, *mcFile;
-    mcTable mcDir[64] __attribute__((aligned(64)));
+    sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
     dirEntry_t dir, file;
     fio_stat_t stat;
     char mcPath[100];
@@ -492,44 +492,44 @@ static int createPSU(gameSave_t *save, device_t src)
     
     for(i = 0; i < ret; i++)
     {
-        if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+        if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
         {
             dir.mode = 0x8427;
-            dir._create.year = mcDir[i]._create.year;
-            dir._create.month = mcDir[i]._create.month;
-            dir._create.day = mcDir[i]._create.day;
-            dir._create.hour = mcDir[i]._create.hour;
-            dir._create.min = mcDir[i]._create.min;
-            dir._create.sec = mcDir[i]._create.sec;
-            dir._modify.year = mcDir[i]._modify.year;
-            dir._modify.month = mcDir[i]._modify.month;
-            dir._modify.day = mcDir[i]._modify.day;
-            dir._modify.hour = mcDir[i]._modify.hour;
-            dir._modify.min = mcDir[i]._modify.min;
-            dir._modify.sec = mcDir[i]._modify.sec;
+            dir._create.year = mcDir[i]._Create.Year;
+            dir._create.month = mcDir[i]._Create.Month;
+            dir._create.day = mcDir[i]._Create.Day;
+            dir._create.hour = mcDir[i]._Create.Hour;
+            dir._create.min = mcDir[i]._Create.Min;
+            dir._create.sec = mcDir[i]._Create.Sec;
+            dir._modify.year = mcDir[i]._Modify.Year;
+            dir._modify.month = mcDir[i]._Modify.Month;
+            dir._modify.day = mcDir[i]._Modify.Day;
+            dir._modify.hour = mcDir[i]._Modify.Hour;
+            dir._modify.min = mcDir[i]._Modify.Min;
+            dir._modify.sec = mcDir[i]._Modify.Sec;
         }
         
-        else if(mcDir[i].attrFile & MC_ATTR_FILE)
+        else if(mcDir[i].AttrFile & MC_ATTR_FILE)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
             graphicsRenderNow();
             
-            file.mode = mcDir[i].attrFile;
-            file.length = mcDir[i].fileSizeByte;
-            file._create.year = mcDir[i]._create.year;
-            file._create.month = mcDir[i]._create.month;
-            file._create.day = mcDir[i]._create.day;
-            file._create.hour = mcDir[i]._create.hour;
-            file._create.min = mcDir[i]._create.min;
-            file._create.sec = mcDir[i]._create.sec;
-            file._modify.year = mcDir[i]._modify.year;
-            file._modify.month = mcDir[i]._modify.month;
-            file._modify.day = mcDir[i]._modify.day;
-            file._modify.hour = mcDir[i]._modify.hour;
-            file._modify.min = mcDir[i]._modify.min;
-            file._modify.sec = mcDir[i]._modify.sec;
-            strncpy(file.name, mcDir[i].name, 32);          
+            file.mode = mcDir[i].AttrFile;
+            file.length = mcDir[i].FileSizeByte;
+            file._create.year = mcDir[i]._Create.Year;
+            file._create.month = mcDir[i]._Create.Month;
+            file._create.day = mcDir[i]._Create.Day;
+            file._create.hour = mcDir[i]._Create.Hour;
+            file._create.min = mcDir[i]._Create.Min;
+            file._create.sec = mcDir[i]._Create.Sec;
+            file._modify.year = mcDir[i]._Modify.Year;
+            file._modify.month = mcDir[i]._Modify.Month;
+            file._modify.day = mcDir[i]._Modify.Day;
+            file._modify.hour = mcDir[i]._Modify.Hour;
+            file._modify.min = mcDir[i]._Modify.Min;
+            file._modify.sec = mcDir[i]._Modify.Sec;
+            strncpy(file.name, mcDir[i].EntryName, 32);          
             
             snprintf(filePath, 100, "%s/%s", save->path, file.name);
             mcFile = fopen(filePath, "rb");
@@ -760,7 +760,7 @@ static int extractCBS(gameSave_t *save, device_t dst)
 static int createCBS(gameSave_t *save, device_t src)
 {
     FILE *cbsFile, *mcFile;
-    mcTable mcDir[64] __attribute__((aligned(64)));
+    sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
     cbsHeader_t header;
     cbsEntry_t entryHeader;
     fio_stat_t stat;
@@ -810,57 +810,57 @@ static int createCBS(gameSave_t *save, device_t src)
     
     for(i = 0; i < ret; i++)
     {
-        if(mcDir[i].attrFile & MC_ATTR_FILE)
-            header.decompressedSize += mcDir[i].fileSizeByte + sizeof(cbsEntry_t);
+        if(mcDir[i].AttrFile & MC_ATTR_FILE)
+            header.decompressedSize += mcDir[i].FileSizeByte + sizeof(cbsEntry_t);
     }
     
     dataBuff = malloc(header.decompressedSize);
     
     for(i = 0; i < ret; i++)
     {
-        if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+        if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
         {
             strncpy(header.magic, "CFU\0", 4);
             header.unk1 = 0x1F40;
             header.dataOffset = 0x128;
             strncpy(header.name, strstr(save->path, ":") + 1, 32);
-            header.create.year = mcDir[i]._create.year;
-            header.create.month = mcDir[i]._create.month;
-            header.create.day = mcDir[i]._create.day;
-            header.create.hour = mcDir[i]._create.hour;
-            header.create.min = mcDir[i]._create.min;
-            header.create.sec = mcDir[i]._create.sec;
-            header.modify.year = mcDir[i]._modify.year;
-            header.modify.month = mcDir[i]._modify.month;
-            header.modify.day = mcDir[i]._modify.day;
-            header.modify.hour = mcDir[i]._modify.hour;
-            header.modify.min = mcDir[i]._modify.min;
-            header.modify.sec = mcDir[i]._modify.sec;
+            header.create.year = mcDir[i]._Create.Year;
+            header.create.month = mcDir[i]._Create.Month;
+            header.create.day = mcDir[i]._Create.Day;
+            header.create.hour = mcDir[i]._Create.Hour;
+            header.create.min = mcDir[i]._Create.Min;
+            header.create.sec = mcDir[i]._Create.Sec;
+            header.modify.year = mcDir[i]._Modify.Year;
+            header.modify.month = mcDir[i]._Modify.Month;
+            header.modify.day = mcDir[i]._Modify.Day;
+            header.modify.hour = mcDir[i]._Modify.Hour;
+            header.modify.min = mcDir[i]._Modify.Min;
+            header.modify.sec = mcDir[i]._Modify.Sec;
             header.mode = 0x8427;
             strncpy(header.title, save->name, 32);
         }
         
-        else if(mcDir[i].attrFile & MC_ATTR_FILE)
+        else if(mcDir[i].AttrFile & MC_ATTR_FILE)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
             graphicsRenderNow();
             
-            entryHeader.create.year = mcDir[i]._create.year;
-            entryHeader.create.month = mcDir[i]._create.month;
-            entryHeader.create.day = mcDir[i]._create.day;
-            entryHeader.create.hour = mcDir[i]._create.hour;
-            entryHeader.create.min = mcDir[i]._create.min;
-            entryHeader.create.sec = mcDir[i]._create.sec;
-            entryHeader.modify.year = mcDir[i]._modify.year;
-            entryHeader.modify.month = mcDir[i]._modify.month;
-            entryHeader.modify.day = mcDir[i]._modify.day;
-            entryHeader.modify.hour = mcDir[i]._modify.hour;
-            entryHeader.modify.min = mcDir[i]._modify.min;
-            entryHeader.modify.sec = mcDir[i]._modify.sec;
-            entryHeader.length = mcDir[i].fileSizeByte;
-            entryHeader.mode = mcDir[i].attrFile;
-            strncpy(entryHeader.name, mcDir[i].name, 32);
+            entryHeader.create.year = mcDir[i]._Create.Year;
+            entryHeader.create.month = mcDir[i]._Create.Month;
+            entryHeader.create.day = mcDir[i]._Create.Day;
+            entryHeader.create.hour = mcDir[i]._Create.Hour;
+            entryHeader.create.min = mcDir[i]._Create.Min;
+            entryHeader.create.sec = mcDir[i]._Create.Sec;
+            entryHeader.modify.year = mcDir[i]._Modify.Year;
+            entryHeader.modify.month = mcDir[i]._Modify.Month;
+            entryHeader.modify.day = mcDir[i]._Modify.Day;
+            entryHeader.modify.hour = mcDir[i]._Modify.Hour;
+            entryHeader.modify.min = mcDir[i]._Modify.Min;
+            entryHeader.modify.sec = mcDir[i]._Modify.Sec;
+            entryHeader.length = mcDir[i].FileSizeByte;
+            entryHeader.mode = mcDir[i].AttrFile;
+            strncpy(entryHeader.name, mcDir[i].EntryName, 32);
             
             memcpy(&dataBuff[dataOffset], &entryHeader, sizeof(cbsEntry_t));
             dataOffset += sizeof(cbsEntry_t);
@@ -1011,7 +1011,7 @@ static int createZIP(gameSave_t *save, device_t src)
     FILE *mcFile;
     zipFile zf;
     zip_fileinfo zfi;
-    mcTable mcDir[64] __attribute__((aligned(64)));
+    sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
     fio_stat_t stat;
     char mcPath[100];
     char zipPath[100];
@@ -1053,25 +1053,25 @@ static int createZIP(gameSave_t *save, device_t src)
     
     for(i = 0; i < ret; i++)
     {
-        if(mcDir[i].attrFile & MC_ATTR_SUBDIR)
+        if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
             continue;
 
-        else if(mcDir[i].attrFile & MC_ATTR_FILE)
+        else if(mcDir[i].AttrFile & MC_ATTR_FILE)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
             graphicsRenderNow();
 
-            snprintf(filePath, 100, "%s/%s", save->path, mcDir[i].name);
+            snprintf(filePath, 100, "%s/%s", save->path, mcDir[i].EntryName);
             
             mcFile = fopen(filePath, "rb");
-            data = malloc(mcDir[i].fileSizeByte);
-            fread(data, 1, mcDir[i].fileSizeByte, mcFile);
+            data = malloc(mcDir[i].FileSizeByte);
+            fread(data, 1, mcDir[i].FileSizeByte, mcFile);
             fclose(mcFile);
 
             if(zipOpenNewFileInZip(zf, strstr(filePath, ":") + 1, &zfi, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION) == ZIP_OK)
             {
-                zipWriteInFileInZip(zf, data, mcDir[i].fileSizeByte);
+                zipWriteInFileInZip(zf, data, mcDir[i].FileSizeByte);
                 zipCloseFileInZip(zf);
             }
             else
