@@ -106,15 +106,16 @@ int initGraphics()
         gsGlobal->PrimAAEnable = GS_SETTING_ON;
         gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
         gsGlobal->DoubleBuffering = GS_SETTING_OFF;
-        gsGlobal->PSM = GS_PSM_CT32;
+        gsGlobal->ZBuffering = GS_SETTING_OFF;
         callbackId = gsKit_add_vsync_handler(&vsync_callback);
         gsKit_init_screen( gsGlobal );
         gsKit_mode_switch( gsGlobal, GS_ONESHOT );
 
         // Clear the screen right away to prevent the old framebuffer from being dumped to screen
+        gsKit_set_test(gsGlobal, GS_ZTEST_OFF);
+        gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
         gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
         gsKit_sync_flip( gsGlobal );
-        gsKit_queue_exec( gsGlobal );
 
         font.Width = STB_SOMEFONT_BITMAP_WIDTH;
         font.Height = STB_SOMEFONT_BITMAP_HEIGHT;
@@ -171,6 +172,8 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
     upng_header(pngTexture);
     upng_decode(pngTexture);
 
+    tex->VramClut = 0;
+    tex->Clut = NULL;
     tex->Width = upng_get_width(pngTexture);
     tex->Height = upng_get_height(pngTexture);
     u8 *imageBuffer = upng_get_buffer(pngTexture);
@@ -554,6 +557,7 @@ void graphicsClearScreen(int r, int g, int b)
 
 void graphicsDrawBackground()
 {
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
                                         0,                            // Y1
@@ -566,11 +570,12 @@ void graphicsDrawBackground()
                                         1,                            // Z
                                         0x80808080                    // RGBAQ
                                         );
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
 void graphicsDrawBackgroundBottom(unsigned int rows)
 {
-    //gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
                                         bg.Height - rows,             // Y1
@@ -583,7 +588,7 @@ void graphicsDrawBackgroundBottom(unsigned int rows)
                                         1,                            // Z
                                         0x80808080                    // RGBAQ
                                         );
-    //gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
 void graphicsDrawPointer(int x, int y)
