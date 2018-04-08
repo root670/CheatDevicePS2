@@ -223,3 +223,4 @@ void settingsDrawBootMenuTicker()
 
     graphicsDrawText(640 - x, 405, msg, WHITE);
 }
+
