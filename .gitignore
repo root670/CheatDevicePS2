@@ -57,3 +57,4 @@ dkms.conf
 version\.h
 CheatHistory\.bin
 cb10\.cdb
+release/*
