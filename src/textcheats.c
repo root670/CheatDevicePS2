@@ -178,7 +178,7 @@ static int parseLine(const char *line, const int len)
             }
             
             strncpy(cheat->title, line, 81);
-            cheat->type = CHEATHEADER;
+            cheat->type = CHEAT_HEADER;
             cheat->next = NULL;
             game->numCheats++;
             break;
@@ -236,7 +236,7 @@ static int parseLine(const char *line, const int len)
 
             } while( i <= 16 );
 
-            cheat->type = CHEATNORMAL;
+            cheat->type = CHEAT_NORMAL;
             cheat->numCodeLines++;
             game->codeLinesUsed++;
             break;

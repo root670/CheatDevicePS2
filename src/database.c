@@ -123,16 +123,16 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
                 }
 
                 if(numHookLines == cheat->numCodeLines)
-                    cheat->type = CHEATMASTERCODE;
+                    cheat->type = CHEAT_ENABLECODE;
                 else
-                    cheat->type = CHEATNORMAL;
+                    cheat->type = CHEAT_NORMAL;
 
                 cdbCheatsOffset += cheat->numCodeLines * sizeof(u64);
                 game->codeLinesUsed += cheat->numCodeLines;
             }
             else
             {
-                cheat->type = CHEATHEADER;
+                cheat->type = CHEAT_HEADER;
                 game->numCheats--;
             }
 

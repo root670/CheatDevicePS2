@@ -231,7 +231,7 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 
         while(cheat != NULL)
         {
-            if(cheat->type == CHEATNORMAL || cheat->type == CHEATMASTERCODE)
+            if(cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE)
                 item->type = NORMAL;
             else
                 item->type = HEADER;
@@ -666,7 +666,7 @@ int cheatsGetNumEnabledCheats()
 
 int cheatsToggleCheat(cheatsCheat_t *cheat)
 {
-    if(cheat && cheat->type != CHEATHEADER)
+    if(cheat && cheat->type != CHEAT_HEADER)
     {
         if(!cheat->enabled)
         {
@@ -698,7 +698,7 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
                 cheatsCheat_t *cheat = activeGame->cheats;
                 while(cheat)
                 {
-                    if(cheat->type == CHEATMASTERCODE)
+                    if(cheat->type == CHEAT_ENABLECODE)
                     {
                         printf("Enable Code found: %s\n", cheat->title);
                         cheat->enabled = 0;
@@ -826,7 +826,7 @@ int cheatsSetActiveGame(cheatsGame_t *game)
         cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
-            if(cheat->type == CHEATMASTERCODE)
+            if(cheat->type == CHEAT_ENABLECODE)
             {
                 printf("Enable Code found: %s\n", cheat->title);
                 cheat->enabled = 1;

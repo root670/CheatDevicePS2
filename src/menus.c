@@ -408,7 +408,7 @@ void menuToggleItem()
         text = activeMenu->items[activeMenu->currentItem]->text;
         type = activeMenu->items[activeMenu->currentItem]->type;
 
-        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type == CHEATNORMAL)
+        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type == CHEAT_NORMAL)
         {
             cheatsSetActiveGame(activeMenu->extra);
             cheatsToggleCheat((cheatsCheat_t *) extra);
@@ -416,6 +416,7 @@ void menuToggleItem()
         else if(activeMenu->identifier == BOOTMENU)
         {
             settingsSave();
+            cheatsSaveDatabase("host:testsavedb.txt");
             cheatsInstallCodesForEngine();
             startgameExecute(text);
         }

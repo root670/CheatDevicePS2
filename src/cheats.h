@@ -8,8 +8,11 @@
 
 #include <tamtypes.h>
 
-typedef enum { TEXT, BINARY } cheatDatabaseType_t;
-typedef enum { CHEATNORMAL, CHEATHEADER, CHEATMASTERCODE } cheatTitleType_t;
+typedef enum {
+    CHEAT_NORMAL, 
+    CHEAT_HEADER, 
+    CHEAT_ENABLECODE
+} cheatTitleType_t;
 
 // Memory constraints
 #define MAX_GAMES   1600
