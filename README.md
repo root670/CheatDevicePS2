@@ -18,7 +18,7 @@ using Cheat Device.
 If you have Docker installed, it's easiest to compile Cheat Device using my
 docker image:
 ```bash
-    ./docker-make
+./docker-make
 ```
 See the [compile](https://github.com/root670/CheatDevicePS2/wiki/Compiling) 
 page in the wiki for instructions to build without Docker.
