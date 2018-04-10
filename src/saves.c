@@ -96,6 +96,7 @@ void savesDrawTicker()
         case FLASH_DRIVE:
             deviceName = "Flash Drive";
             freeSpace = 0; // TODO: Get free space from flash drive.
+            break;
         default:
             deviceName = "";
             freeSpace = 0;
@@ -109,12 +110,12 @@ void savesDrawTicker()
     }
     
     static int ticker_x = 0;
-    if (ticker_x < 1500)
+    if (ticker_x < 1000)
         ticker_x+= 2;
     else
         ticker_x = 0;
     
-    graphicsDrawText(640 - ticker_x, 405, "Press X to choose a game save. Press CIRCLE to return to device menu.", WHITE);
+    graphicsDrawText(640 - ticker_x, 405, "{CROSS} Copy     {CIRCLE} Device Menu", WHITE);
 }
 
 static char *getDevicePath(char *str, device_t dev)
