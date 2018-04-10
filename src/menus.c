@@ -20,6 +20,7 @@ int initMenus()
     if(!initialized)
     {
         int i;
+        memset(menues, 0, sizeof(menuState_t) * NUMMENUS);
         for(i = 0; i < NUMMENUS; i++)
         {
             menues[i].identifier = (menuID_t)i;
@@ -32,6 +33,8 @@ int initMenus()
 
         menues[GAMEMENU].isSorted = 1;
         menues[SAVEMENU].isSorted = 1;
+        menues[CODEMENU].freeTextWhenRemoved = 1;
+        menues[SAVEMENU].freeTextWhenRemoved = 1;
 
         activeMenu = &menues[GAMEMENU];
         initialized = 1;
@@ -107,7 +110,7 @@ int menuRemoveActiveItem()
 {
     if(activeMenu->numItems > 0)
     {
-        if(activeMenu->items[activeMenu->currentItem]->text)
+        if(activeMenu->freeTextWhenRemoved && activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
         if(activeMenu->identifier != GAMEMENU && activeMenu->identifier != CHEATMENU && activeMenu->identifier != BOOTMENU)
@@ -138,7 +141,7 @@ int menuRemoveAllItems()
     {
         menuItem_t *item = activeMenu->items[i];
 
-        if(item->text)
+        if(activeMenu->freeTextWhenRemoved && item->text)
             free(item->text);
     }
 

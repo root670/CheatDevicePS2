@@ -203,7 +203,7 @@ int cheatsLoadGameMenu()
         while(node)
         {
             item->type = NORMAL;
-            item->text = strdup(node->title);
+            item->text = node->title;
             item->extra = node;
 
             hash = hashFunction(item->text, strlen(item->text));
@@ -236,7 +236,7 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
             else
                 item->type = HEADER;
 
-            item->text = strdup(cheat->title);
+            item->text = cheat->title;
             item->extra = (void *)cheat;
 
             menuInsertItem(item);
