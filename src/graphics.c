@@ -552,11 +552,12 @@ void graphicsDrawDeviceMenu(int activeItem)
 
 void graphicsClearScreen(int r, int g, int b)
 {
-    gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(r, g, b,0x00,0x00));
+    gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(r, g, b, 0x00, 0x00));
 }
 
 void graphicsDrawBackground()
 {
+    graphicsClearScreen(0, 0, 0);
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
