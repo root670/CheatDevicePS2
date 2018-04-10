@@ -88,6 +88,43 @@ static void populateCheatHashTable(int numEntries)
     }
 }
 
+static void findEnableCodes()
+{
+    cheatsGame_t *game = gamesHead;
+    while(game)
+    {
+        cheatsCheat_t *cheat = game->cheats;
+        while(cheat)
+        {
+            if(cheat->type == CHEAT_HEADER)
+            {
+                cheat = cheat->next;
+                continue;
+            }
+
+            u64 *codeLine = game->codeLines + cheat->codeLinesOffset;
+            int line = 0;
+            int numHookLines = 0;
+            while(line < cheat->numCodeLines)
+            {
+                u64 *code = codeLine + line;
+                if((code[line] & 0xF0000000) == 0x90000000)
+                    numHookLines++;
+
+                line++;
+            }
+
+            if(numHookLines == cheat->numCodeLines)
+                cheat->type = CHEAT_ENABLECODE;
+            else
+                cheat->type = CHEAT_NORMAL;
+
+            cheat = cheat->next;
+        }
+        game = game->next;
+    }
+}
+
 int cheatsLoadHistory()
 {
     int i;
@@ -174,6 +211,7 @@ int cheatsOpenDatabase(const char* path)
         numGames = 0;
     }
 
+    findEnableCodes();
     return numGames;
 }
 

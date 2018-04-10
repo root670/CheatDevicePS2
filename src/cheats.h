@@ -9,9 +9,9 @@
 #include <tamtypes.h>
 
 typedef enum {
-    CHEAT_NORMAL, 
-    CHEAT_HEADER, 
-    CHEAT_ENABLECODE
+    CHEAT_NORMAL,       // Cheat with code lines
+    CHEAT_HEADER,       // Cheat without code lines
+    CHEAT_ENABLECODE    // Cheat with only 9-type code lines
 } cheatTitleType_t;
 
 // Memory constraints

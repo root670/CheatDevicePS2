@@ -106,27 +106,10 @@ static int cdbOpenBuffer(unsigned char *cdbBuff)
 
             cheat->codeLinesOffset = game->codeLinesUsed;
 
-            int numHookLines = 0;
-            int line = 0;
             if(cheat->numCodeLines > 0)
             {
                 u64 *codeLine = game->codeLines + cheat->codeLinesOffset;
                 memcpy(codeLine, cdbCheatsOffset, cheat->numCodeLines * sizeof(u64));
-
-                while(line < cheat->numCodeLines)
-                {
-                    u64 *code = codeLine + line;
-                    if((code[line] & 0xF0000000) == 0x90000000)
-                        numHookLines++;
-
-                    line++;
-                }
-
-                if(numHookLines == cheat->numCodeLines)
-                    cheat->type = CHEAT_ENABLECODE;
-                else
-                    cheat->type = CHEAT_NORMAL;
-
                 cdbCheatsOffset += cheat->numCodeLines * sizeof(u64);
                 game->codeLinesUsed += cheat->numCodeLines;
             }

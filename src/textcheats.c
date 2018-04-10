@@ -205,6 +205,7 @@ static int parseLine(const char *line, const int len)
             
             u64 *codeLine = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
 
+            // Convert pair of 32-bit hexidecimal text values
             int i = 0;
             static char offsets[] = {3, 0, 2, 0, 1, 0, 0, 0, 0, 7, 0, 6, 0, 5, 0, 4};
             do
