@@ -176,7 +176,7 @@ void settingsLoadBootMenu()
     for(i = 1; i < numPaths + 1; i++)
     {
         items[i].type = NORMAL;
-        items[i].text = strdup(paths[i-1]);
+        items[i].text = paths[i-1];
         items[i].extra = (void *)&paths[i-1];
         menuInsertItem(&items[i]);
     }

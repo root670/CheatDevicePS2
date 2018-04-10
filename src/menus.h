@@ -20,6 +20,7 @@ typedef struct menuItem {
 typedef struct menuState {
     menuID_t identifier;
     int isSorted;
+    int freeTextWhenRemoved;
     char *text;
     void *extra; // Optional: Associate additional data with the menu.
     
