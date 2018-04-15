@@ -21,6 +21,7 @@ OBJS += src/libraries/minizip/unzip.o
 OBJS += src/main.o
 OBJS += src/objectpool.o
 OBJS += src/hash.o
+OBJS += src/pad.o
 OBJS += src/util.o
 OBJS += src/startgame.o
 OBJS += src/database.o

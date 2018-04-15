@@ -1,4 +1,5 @@
 #include "util.h"
+#include "pad.h"
 #include "menus.h"
 #include "graphics.h"
 #include "startgame.h"
@@ -9,7 +10,6 @@
 #include <ctype.h>
 #include <loadfile.h>
 #include <iopcontrol.h>
-#include <libpad.h>
 #include <sifrpc.h>
 #include <iopheap.h>
 #include <kernel.h>
@@ -35,7 +35,6 @@ extern u8  _usbd_irx_start[];
 extern int _usbd_irx_size;
 extern u8  _usb_mass_irx_start[];
 extern int _usb_mass_irx_size;
-static char padBuff[256] __attribute__ ((aligned(64)));
 
 void loadModules()
 {
@@ -96,43 +95,19 @@ void loadModules()
     mcInit(MC_TYPE_MC);
     #endif
 
-    padInit(0);
-    padPortOpen(0, 0, padBuff);
-    padSetMainMode(0, 0, PAD_MMODE_DIGITAL, PAD_MMODE_LOCK);
+    padInitialize();
 }
 
 void handlePad()
 {
-    u32 pad_rapid = 0;
-    static u32 old_pad = 0xffff;
-    static u32 pad_pressed;
-    struct padButtonStatus padStat;
-    int state;
-    static u32 time_held = 0;
     static int selected = 0;
     static int selectedDevice = 0;
 
-    state = padGetState(0, 0);
-    while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-        state = padGetState(0, 0);
-
-    padRead(0, 0, &padStat);
-    pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-    old_pad = 0xFFFF ^ padStat.btns;
+    padPoll(DELAYTIME_FAST);
+    u32 pad_pressed = padPressed();
+    u32 pad_rapid = padHeld();
     
-    // pad_rapid will have an initial delay when a button is held
-    if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
-    {
-        if(time_held++ > 18 && time_held % 2 == 0) // don't go too fast!
-            pad_rapid = (0xFFFF ^ padStat.btns);
-        else
-            pad_rapid = pad_pressed;
-    }
-    else
-        time_held = 0;
-
     menuID_t currentMenu = menuGetActive();
-    
     if(currentMenu == GAMEMENU ||
        currentMenu == CHEATMENU ||
        currentMenu == CODEMENU ||
@@ -158,16 +133,10 @@ void handlePad()
         }
 
         else if(pad_pressed & PAD_SELECT)
-        {
             graphicsDrawAboutPage();
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
 
         else if(pad_pressed & PAD_SQUARE)
-        {
             displayContextMenu(GAMEMENU);
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
 
         if(pad_rapid & PAD_R1)
         {
@@ -188,7 +157,6 @@ void handlePad()
 
         else if(pad_rapid & PAD_L2)
             menuUpAlpha();
-        // TODO: Goto settings menu, mini menu, etc
     }
 
     else if(currentMenu == CHEATMENU)
@@ -200,10 +168,7 @@ void handlePad()
             menuSetActive(GAMEMENU);
 
         else if(pad_pressed & PAD_SQUARE)
-        {
             displayContextMenu(CHEATMENU);
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
         
         else if(pad_pressed & PAD_START)
             menuSetActive(MAINMENU);
@@ -229,18 +194,12 @@ void handlePad()
             menuSetActive(CHEATMENU);
 
         else if(pad_pressed & PAD_SQUARE)
-        {
             displayContextMenu(CODEMENU);
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
 
         else if(pad_pressed & PAD_CROSS)
         {
             if(cheatsGetNumCodeLines() > 0)
-            {
                 cheatsEditCodeLine();
-                old_pad |= PAD_CROSS | PAD_CIRCLE;
-            }
         }
 
         if(pad_rapid & PAD_R1)
@@ -272,10 +231,7 @@ void handlePad()
         }
 
         else if(pad_pressed & PAD_SELECT)
-        {
             graphicsDrawAboutPage();
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
 
         else if(pad_pressed & PAD_CIRCLE)
             menuSetActive(GAMEMENU);
@@ -309,10 +265,7 @@ void handlePad()
         }
 
         else if(pad_pressed & PAD_SQUARE)
-        {
             displayContextMenu(BOOTMENU);
-            old_pad |= PAD_CROSS | PAD_CIRCLE;
-        }
     }
     
     else if(currentMenu == SAVEDEVICEMENU)
@@ -355,12 +308,8 @@ void handlePad()
     else if(currentMenu == SAVEMENU)
     {
         if(pad_pressed & PAD_CROSS)
-        {
-            // choose destination device
             menuToggleItem();
-            // if user backs out of device menu, they'll be holding circle.
-            old_pad |= PAD_CIRCLE;
-        }
+        
         else if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
@@ -479,13 +428,10 @@ char *keyBoardCharsUpper = "~!@#$%^&*()_+" \
 
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
-    struct padButtonStatus padStat;
     char tmp[1024];
-    int tmpLoc, state;
-    u32 old_pad = PAD_CROSS;
-    u32 pad_pressed = 0;
-    u32 pad_rapid = 0;
-    static u32 time_held = 0;
+    int tmpLoc;
+    u32 pad_pressed;
+    u32 pad_rapid;
     int row = 0;
     int column = 0;
     int upper = 0;
@@ -521,26 +467,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         if(tmp)
             graphicsDrawTextCentered(150, tmp, YELLOW);
 
-        state = padGetState(0, 0);
-        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-            state = padGetState(0, 0);
-    
-        padRead(0, 0, &padStat);
-    
-        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-        old_pad = 0xFFFF ^ padStat.btns;
-
-        // pad_rapid will have an initial delay when a button is held
-        if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
-        {
-            if(time_held++ > 18 && time_held % 6 == 0) // don't go too fast!
-                pad_rapid = (0xFFFF ^ padStat.btns);
-            else
-                pad_rapid = pad_pressed;
-        }
-        else
-            time_held = 0;
-
+        padPoll(DELAYTIME_SLOW);
+        pad_pressed = padPressed();
+        pad_rapid = padHeld();
         if(pad_pressed & PAD_CROSS)
         {
             if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
@@ -683,12 +612,8 @@ char *codeKeyboardChars = "0123" \
 
 int displayCodeEditMenu(u64 *code)
 {
-    struct padButtonStatus padStat;
-    int state;
-    u32 old_pad = PAD_CROSS;
-    u32 pad_pressed = 0;
-    u32 pad_rapid = 0;
-    static u32 time_held = 0;
+    u32 pad_pressed;
+    u32 pad_rapid;
     int row = 0;
     int column = 0;
     char codeString[18];
@@ -707,25 +632,9 @@ int displayCodeEditMenu(u64 *code)
     {
         graphicsDrawPromptBoxBlack(285, 220);
 
-        state = padGetState(0, 0);
-        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-            state = padGetState(0, 0);
-    
-        padRead(0, 0, &padStat);
-    
-        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-        old_pad = 0xFFFF ^ padStat.btns;
-
-        // pad_rapid will have an initial delay when a button is held
-        if((0xFFFF ^ padStat.btns) && (0xFFFF ^ padStat.btns) == old_pad)
-        {
-            if(time_held++ > 18 && time_held % 6 == 0) // don't go too fast!
-                pad_rapid = (0xFFFF ^ padStat.btns);
-            else
-                pad_rapid = pad_pressed;
-        }
-        else
-            time_held = 0;
+        padPoll(DELAYTIME_SLOW);
+        pad_pressed = padPressed();
+        pad_rapid = padHeld();
 
         if(pad_pressed & PAD_CROSS)
         {
@@ -894,20 +803,15 @@ int displayCodeEditMenu(u64 *code)
 
 int displayPromptMenu(char **items, int numItems, const char *header)
 {
-    struct padButtonStatus padStat;
-    u32 old_pad = PAD_CROSS;
     u32 pad_pressed = 0;
-    int state, i, y;
+    int i, y;
     int selectedItem = 0;
-
-    float maxLength = 0;
-    int numHeaderLines;
     
     if(!items || numItems <= 0 || !header)
         return 0;
     
-    maxLength = graphicsGetWidth(header);
-    numHeaderLines = getNumLines(header);
+    float maxLength = graphicsGetWidth(header);
+    int numHeaderLines = getNumLines(header);
 
     for(i = 0; i < numItems; i++)
     {
@@ -921,14 +825,8 @@ int displayPromptMenu(char **items, int numItems, const char *header)
 
     do
     {
-        state = padGetState(0, 0);
-        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-            state = padGetState(0, 0);
-    
-        padRead(0, 0, &padStat);
-    
-        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-        old_pad = 0xFFFF ^ padStat.btns;
+        padPoll(DELAYTIME_SLOW);
+        pad_pressed = padPressed();
         
         graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
         graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, header, GREEN);

@@ -3,9 +3,9 @@
 #include <dirent.h>
 #include <fileio.h>
 #include <libmc.h>
-#include <libpad.h>
 #include <sys/stat.h>
 #include "saves.h"
+#include "pad.h"
 #include "saveutil.h"
 #include "menus.h"
 #include "graphics.h"
@@ -1138,22 +1138,13 @@ static int doCopy(device_t src, device_t dst, gameSave_t *save)
 
 int savesCopySavePrompt(gameSave_t *save)
 {
-    struct padButtonStatus padStat;
-    u32 old_pad = PAD_CROSS;
-    u32 pad_pressed = 0;
-    int state;
+    u32 pad_pressed;
     int selectedDevice = 0;
     
     do
     {
-        state = padGetState(0, 0);
-        while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
-            state = padGetState(0, 0);
-    
-        padRead(0, 0, &padStat);
-    
-        pad_pressed = (0xFFFF ^ padStat.btns) & ~old_pad;
-        old_pad = 0xFFFF ^ padStat.btns;
+        padPoll(DELAYTIME_SLOW);
+        pad_pressed = padPressed();
         
         graphicsDrawBackground();
         graphicsDrawTextCentered(47, save->name, WHITE);
