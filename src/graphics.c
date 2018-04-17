@@ -176,7 +176,7 @@ static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filter
     tex->Clut = NULL;
     tex->Width = upng_get_width(pngTexture);
     tex->Height = upng_get_height(pngTexture);
-    u8 *imageBuffer = upng_get_buffer(pngTexture);
+    u8 *imageBuffer = (u8 *)upng_get_buffer(pngTexture);
     
     if(upng_get_format(pngTexture) == UPNG_RGB8)
     {

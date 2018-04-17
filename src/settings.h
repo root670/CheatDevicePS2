@@ -18,9 +18,9 @@ int killSettings();
 int settingsSave();
 
 // Get database path string.
-const char* settingsGetDatabasePath();
+char* settingsGetDatabasePath();
 // Get string array containing numPaths boot paths.
-const char **settingsGetBootPaths(int *numPaths);
+char** settingsGetBootPaths(int *numPaths);
 void settingsLoadBootMenu();
 
 // Rename currently selected boot path.

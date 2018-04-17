@@ -569,8 +569,6 @@ int cheatsDeleteCheat()
 int cheatsAddCodeLine()
 {
     u64 newCode = lastSelectedCode;
-    char newCodeLine[18];
-    menuItem_t *item;
 
     if(menuGetActive() != CODEMENU)
         return 0;

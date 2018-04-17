@@ -139,7 +139,7 @@ int settingsSave()
     return 0;
 }
 
-const char* settingsGetDatabasePath(char* property)
+char* settingsGetDatabasePath(char* property)
 {
     if(initialized)
     {
@@ -149,19 +149,19 @@ const char* settingsGetDatabasePath(char* property)
     return NULL;
 }
 
-const char **settingsGetBootPaths(int *numPaths)
+char** settingsGetBootPaths(int *numPaths)
 {
     if(initialized)
     {
         *numPaths = 5;
-        return (const char**) settings.bootPaths;
+        return settings.bootPaths;
     }
     return NULL;
 }
 
 void settingsLoadBootMenu()
 {
-    const char **paths;
+    char **paths;
     int numPaths;
     
     paths = settingsGetBootPaths(&numPaths);
