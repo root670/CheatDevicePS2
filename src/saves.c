@@ -289,7 +289,9 @@ gameSave_t *savesGetSaves(device_t dev)
                         if(*jp == 0x82)
                         {
                             jp++;
-                            if(*jp >= 0x4F && *jp <= 0x58) // 0-9
+                            if(*jp == 0x3F) // spaces
+                                c = ' ';
+                            else if(*jp >= 0x4F && *jp <= 0x58) // 0-9
                                 c = *jp - 0x1F;
                             else if(*jp >= 0x60 && *jp <= 0x79) // A-Z
                                 c = *jp - 0x1F;
