@@ -16,9 +16,9 @@ void padInitialize();
 void padPoll(delayTime_t delayTime);
 
 // Get buttons pressed momentarily
-u32 padPressed();
+inline u32 padPressed();
 
 // Get buttons held down
-u32 padHeld();
+inline u32 padHeld();
 
 #endif // PAD_H

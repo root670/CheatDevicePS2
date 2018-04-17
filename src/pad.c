@@ -49,12 +49,12 @@ void padPoll(delayTime_t delayTime)
         padState.timeHeld = 0;
 }
 
-u32 padPressed()
+inline u32 padPressed()
 {
     return padState.padPressed;
 }
 
-u32 padHeld()
+inline u32 padHeld()
 {
     return padState.padHeld;
 }
