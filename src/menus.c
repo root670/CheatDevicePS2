@@ -430,7 +430,40 @@ void menuToggleItem()
     }
 }
 
-void drawMenuItems()
+static float windowPosition;
+
+static void drawScrollBar()
+{
+    if(activeMenu->numItems < 15)
+        return;
+
+    // Based on notes from http://csdgn.org/article/scrollbar
+    // All menu items
+    float contentSize = activeMenu->numItems * 22;
+    // Currently displayed menu items
+    float windowSize = 14 * 22;
+    // Size of track the grip moves over
+    float trackSize = windowSize;
+    float windowContentRatio = windowSize / contentSize;
+    float gripSize = trackSize * windowContentRatio;
+    
+    if(gripSize < 20)
+        gripSize = 20;
+    else if(gripSize > trackSize)
+        gripSize = trackSize;
+    
+    float windowScrollAreaSize = contentSize - windowSize;
+    float windowPositionRatio = windowPosition / windowScrollAreaSize;
+    float trackScrollAreaSize = trackSize - gripSize;
+    float gripPositionOnTrack = trackScrollAreaSize * windowPositionRatio;
+
+    // Draw track w/ 2px padding around grip
+    graphicsDrawQuad(graphicsGetDisplayWidth() - 40, 76, 10, trackSize + 4, BLUE);
+    // Draw grip
+    graphicsDrawQuad(graphicsGetDisplayWidth() - 38, 78 + gripPositionOnTrack, 6, gripSize, WHITE);
+}
+
+static void drawMenuItems()
 {
     int yItems = 14;
     int yAbove = 7;
@@ -445,6 +478,8 @@ void drawMenuItems()
 
     while(yAbove-- > 0 && idx > 0)
         idx--;
+
+    windowPosition = idx * 22;
     
     /* Render visible items */
     int i;
@@ -504,6 +539,7 @@ int menuRender()
         settingsDrawBootMenuTicker();
     }
 
+    drawScrollBar();
     drawMenuItems();
 
     return 1;

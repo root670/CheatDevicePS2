@@ -38,7 +38,7 @@ void graphicsDrawPromptBox(int width, int height);
 // Draw solid black rectangular box
 void graphicsDrawPromptBoxBlack(int width, int height);
 // Draw a quad
-void graphicsDrawQuad(int x, int y, int xsize, int ysize, graphicsColor_t color);
+void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_t color);
 
 // Get total width of characters in string
 int graphicsGetWidth(const char *str);

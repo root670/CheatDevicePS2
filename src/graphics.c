@@ -464,7 +464,7 @@ void graphicsDrawLoadingBar(int x, int y, float progress)
                               x + (progress * width), y+height, 1, color);
 }
 
-void graphicsDrawQuad(int x, int y, int xsize, int ysize, graphicsColor_t color)
+void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_t color)
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
 
