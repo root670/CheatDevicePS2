@@ -48,6 +48,8 @@ void *menuGetActiveItemExtra();
 
 int menuUp();
 int menuDown();
+int menuUpRepeat(int n);
+int menuDownRepeat(int n);
 int menuUpAlpha();
 int menuDownAlpha();
 int menuGoToBottom();

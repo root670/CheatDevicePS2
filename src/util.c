@@ -139,18 +139,10 @@ void handlePad()
             displayContextMenu(GAMEMENU);
 
         if(pad_rapid & PAD_R1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuDown();
-        }
+            menuDownRepeat(10);
 
         else if(pad_rapid & PAD_L1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuUp();
-        }
+            menuUpRepeat(10);
 
         if(pad_rapid & PAD_R2)
             menuDownAlpha();
@@ -174,18 +166,10 @@ void handlePad()
             menuSetActive(MAINMENU);
 
         if(pad_rapid & PAD_R1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuDown();
-        }
+            menuDownRepeat(10);
 
         else if(pad_rapid & PAD_L1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuUp();
-        }
+            menuUpRepeat(10);
     }
 
     else if(currentMenu == CODEMENU)
@@ -203,18 +187,10 @@ void handlePad()
         }
 
         if(pad_rapid & PAD_R1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuDown();
-        }
+            menuDownRepeat(10);
 
         else if(pad_rapid & PAD_L1)
-        {
-            int i;
-            for(i = 0; i < 10; i++)
-                menuUp();
-        }
+            menuUpRepeat(10);
     }
 
     else if(currentMenu == MAINMENU)

@@ -340,6 +340,24 @@ int menuDown()
     return 0;
 }
 
+int menuUpRepeat(int n)
+{
+    int i;
+    for(i = 0; i < n; i++)
+        menuUp();
+
+    return 1;
+}
+
+int menuDownRepeat(int n)
+{
+    int i;
+    for(i = 0; i < n; i++)
+        menuDown();
+
+    return 1;
+}
+
 int menuUpAlpha()
 {
     int idx;
