@@ -88,10 +88,46 @@ void MyLoadElf(char *elfpath)
     /* Clear scratchpad memory */
     memset((void*)0x70000000, 0, 16 * 1024);
 
+    /* HACK do not reset IOP when launching ELF from mass */
+	if (!(elfpath[0] == 'm' && elfpath[1] == 'a' &&
+		    elfpath[2] == 's' && elfpath[3] == 's'))
+    {
+		/* reset IOP */
+		SifInitRpc(0);
+
+		FlushCache(0);
+		FlushCache(2);
+
+		/* reload modules */
+		SifLoadFileInit();
+		SifLoadModule("rom0:SIO2MAN", 0, NULL);
+		SifLoadModule("rom0:MCMAN", 0, NULL);
+		SifLoadModule("rom0:MCSERV", 0, NULL);
+	}
+
     char *args[1];
     t_ExecData sifelf;
-
     memset(&sifelf, 0, sizeof(t_ExecData));
+
+    int ret = SifLoadElf(elfpath, &sifelf);
+    if(!ret && sifelf.epc)
+    {
+        /* exit services */
+		fioExit();
+		SifLoadFileExit();
+		SifExitIopHeap();
+		SifExitRpc();
+
+		FlushCache(0);
+		FlushCache(2);
+
+		/* finally, run game ELF... */
+		ExecPS2((void*)sifelf.epc, (void*)sifelf.gp, 1, &elfpath);
+
+		SifInitRpc(0);
+    }
+
+    /* SifLoadElf failed, so try to load the ELF manually */
 
     elf_header_t boot_header;
     elf_pheader_t boot_pheader;
