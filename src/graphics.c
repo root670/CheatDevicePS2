@@ -534,11 +534,10 @@ static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
 void graphicsDrawMainMenu(int activeItem)
 {
     menuIcon_t icons[] = {{"Start Game", &gamepad},
-                               {"Game List", &cube},
-                               {"Save Manager", &savemanager},
-                               {"Settings", &cogs}};
+                          {"Game List", &cube},
+                          {"Save Manager", &savemanager}};
     
-    drawMenu(icons, 4, activeItem);
+    drawMenu(icons, 3, activeItem);
 }
 
 void graphicsDrawDeviceMenu(int activeItem)

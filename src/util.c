@@ -214,7 +214,7 @@ void handlePad()
 
         else if(pad_pressed & PAD_RIGHT)
         {
-            if(selected >= 3)
+            if(selected >= 2)
                 selected = 0;
             else
                 ++selected;
@@ -223,7 +223,7 @@ void handlePad()
         else if(pad_pressed & PAD_LEFT)
         {
             if (selected == 0)
-                selected = 3;
+                selected = 2;
             else
                 --selected;
         }

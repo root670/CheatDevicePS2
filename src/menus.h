@@ -9,7 +9,7 @@
 #include <tamtypes.h>
 #include "cheats.h"
 
-typedef enum { GAMEMENU, CHEATMENU, CODEMENU, SETTINGSMENU, MAINMENU, BOOTMENU, SAVEDEVICEMENU, SAVEMENU, NUMMENUS } menuID_t;
+typedef enum { GAMEMENU, CHEATMENU, CODEMENU, MAINMENU, BOOTMENU, SAVEDEVICEMENU, SAVEMENU, NUMMENUS } menuID_t;
 typedef enum { NORMAL, HEADER } menutype_t;
 typedef struct menuItem {
     menutype_t type;
