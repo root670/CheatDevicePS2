@@ -669,7 +669,9 @@ void graphicsDrawAboutPage()
 
     snprintf(msg, 200, "Cheat Device\n" GIT_VERSION 
                        "\nCompiled " __DATE__ " " __TIME__
-                       "\n\nTotal Games: %d", cheatsGetNumGames());
+                       "\n\nTotal Games: %d\n"
+                       "Database: %s",
+                       cheatsGetNumGames(), settingsGetDatabasePath());
 
     displayError(msg);
 }
