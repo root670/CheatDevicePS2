@@ -47,13 +47,10 @@ typedef struct {
 extern u8   _bootstrap_elf_start[];
 extern int _bootstrap_elf_size;
 
-static void discPrompt()
+static int discPrompt()
 {
-    char *items[] = {"OK"};
-    displayPromptMenu(items, 1, "Please insert disc");
-    
-    graphicsDrawTextCentered(310, "Starting game...", YELLOW);
-    graphicsRenderNow();
+    char *items[] = {"OK", "Cancel"};
+    return (displayPromptMenu(items, 2, "Please insert disc") == 0);
 }
 
 #define ELF_PT_LOAD 1
@@ -67,14 +64,15 @@ void startgameExecute(char *path)
     char syscnfText[256];
     static char boot2[100];
     char *line, *substr;
-
-    killMenus();
-    killCheats();
-    killSettings();
     
     if(strcmp(path, "==Disc==") == 0)
     {
-        discPrompt();
+        if(!discPrompt())
+            return;
+
+        graphicsDrawTextCentered(310, "Starting game...", YELLOW);
+        graphicsRenderNow();
+
         // wait for disc to be ready
         while(sceCdGetDiskType() == 1);
         sceCdDiskReady(0);
@@ -120,6 +118,12 @@ void startgameExecute(char *path)
     {
         strncpy(boot2, path, 100);
     }
+
+    settingsSave();
+    cheatsInstallCodesForEngine();
+    killMenus();
+    killCheats();
+    killSettings();
     
     eh = (elf_header_t *)_bootstrap_elf_start;
     eph = (elf_pheader_t *)(_bootstrap_elf_start + eh->phoff);
