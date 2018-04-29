@@ -42,6 +42,8 @@ void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_
 
 // Get total width of characters in string
 int graphicsGetWidth(const char *str);
+// Get total width of first n characters in string
+int graphicsGetWidthSubString(const char *str, int n);
 
 // Get display width in pixels
 int graphicsGetDisplayWidth();

@@ -405,7 +405,7 @@ char *keyBoardCharsUpper = "~!@#$%^&*()_+" \
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
     char tmp[1024];
-    int tmpLoc;
+    int tmpLen;
     u32 pad_pressed;
     u32 pad_rapid;
     int row = 0;
@@ -413,6 +413,8 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
     int upper = 0;
     float width = 0;
     int tickerX = 0;
+    int cursorIndex;
+    static int cursorWidth = 2;
 
     tmp[0] = '\0';
 
@@ -421,27 +423,27 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
     else
         tmp[0] = '\0';
 
-    tmpLoc = strlen(tmp);
+    tmpLen = strlen(tmp);
+    cursorIndex = tmpLen;
 
     do
     {
-        if(tmp)
-        {
-            int newWidth = graphicsGetWidth(tmp) + 20;
-            if(newWidth > width)
-                width = newWidth;
-        }
+        int textWidth = graphicsGetWidth(tmp);
+        int newWidth = textWidth + cursorWidth + 30;
+        if(newWidth > width)
+            width = newWidth;
 
         if(width < 345)
             width = 345;
 
+        int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (320 - textWidth/2.0);
+
         graphicsDrawPromptBoxBlack(width, 220);
+        graphicsDrawTextCentered(150, tmp, YELLOW);
+        graphicsDrawQuad(cursorX, 150, cursorWidth, 25, BLUE);
 
         if(prompt)
             graphicsDrawTextCentered(125, prompt, GREEN);
-
-        if(tmp)
-            graphicsDrawTextCentered(150, tmp, YELLOW);
 
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
@@ -450,13 +452,16 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         {
             if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
             {
+                if(cursorIndex < tmpLen) // Move characters after cursor to the right
+                    memmove(&tmp[cursorIndex+1], &tmp[cursorIndex], tmpLen - cursorIndex);
                 if(upper)
-                    tmp[tmpLoc] = keyBoardCharsUpper[row*KEYBOARD_COLUMNS + column];
+                    tmp[cursorIndex] = keyBoardCharsUpper[row*KEYBOARD_COLUMNS + column];
                 else
-                    tmp[tmpLoc] = keyBoardChars[row*KEYBOARD_COLUMNS + column];
+                    tmp[cursorIndex] = keyBoardChars[row*KEYBOARD_COLUMNS + column];
 
-                tmp[tmpLoc + 1] = '\0';
-                tmpLoc++;
+                tmp[tmpLen + 1] = '\0';
+                tmpLen++;
+                cursorIndex++;
             }
 
             else if(row == ACCEPT_ROW)
@@ -474,19 +479,25 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 return 0;
         }
 
-        else if(pad_pressed & PAD_R1)
+        else if(pad_pressed & PAD_TRIANGLE)
         {
-            tmp[tmpLoc] = ' ';
-            tmp[tmpLoc + 1] = '\0';
-            tmpLoc++;
+            if(cursorIndex < tmpLen) // Move characters after cursor to the right
+                memmove(&tmp[cursorIndex+1], &tmp[cursorIndex], tmpLen - cursorIndex);
+            tmp[cursorIndex] = ' ';
+            tmp[tmpLen + 1] = '\0';
+            tmpLen++;
+            cursorIndex++;
         }
 
         else if(pad_rapid & PAD_SQUARE)
         {
-            if(tmpLoc > 0)
-                tmpLoc--;
-
-            tmp[tmpLoc] = '\0';
+            if(cursorIndex == 0 || tmpLen == 0)
+                continue;
+            
+            memmove(&tmp[cursorIndex - 1], &tmp[cursorIndex], tmpLen - cursorIndex);
+            tmpLen--;
+            tmp[tmpLen] = '\0';
+            cursorIndex--;
         }
 
         else if(pad_pressed & PAD_R2)
@@ -530,6 +541,17 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
             }
         }
 
+        if(pad_rapid & PAD_L1)
+        {
+            if(cursorIndex > 0)
+                cursorIndex--;
+        }
+        else if(pad_rapid & PAD_R1)
+        {
+            if(cursorIndex < tmpLen)
+                cursorIndex++;
+        }
+
         int i, j, color;
         for(i = 0; i < KEYBOARD_ROWS; i++)
         {
@@ -560,14 +582,15 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
-        if(tickerX < 1300)
+        if(tickerX < 1600)
             tickerX += 2;
         else
             tickerX = 0;
 
-        char *helpText = "{R1} Space     "
-                         "{R2} Toggle Upper/Lower Case     "
-                         "{SQUARE} Backspace";
+        char *helpText = "{L1}/{R1} Move Cursor     "
+                         "{TRIANGLE} Space     "
+                         "{SQUARE} Backspace     "
+                         "{R2} Toggle Upper/Lower Case";
         graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
 
         graphicsRender();

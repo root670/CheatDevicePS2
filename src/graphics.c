@@ -608,7 +608,7 @@ void graphicsDrawPointer(int x, int y)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-int graphicsGetWidth(const char *str)
+int graphicsGetWidthSubString(const char *str, int n)
 {
     if(!str)
         return 0;
@@ -617,7 +617,7 @@ int graphicsGetWidth(const char *str)
     double maxWidth = 0;
     double lineWidth = 0;
     
-    while(*cptr)
+    while(*cptr && n-- > 0)
     {
         if(*cptr == '\n')
         {
@@ -651,6 +651,15 @@ int graphicsGetWidth(const char *str)
         maxWidth = lineWidth;
 
     return maxWidth;
+}
+
+int graphicsGetWidth(const char *str)
+{
+    if(!str)
+        return 0;
+
+    int len = strlen(str);
+    return graphicsGetWidthSubString(str, len);
 }
 
 int graphicsGetDisplayWidth()
