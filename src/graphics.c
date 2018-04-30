@@ -295,9 +295,56 @@ static const char* getSpecialTexture(const char *str, GSTEXTURE** texture)
         return NULL;
     }
 
-    *texture = specialTexture;
+    if(texture)
+        *texture = specialTexture;
     return cptr;
 
+}
+
+int graphicsGetSymbolLength(const char *start, int index)
+{
+    if(!start)
+        return 1;
+
+    // Figure out if we're in a {} symbol pair
+    // find closing brace
+    int endIndex = strlen(start);
+    int closingIndex = index;
+    while(start[closingIndex] && start[closingIndex] != '}')
+        closingIndex++;
+    // now work backwards
+    int openingIndex = closingIndex;
+    while(openingIndex > 0 && start[openingIndex] != '{')
+        openingIndex--;
+
+    if(openingIndex > index ||
+       openingIndex == closingIndex ||
+       closingIndex == endIndex)
+       return 1;
+
+    // Might be in a special symbol. Check if it's valid.
+    const char *end = getSpecialTexture(&start[index], NULL);
+
+    if(end)
+        return end - &start[index];
+    else
+        return 1;
+}
+
+int graphicsGetSymbolLengthBackwards(const char *start, int index)
+{
+    if(!start || start[index] != '}')
+        return 1;
+
+    while(index > 0 && start[index] != '{')
+        index--;
+
+    const char *end = getSpecialTexture(&start[index], NULL);
+
+    if(end)
+        return end - &start[index];
+    else
+        return 1;
 }
 
 static void graphicsPrintText(int x, int y, const char *txt, u64 color)
@@ -636,6 +683,7 @@ int graphicsGetWidthSubString(const char *str, int n)
             if(ret != NULL)
             {
                 lineWidth += specialTexture->Width;
+                n -= (ret - cptr) - 1;
                 cptr = ret;
                 continue;
             }

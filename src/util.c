@@ -543,13 +543,15 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
         if(pad_rapid & PAD_L1)
         {
-            if(cursorIndex > 0)
-                cursorIndex--;
+            if(cursorIndex > 1)
+                cursorIndex -= graphicsGetSymbolLengthBackwards(tmp, cursorIndex - 1);
+            else if(cursorIndex > 0)
+                cursorIndex -= graphicsGetSymbolLengthBackwards(tmp, cursorIndex);
         }
         else if(pad_rapid & PAD_R1)
         {
             if(cursorIndex < tmpLen)
-                cursorIndex++;
+                cursorIndex += graphicsGetSymbolLength(tmp, cursorIndex);
         }
 
         int i, j, color;

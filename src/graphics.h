@@ -44,6 +44,13 @@ void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_
 int graphicsGetWidth(const char *str);
 // Get total width of first n characters in string
 int graphicsGetWidthSubString(const char *str, int n);
+// Get number of bytes representing the symbol starting at &str[index]
+// An ASCII character is 1 byte, a special sequence is >1 bytes, etc.
+// Ex: ("ABC{SQUARE}", 0) == 1 byte, ("ABC{SQUARE}", 3) == 8
+int graphicsGetSymbolLength(const char *start, int index);
+// Get number of bytes representing the symbol ending at &str[index]
+// Ex: ("ABC{SQUARE}", 10) == 8
+int graphicsGetSymbolLengthBackwards(const char *start, int index);
 
 // Get display width in pixels
 int graphicsGetDisplayWidth();
