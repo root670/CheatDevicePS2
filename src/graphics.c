@@ -125,7 +125,7 @@ int initGraphics()
         font.Clut = memalign(128, gsKit_texture_size_ee(16, 16, font.ClutPSM));
         font.VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(16, 16, font.ClutPSM), GSKIT_ALLOC_USERBUFFER);
         font.Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(font.Width, font.Height, font.PSM), GSKIT_ALLOC_USERBUFFER);
-        font.Filter = GS_FILTER_LINEAR;
+        font.Filter = GS_FILTER_NEAREST;
 
         /* Generate palette */
         unsigned int i;
