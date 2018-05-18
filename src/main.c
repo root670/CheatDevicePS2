@@ -13,8 +13,8 @@
 
 int main(int argc, char *argv[])
 {
-    loadModules();
     initGraphics();
+    loadModules();
     initSettings();
     initMenus();
     
@@ -35,7 +35,6 @@ int main(int argc, char *argv[])
         graphicsDrawBackground();
         
         menuRender();
-        cheatsDrawStats();
         handlePad();
         graphicsRender();
     }

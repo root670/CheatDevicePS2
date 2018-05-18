@@ -534,6 +534,8 @@ static void drawMenuItems()
 
 int menuRender()
 {
+    cheatsDrawStats();
+    
     if(activeMenu->identifier == MAINMENU)
     {
         return 1;
