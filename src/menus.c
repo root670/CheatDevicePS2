@@ -406,6 +406,12 @@ int menuDownAlpha()
     return 0;
 }
 
+int menuGoToTop()
+{
+    activeMenu->currentItem = 0;
+    return 1;
+}
+
 int menuGoToBottom()
 {
     if(activeMenu->numItems > 0)

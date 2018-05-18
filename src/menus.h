@@ -52,6 +52,7 @@ int menuUpRepeat(int n);
 int menuDownRepeat(int n);
 int menuUpAlpha();
 int menuDownAlpha();
+int menuGoToTop();
 int menuGoToBottom();
 void menuToggleItem();
 
