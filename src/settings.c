@@ -16,6 +16,7 @@ static int initialized = 0;
 static struct ini_info *ini;
 settings_t settings;
 static char *diskBootStr = "==Disc==";
+static int settingsChanged = 0;
 
 int initSettings()
 {
@@ -107,17 +108,17 @@ int killSettings()
 
 int settingsSave()
 {
-    if(initialized)
+    if(initialized && settingsChanged)
     {
         FILE *iniFile;
 
         #ifdef _DTL_T10000
-        iniFile = fopen("CheatDevicePS2.ini", "r");
+        iniFile = fopen("host:CheatDevicePS2.ini", "w");
         #else
-        iniFile = fopen("host:CheatDevicePS2.ini", "r");
+        iniFile = fopen("CheatDevicePS2.ini", "w");
         #endif
 
-        if(!iniFile)
+        if(iniFile < 0)
         {
             printf("Error saving CheatDevicePS2.ini\n");
             return 0;
@@ -203,6 +204,7 @@ void settingsRenameBootPath()
         menuRenameActiveItem(newPath);
         menuRemoveAllItems();
         settingsLoadBootMenu();
+        settingsChanged = 1;
     }
 }
 
