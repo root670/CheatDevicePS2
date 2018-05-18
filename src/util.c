@@ -448,7 +448,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         if(width < 345)
             width = 345;
 
-        int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (320 - textWidth/2.0);
+        int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
 
         graphicsDrawPromptBoxBlack(width, 220);
         graphicsDrawTextCentered(150, tmp, YELLOW);
@@ -587,9 +587,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         }
 
         if(row == ACCEPT_ROW)
-            graphicsDrawQuad(320 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, BLUE);
         else if(row == CANCEL_ROW)
-            graphicsDrawQuad(320 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, BLUE);
 
         graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, "Accept", (row == ACCEPT_ROW) ? YELLOW : WHITE);
         graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, "Cancel", (row == CANCEL_ROW) ? YELLOW : WHITE);
