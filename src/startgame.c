@@ -13,6 +13,7 @@
 #include "cheats.h"
 #include "settings.h"
 #include "util.h"
+#include "objectpool.h"
 
 typedef struct {
     u8  ident[16];  // struct definition for ELF object header
@@ -124,6 +125,7 @@ void startgameExecute(char *path)
     killMenus();
     killCheats();
     killSettings();
+    objectPoolKill();
     
     eh = (elf_header_t *)_bootstrap_elf_start;
     eph = (elf_pheader_t *)(_bootstrap_elf_start + eh->phoff);

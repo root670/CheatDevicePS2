@@ -9,6 +9,8 @@
 #define POOLSIZE_CODE     MAX_CODES * sizeof(u64)
 
 static int initialized = 0;
+static unsigned char gameMemory[POOLSIZE_GAME];
+static unsigned char cheatMemory[POOLSIZE_CHEAT];
 
 typedef struct freeList {
     void *ptr;
@@ -30,26 +32,18 @@ int initialize()
     // Initialize game object pool
     pools[OBJECTPOOLTYPE_GAME].capacity = POOLSIZE_GAME;
     pools[OBJECTPOOLTYPE_GAME].objectSize = sizeof(cheatsGame_t);
-    pools[OBJECTPOOLTYPE_GAME].memory = calloc(1, POOLSIZE_GAME);
-    if(!pools[OBJECTPOOLTYPE_GAME].memory)
-    {
-        printf("objectPool initialization failed (cheatsGame_t)!\n");
-        return 0;
-    }
+    pools[OBJECTPOOLTYPE_GAME].memory = gameMemory;
     pools[OBJECTPOOLTYPE_GAME].tail = pools[OBJECTPOOLTYPE_GAME].memory;
     pools[OBJECTPOOLTYPE_GAME].freeList = NULL;
+    memset(gameMemory, 0, POOLSIZE_GAME);
 
     // Initialize cheat object pool
     pools[OBJECTPOOLTYPE_CHEAT].capacity = POOLSIZE_CHEAT;
     pools[OBJECTPOOLTYPE_CHEAT].objectSize = sizeof(cheatsCheat_t);
-    pools[OBJECTPOOLTYPE_CHEAT].memory = calloc(1, POOLSIZE_CHEAT);
-    if(!pools[OBJECTPOOLTYPE_CHEAT].memory)
-    {
-        printf("objectPool initialization failed (cheatsCheat_t)!\n");
-        return 0;
-    }
+    pools[OBJECTPOOLTYPE_CHEAT].memory = cheatMemory;
     pools[OBJECTPOOLTYPE_CHEAT].tail = pools[OBJECTPOOLTYPE_CHEAT].memory;
     pools[OBJECTPOOLTYPE_CHEAT].freeList = NULL;
+    memset(cheatMemory, 0, POOLSIZE_CHEAT);
 
     initialized = 1;
     return 1;
@@ -118,9 +112,6 @@ int objectPoolKill()
 {
     if(!initialized)
         return 0;
-
-    free(pools[OBJECTPOOLTYPE_GAME].memory);
-    free(pools[OBJECTPOOLTYPE_CHEAT].memory);
 
     while(pools[OBJECTPOOLTYPE_GAME].freeList != NULL)
     {
