@@ -879,6 +879,14 @@ int cheatsSetActiveGame(cheatsGame_t *game)
     return 1;
 }
 
+char* cheatsGetActiveGameTitle()
+{
+    if(!activeGame)
+        return NULL;
+
+    return activeGame->title;
+}
+
 void SetupERL()
 {
     struct erl_record_t *erl;

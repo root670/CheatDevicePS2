@@ -113,6 +113,8 @@ void cheatsDeactivateGame(cheatsGame_t *game);
 // Set the active game. If any cheats were enabled for the previously active
 // game, they will all be disabled.
 int cheatsSetActiveGame(cheatsGame_t *game);
+// Get title for the active game
+char* cheatsGetActiveGameTitle();
 // Setup up the cheat engine and load active cheats
 void cheatsInstallCodesForEngine();
 

@@ -50,8 +50,16 @@ extern int _bootstrap_elf_size;
 
 static int discPrompt()
 {
-    char *items[] = {"OK", "Cancel"};
-    return (displayPromptMenu(items, 2, "Please insert disc") == 0);
+    char *items[] = {"Start Game", "Cancel"};
+    char *activeGameTitle = cheatsGetActiveGameTitle();
+    char promptText[128];
+
+    if(activeGameTitle)
+        snprintf(promptText, sizeof(promptText), "Please insert game disc for\n%s", activeGameTitle);
+    else
+        snprintf(promptText, sizeof(promptText), "Please insert game disc");
+
+    return (displayPromptMenu(items, 2, promptText) == 0);
 }
 
 #define ELF_PT_LOAD 1
