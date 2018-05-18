@@ -280,13 +280,13 @@ int menuSetActive(menuID_t id)
 
     activeMenu = &menues[id];
 
-    if(id == CHEATMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text) != 0)) // Refresh cheat menu if a new game was chosen
+    if(id == CHEATMENU && (activeMenu->text != menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text)) // Refresh cheat menu if a new game was chosen
     {
         menuRemoveAllItems();
         activeMenu->text = menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text;
         activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
     }
-    else if(id == CODEMENU && (!activeMenu->text || strcmp(activeMenu->text, menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text) != 0)) // Refresh code menu if a new cheat was chosen
+    else if(id == CODEMENU && (activeMenu->text != menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text)) // Refresh code menu if a new cheat was chosen
     {
         if(menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->type == NORMAL)
         {
