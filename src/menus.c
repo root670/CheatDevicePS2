@@ -442,7 +442,6 @@ void menuToggleItem()
         }
         else if(activeMenu->identifier == BOOTMENU)
         {
-            cheatsSaveDatabase("host:testsavedb.txt");
             startgameExecute(text);
         }
         else if(activeMenu->identifier == SAVEMENU && type != HEADER)
