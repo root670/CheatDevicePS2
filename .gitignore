@@ -56,6 +56,5 @@ dkms.conf
 .DS_Store
 version\.h
 CheatHistory\.bin
-cb10\.cdb
 release/*
 .vscode/*
