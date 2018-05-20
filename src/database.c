@@ -20,12 +20,6 @@ typedef struct cdbMasterHeader {
     char padding[9];
 } cdbMasterHeader_t;
 
-typedef struct cdbCheat {
-    char *title;
-    u8 numCodeLines;
-    u64 *codeEntries;
-} cdbCheat_t;
-
 static cheatsGame_t *gamesHead = NULL;
 
 static int cdbOpenBuffer(unsigned char *cdbBuff)
