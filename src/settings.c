@@ -17,6 +17,13 @@ static struct ini_info *ini;
 settings_t settings;
 static char *diskBootStr = "==Disc==";
 static int settingsChanged = 0;
+static char *defaultBootPaths[] = {
+    "mass:BOOT/BOOT.ELF",
+    "mass:BOOT/ESR.ELF",
+    "mc0:BOOT/BOOT.ELF",
+    "mc1:BOOT/BOOT.ELF",
+    "rom:OSDSYS"
+};
 
 int initSettings()
 {
@@ -34,11 +41,11 @@ int initSettings()
             printf("Error opening CheatDevicePS2.ini\n");
             // Use fallback values
             settings.databasePath = strdup("CheatDatabase.cdb");
-            settings.bootPaths[0] = strdup("mc0:/BOOT/BOOT.ELF");
-            settings.bootPaths[1] = strdup("mc1:/BOOT/BOOT.ELF");
-            settings.bootPaths[2] = strdup("mass:BOOT/BOOT.ELF");
-            settings.bootPaths[3] = strdup("rom0:OSDSYS");
-            settings.bootPaths[4] = strdup("FASTBOOT");
+            settings.bootPaths[0] = strdup(defaultBootPaths[0]);
+            settings.bootPaths[1] = strdup(defaultBootPaths[1]);
+            settings.bootPaths[2] = strdup(defaultBootPaths[2]);
+            settings.bootPaths[3] = strdup(defaultBootPaths[3]);
+            settings.bootPaths[4] = strdup(defaultBootPaths[4]);
             
             initialized = 1;
             return 1;
@@ -52,27 +59,27 @@ int initSettings()
         if(ini_get(ini, "CheatDevicePS2", "boot1"))
             settings.bootPaths[0] = strdup(ini_get(ini, "CheatDevicePS2", "boot1"));
         else
-            settings.bootPaths[0] = strdup("mc0:/BOOT/BOOT.ELF");
+            settings.bootPaths[0] = strdup(defaultBootPaths[0]);
             
         if(ini_get(ini, "CheatDevicePS2", "boot2"))
             settings.bootPaths[1] = strdup(ini_get(ini, "CheatDevicePS2", "boot2"));
         else
-            settings.bootPaths[1] = strdup("mc1:/BOOT/BOOT.ELF");
+            settings.bootPaths[1] = strdup(defaultBootPaths[1]);
             
         if(ini_get(ini, "CheatDevicePS2", "boot3"))
             settings.bootPaths[2] = strdup(ini_get(ini, "CheatDevicePS2", "boot3"));
         else
-            settings.bootPaths[2] = strdup("mass:/BOOT/BOOT.ELF");
+            settings.bootPaths[2] = strdup(defaultBootPaths[2]);
         
         if(ini_get(ini, "CheatDevicePS2", "boot4"))
             settings.bootPaths[3] = strdup(ini_get(ini, "CheatDevicePS2", "boot4"));
         else
-            settings.bootPaths[3] = strdup("rom0:OSDSYS");
+            settings.bootPaths[3] = strdup(defaultBootPaths[3]);
         
         if(ini_get(ini, "CheatDevicePS2", "boot5"))
             settings.bootPaths[4] = strdup(ini_get(ini, "CheatDevicePS2", "boot5"));
         else
-            settings.bootPaths[4] = strdup("FASTBOOT");
+            settings.bootPaths[4] = strdup(defaultBootPaths[4]);
         
         printf("Database path: %s\n", settings.databasePath);
         printf("Boot path 1: %s\n", settings.bootPaths[0]);
