@@ -2,6 +2,8 @@
 #include "cheats.h"
 #include "graphics.h"
 #include "objectpool.h"
+#include "util.h"
+#include "libraries/minizip/unzip.h"
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -16,19 +18,15 @@
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *game = NULL;
 static cheatsCheat_t *cheat = NULL;
-
 static unsigned int g_numGamesRead = 0;
 
-static int parseLine(const char *line, const int len);
+static int readTextCheats(char *text, size_t len);
 
 cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
 {
     FILE *txtFile;
     char *text;
-    char *end;
-    char *endPtr;
     char *buff;
-    unsigned int lineLen;
     size_t txtLen;
     
     if(!path)
@@ -43,38 +41,10 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     
     buff = malloc(txtLen + 1);
     text = buff;
-    endPtr = text + txtLen;
     fread(text, 1, txtLen, txtFile);
     fclose(txtFile);
-    
-    u32 lineNum = 0;
-    while(text < endPtr)
-    {
-        if((lineNum % 100) == 0)
-        {
-            float progress = 1.0 - ((endPtr - text)/(float)txtLen);
-            graphicsDrawLoadingBar(100, 375, progress);
-            graphicsRenderNow();
-        }
-        end = strchr(text, '\n');
-        if(!end) // Reading the last line
-            end = endPtr;
-        
-        lineLen = end - text;
-        
-        if(lineLen)
-        {
-            // remove trailing whitespace;
-            char *c;
-            for(c = text + lineLen; (*c == ' ') || (*c == '\r') || (*c == '\n') || (*c == '\t'); --c)
-                *c = '\0';
 
-            parseLine(text, c - text + 1);
-        }
-        
-        text += lineLen + 1;
-        lineNum++;
-    }
+    readTextCheats(text, txtLen);
     
     free(buff);
     *numGamesRead = g_numGamesRead;
@@ -82,8 +52,83 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     return gamesHead;
 }
 
+
 int textCheatsSave(const char *path, const cheatsGame_t *games)
 {
+    // TODO: Implement saving text cheats.
+    return 1;
+}
+
+cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
+{
+    if(!path || !numGamesRead)
+        return NULL;
+
+    unzFile zipFile = unzOpen(path);
+    if(!zipFile)
+        return NULL;
+
+    unz_global_info zipGlobalInfo;
+    if(unzGetGlobalInfo(zipFile, &zipGlobalInfo) != UNZ_OK)
+    {
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    unz_file_info64 zipFileInfo;
+    char filename[100];
+    if(unzGoToFirstFile2(zipFile, &zipFileInfo, 
+                      filename, sizeof(filename), 
+                      NULL, 0, 
+                      NULL, 0) != UNZ_OK)
+    {
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    if(strcmp(getFileExtension(filename), "txt") != 0)
+    {
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    if(unzOpenCurrentFile(zipFile) != UNZ_OK)
+    {
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    char *text = malloc(zipFileInfo.uncompressed_size);
+    if(!text)
+    {
+        unzCloseCurrentFile(zipFile);
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    if(unzReadCurrentFile(zipFile, text, zipFileInfo.uncompressed_size) < 0)
+    {
+        // Zip file is corrupt!
+        free(text);
+        unzCloseCurrentFile(zipFile);
+        unzClose(zipFile);
+        return NULL;
+    }
+
+    unzCloseCurrentFile(zipFile);
+    unzClose(zipFile);
+
+    readTextCheats(text, zipFileInfo.uncompressed_size);
+
+    free(text);
+    *numGamesRead = g_numGamesRead;
+    
+    return gamesHead;
+}
+
+int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
+{
+    // TODO: Implement saving text cheats in a ZIP file.
     return 1;
 }
 
@@ -127,10 +172,8 @@ static inline int getToken(const char *line, const int len)
 static int parseLine(const char *line, const int len)
 {
     cheatsGame_t *newGame;
-    int token;
-    
-    token = getToken(line, len);
-    
+    int token = getToken(line, len);
+
     switch(token)
     {
         case TOKEN_TITLE: // Create new game
@@ -146,6 +189,7 @@ static int parseLine(const char *line, const int len)
             {
                 if(game->codeLinesUsed > 0)
                 {
+                    // Free excess memory from the previous game's code list
                     game->codeLinesCapacity = game->codeLinesUsed;
                     game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
                 }
@@ -155,7 +199,7 @@ static int parseLine(const char *line, const int len)
             }
             
             strncpy(game->title, line+1, 81);
-            game->title[strlen(line) - 2] = '\0';
+            game->title[strlen(line) - 2] = '\0'; // Remove trailing '"'
             game->next = NULL;
             g_numGamesRead += 1;
             break;
@@ -205,7 +249,7 @@ static int parseLine(const char *line, const int len)
             
             u64 *codeLine = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
 
-            // Convert pair of 32-bit hexidecimal text values
+            // Decode pair of 32-bit hexidecimal text values
             int i = 0;
             static char offsets[] = {3, 0, 2, 0, 1, 0, 0, 0, 0, 7, 0, 6, 0, 5, 0, 4};
             do
@@ -231,9 +275,9 @@ static int parseLine(const char *line, const int len)
                 *((u8 *)codeLine + offsets[i]) = hex;
 
                 if(i != 6)
-                    i += 2; // Skip over 2 hex digits
+                    i += 2; // Skip over 2 hex nibbles
                 else
-                    i += 3; // Skip over 2 hex digits + space
+                    i += 3; // Skip over 2 hex nibbles + space
 
             } while( i <= 16 );
 
@@ -246,5 +290,40 @@ static int parseLine(const char *line, const int len)
             break;
     }
     
+    return 1;
+}
+
+static int readTextCheats(char *text, size_t len)
+{
+    char *endPtr = text + len;
+    u32 lineNum = 0;
+    
+    while(text < endPtr)
+    {
+        if((lineNum % 100) == 0)
+        {
+            float progress = 1.0 - ((endPtr - text)/(float)len);
+            graphicsDrawLoadingBar(100, 375, progress);
+            graphicsRenderNow();
+        }
+        char *end = strchr(text, '\n');
+        if(!end) // Reading the last line
+            end = endPtr;
+        
+        int lineLen = end - text;
+        if(lineLen)
+        {
+            // Remove trailing whitespace
+            char *c;
+            for(c = text + lineLen; (*c == ' ') || (*c == '\r') || (*c == '\n') || (*c == '\t'); --c)
+                *c = '\0';
+
+            parseLine(text, c - text + 1);
+        }
+        
+        text += lineLen + 1;
+        lineNum++;
+    }
+
     return 1;
 }

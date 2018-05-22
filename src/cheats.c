@@ -28,14 +28,17 @@ extern unsigned char _engine_erl_start[];
 
 typedef struct cheatDatabaseHandler {
     char name[28]; // cheat database format name
-    char extention[4]; // file extention
+    char extension[4]; // file extension
     
     cheatsGame_t* (*open)(const char *path, unsigned int *numGames);
     int (*save)(const char *path, const cheatsGame_t *games);
 } cheatDatabaseHandler_t;
 
-static cheatDatabaseHandler_t CDBHandler = {"Binary Database (.cdb)", "cdb", cdbOpen, cdbSave};
-static cheatDatabaseHandler_t TXTHandler = {"Text File (.txt)", "txt", textCheatsOpen, textCheatsSave};
+static cheatDatabaseHandler_t cheatDatabaseHandlers[] = {
+    {"Binary Database (.cdb)", "cdb", cdbOpen, cdbSave},
+    {"Text File (.txt)", "txt", textCheatsOpen, textCheatsSave},
+    {"Text File in ZIP (.zip)", "zip", textCheatsOpenZip, textCheatsSaveZip}
+};
 
 int killCheats()
 {
@@ -175,20 +178,20 @@ int cheatsLoadHistory()
 
 // Determine cheat database handler by filename.
 static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
-{
-    const char *extension;
-    
+{   
     if(!path)
         return NULL;
     
-    extension = getFileExtension(path);
-    
-    if(strcmp(extension, CDBHandler.extention) == 0)
-        return &CDBHandler;
-    else if(strcmp(extension, TXTHandler.extention) == 0)
-        return &TXTHandler;
-    else
-        return NULL;
+    const char *extension = getFileExtension(path);
+
+    int i = 0;
+    for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
+    {
+        if(strcmp(extension, cheatDatabaseHandlers[i].extension) == 0)
+            return &cheatDatabaseHandlers[i];
+    }
+
+    return NULL;
 }
 
 // CheatDB --> Game --> Cheat --> Code
