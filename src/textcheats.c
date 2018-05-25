@@ -52,10 +52,131 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     return gamesHead;
 }
 
+static inline int copyGameTitleToBuffer(char *buffer, const char *gameTitle)
+{
+    int length = 0;
+    buffer[length++] = '"';
+    strcpy(&buffer[length], gameTitle);
+    length += strlen(gameTitle);
+    buffer[length++] = '"';
+    buffer[length++] = '\n';
+
+    return length;
+}
+
+static inline int copyCheatTitleToBuffer(char *buffer, const char *cheatTitle)
+{
+    strcpy(buffer, cheatTitle);
+    int length = strlen(cheatTitle);
+    buffer[length++] = '\n';
+
+    return length;
+}
+
+// Print "<addr> <val>\n" in text buffer. Returns number of bytes written.
+static inline int copyCodeToBuffer(char *buffer, u32 addr, u32 val)
+{
+    int i;
+    int index = 0;
+    const char *hexLUT = "0123456789ABCDEF";
+
+    // Convert address to ASCII
+    for(i = 0; i < 8; i++)
+    {
+        u8 nibble = (addr >> (28 - i*4)) & 0xF;
+        buffer[index++] = hexLUT[nibble];
+    }
+    buffer[index++] = ' ';
+    // Convert value to ASCII
+    for(i = 0; i < 8; i++)
+    {
+        u8 nibble = (val >> (28 - i*4)) & 0xF;
+        buffer[index++] = hexLUT[nibble];
+    }
+    buffer[index++] = '\n';
+
+    return 18; // 8 characters for address + space + 8 characters for value + newline
+}
 
 int textCheatsSave(const char *path, const cheatsGame_t *games)
 {
-    // TODO: Implement saving text cheats.
+    if(!path || !games)
+        return 0;
+
+    FILE *f = fopen(path, "w");
+    if(!f)
+        return 0;
+
+    graphicsDrawLoadingBar(50, 350, 0.0);
+    graphicsDrawTextCentered(310, "Saving cheat database...", YELLOW);
+    graphicsRenderNow();
+
+    clock_t start = clock();
+    char buf[8192];
+    int index = 0;
+    float progress = 0;
+    const cheatsGame_t *game = games;
+    while(game)
+    {
+        progress += (float)1/cheatsGetNumGames();
+        graphicsDrawLoadingBar(50, 350, progress);
+        graphicsRenderNow();
+
+        if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
+        {
+            index += copyGameTitleToBuffer(&buf[index], game->title);
+        }
+        else
+        {
+            // Flush buffer to file
+            fwrite(buf, 1, index, f);
+            index = copyGameTitleToBuffer(&buf[0], game->title);
+        }
+
+        cheatsCheat_t *cheat = game->cheats;
+        while(cheat)
+        {
+            if(index + strlen(cheat->title) + 1 < sizeof(buf))
+            {
+                index += copyCheatTitleToBuffer(&buf[index], cheat->title);
+            }
+            else
+            {
+                // Flush buffer to file
+                fwrite(buf, 1, index, f);
+                index = copyCheatTitleToBuffer(&buf[0], cheat->title);
+            }
+
+            int i;
+            for(i = 0; i < cheat->numCodeLines; i++)
+            {
+                u32 addr = game->codeLines[cheat->codeLinesOffset + i];
+                u32 val = game->codeLines[cheat->codeLinesOffset + i] >> 32;
+                if(index + 18 < sizeof(buf))
+                {
+                    index += copyCodeToBuffer(&buf[index], addr, val);
+                }
+                else
+                {
+                    // Flush buffer to file
+                    fwrite(buf, 1, index, f);
+                    index = copyCodeToBuffer(&buf[0], addr, val);
+                }
+            }
+            cheat = cheat->next;
+        }
+        buf[index++] = '\n';
+        game = game->next;
+    }
+
+    // Flush remaining buffer to file
+    if(index > 0)
+        fwrite(buf, 1, index, f);
+
+    fclose(f);
+    clock_t end = clock();
+    printf("Saving took %f seconds\n", ((float)end - start) / CLOCKS_PER_SEC);
+
     return 1;
 }
 
