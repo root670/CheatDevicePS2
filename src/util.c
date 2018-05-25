@@ -491,6 +491,17 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 return 0;
         }
 
+        else if(pad_pressed & PAD_START)
+        {
+            if(strlen(tmp) > 0)
+            {
+                strncpy(dstStr, tmp, dstLen);
+                return 1;
+            }
+            else
+                return 0;
+        }
+
         else if(pad_pressed & PAD_TRIANGLE)
         {
             if(cursorIndex < tmpLen) // Move characters after cursor to the right
@@ -596,7 +607,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
-        if(tickerX < 1600)
+        if(tickerX < 1700)
             tickerX += 2;
         else
             tickerX = 0;
@@ -604,7 +615,8 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         char *helpText = "{L1}/{R1} Move Cursor     "
                          "{TRIANGLE} Space     "
                          "{SQUARE} Backspace     "
-                         "{R2} Toggle Upper/Lower Case";
+                         "{R2} Toggle Upper/Lower Case     "
+                         "START Accept";
         graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
 
         graphicsRender();
@@ -675,6 +687,13 @@ int displayCodeEditMenu(u64 *code)
             {
                 return 0;
             }
+        }
+
+        else if(pad_pressed & PAD_START)
+        {
+            // Update code value
+            sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
+            return 1;
         }
 
         else if(pad_pressed & PAD_L1)
@@ -797,13 +816,14 @@ int displayCodeEditMenu(u64 *code)
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
-        if(tickerX < 1000)
+        if(tickerX < 1200)
             tickerX += 2;
         else
             tickerX = 0;
 
         char *helpText = "{L1}/{R1} Move Cursor     "
-                         "{CROSS} Set Value";
+                         "{CROSS} Set Value     "
+                         "START Accept";
         graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
 
         graphicsRender();
