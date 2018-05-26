@@ -52,6 +52,8 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     return gamesHead;
 }
 
+// Print game title surrounded by double-quotation marks in buffer. Returns
+// number of bytes written.
 static inline int copyGameTitleToBuffer(char *buffer, const char *gameTitle)
 {
     int length = 0;
@@ -64,6 +66,7 @@ static inline int copyGameTitleToBuffer(char *buffer, const char *gameTitle)
     return length;
 }
 
+// Print cheat title in buffer. Returns number of bytes written.
 static inline int copyCheatTitleToBuffer(char *buffer, const char *cheatTitle)
 {
     strcpy(buffer, cheatTitle);
