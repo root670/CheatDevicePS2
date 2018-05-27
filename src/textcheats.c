@@ -199,6 +199,17 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
         return NULL;
     }
 
+    // TODO: Read multiple TXT cheat database files from ZIP.
+    if(zipGlobalInfo.number_entry != 1)
+    {
+        displayError("More than 1 file found in the cheat database ZIP file.\n"
+                     "It should only contain a single TXT file with cheats.\n"
+                     "Please read the documentation for a list of supported\n"
+                     "cheat database formats.");
+        unzClose(zipFile);
+        return NULL;
+    }
+
     unz_file_info64 zipFileInfo;
     char filename[100];
     if(unzGoToFirstFile2(zipFile, &zipFileInfo, 
@@ -212,6 +223,10 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
 
     if(strcmp(getFileExtension(filename), "txt") != 0)
     {
+        displayError("TXT file not found in cheat database ZIP file.\n"
+                     "It should only contain a single TXT file with cheats.\n"
+                     "Please read the documentation for a list of supported\n"
+                     "cheat database formats");
         unzClose(zipFile);
         return NULL;
     }
