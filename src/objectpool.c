@@ -6,7 +6,6 @@
 
 #define POOLSIZE_GAME     MAX_GAMES * sizeof(cheatsGame_t)
 #define POOLSIZE_CHEAT    MAX_CHEATS * sizeof(cheatsCheat_t)
-#define POOLSIZE_CODE     MAX_CODES * sizeof(u64)
 
 static int initialized = 0;
 static unsigned char gameMemory[POOLSIZE_GAME];

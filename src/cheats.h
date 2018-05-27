@@ -15,9 +15,8 @@ typedef enum {
 } cheatTitleType_t;
 
 // Memory constraints
-#define MAX_GAMES   1600
-#define MAX_CHEATS  175000
-#define MAX_CODES   250000
+#define MAX_GAMES   2000
+#define MAX_CHEATS  180000
 
 /*
 Cheats are stored top-down like this:
