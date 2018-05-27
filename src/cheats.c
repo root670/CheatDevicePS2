@@ -6,6 +6,7 @@
 #include "util.h"
 #include "hash.h"
 #include "objectpool.h"
+#include "settings.h"
 #include <debug.h>
 #include <kernel.h>
 #include <stdio.h>
@@ -23,6 +24,7 @@ static int numGames = 0;
 static int numEnabledCheats = 0;
 static int numEnabledCodes = 0;
 static u64 lastSelectedCode = 0;
+static int cheatDatabaseDirty = 0;
 
 extern unsigned char _engine_erl_start[];
 
@@ -35,9 +37,9 @@ typedef struct cheatDatabaseHandler {
 } cheatDatabaseHandler_t;
 
 static cheatDatabaseHandler_t cheatDatabaseHandlers[] = {
-    {"Binary Database (.cdb)", "cdb", cdbOpen, cdbSave},
+    {"Binary Database (.cdb)", "cdb", cdbOpen, NULL},
     {"Text File (.txt)", "txt", textCheatsOpen, textCheatsSave},
-    {"Text File in ZIP (.zip)", "zip", textCheatsOpenZip, textCheatsSaveZip}
+    {"Text File in ZIP (.zip)", "zip", textCheatsOpenZip, NULL}
 };
 
 int killCheats()
@@ -194,6 +196,45 @@ static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
     return NULL;
 }
 
+// Save cheat database to a chosen format.
+static int promptSaveToFormat()
+{
+    int ret = 1;
+    cheatDatabaseHandler_t handlersWithSaveSupport[5];
+    int numHandlers = 0;
+    int i = 0;
+    for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
+    {
+        if(cheatDatabaseHandlers[i].save != NULL)
+            memcpy(&handlersWithSaveSupport[numHandlers++], &cheatDatabaseHandlers[i], sizeof(cheatDatabaseHandler_t));
+    }
+
+    // Build menu
+    char **items = calloc(numHandlers + 1, sizeof(char *));
+    items[numHandlers] = "Cancel";
+    for(i = 0; i < numHandlers; i++)
+        items[i] = handlersWithSaveSupport[i].name;
+    
+    // Display menu
+    int option = displayPromptMenu(items, numHandlers + 1, "Save Cheat Database\nChoose cheat database format");
+    if(option < numHandlers)
+    {
+        cheatDatabaseHandler_t *handler = &handlersWithSaveSupport[option];
+        
+        // Change file extension
+        char *basename = getFileBasename(settingsGetDatabasePath());
+        char newPath[100];
+        snprintf(newPath, 100, "%s.%s", basename, handler->extension);
+        free(basename);
+        settingsSetDatabasePath(newPath);
+
+        ret = handler->save(newPath, gamesHead);
+    }
+
+    free(items);
+    return ret;
+}
+
 // CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
@@ -218,16 +259,26 @@ int cheatsOpenDatabase(const char* path)
     return numGames;
 }
 
-int cheatsSaveDatabase(const char* path)
+int cheatsSaveDatabase()
 {
+    if(!cheatDatabaseDirty)
+        return 1;
+    
+    const char *path = settingsGetDatabasePath();
     cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
 
-    if(handler)
+    if(handler && handler->save)
     {
         return handler->save(path, gamesHead);
     }
+    else if((handler && !handler->save) || !handler)
+    {
+        displayError("Current cheat format doesn't support saving and needs to be saved\n"
+                     "to a new format. Please choose a format on the next screen.");
+        return promptSaveToFormat();
+    }
 
-    return 0;
+    return 1;
 }
 
 int cheatsLoadGameMenu()
@@ -366,11 +417,11 @@ int cheatsAddGame()
     item->type = NORMAL;
     item->text = strdup(newGame->title);
     item->extra = newGame;
-
     menuInsertItem(item);
     menuSetActiveItem(item);
-
     populateGameHashTable();
+    cheatDatabaseDirty = 1;
+    
     return 1;
 }
 
@@ -396,15 +447,13 @@ int cheatsRenameGame()
         displayError("Game title already exists!");
         return 0;
     }
-    else
-    {
-        strncpy(selectedGame->title, title, 80);
-        menuRenameActiveItem(selectedGame->title);
 
-        populateGameHashTable();
+    strncpy(selectedGame->title, title, 80);
+    menuRenameActiveItem(selectedGame->title);
+    populateGameHashTable();
+    cheatDatabaseDirty = 1;
 
-        return 1;
-    }
+    return 1;
 }
 
 int cheatsDeleteGame()
@@ -443,6 +492,7 @@ int cheatsDeleteGame()
     menuRemoveActiveItem();
     numGames--;
     populateGameHashTable();
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -461,8 +511,6 @@ int cheatsAddCheat()
         displayError("Maximum number of cheats created.");
         return 0;
     }
-
-    cheatsCheat_t *node = game->cheats;
 
     if(displayInputMenu(newCheat->title, 80, NULL, "Enter Cheat Title") == 0)
     {
@@ -491,11 +539,9 @@ int cheatsAddCheat()
     item->type = NORMAL;
     item->text = strdup(newCheat->title);
     item->extra = newCheat;
-
     menuInsertItem(item);
     menuSetActiveItem(item);
-
-    node = game->cheats;
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -517,6 +563,7 @@ int cheatsRenameCheat()
 
     strncpy(selectedCheat->title, title, 80);
     menuRenameActiveItem(selectedCheat->title);
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -565,6 +612,7 @@ int cheatsDeleteCheat()
 
     objectPoolRelease(OBJECTPOOLTYPE_CHEAT, selectedCheat);
     menuRemoveActiveItem();
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -615,6 +663,7 @@ int cheatsAddCodeLine()
     menuRemoveAllItems();
     cheatsLoadCodeMenu(cheat, game);
     menuGoToBottom();
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -640,6 +689,7 @@ int cheatsEditCodeLine()
     u32 val  = (u32)*((u32 *)selectedCode + 1);
     snprintf(newCodeLine, 18, "%08X %08X", addr, val);
     menuRenameActiveItem(newCodeLine);
+    cheatDatabaseDirty = 1;
 
     return 1;
 }
@@ -670,6 +720,7 @@ int cheatsDeleteCodeLine()
     cheat->numCodeLines--;
     game->codeLinesUsed--;
     menuRemoveActiveItem();
+    cheatDatabaseDirty = 1;
 
     return 0;
 }

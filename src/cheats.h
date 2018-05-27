@@ -59,7 +59,7 @@ int killCheats();
 // Open a cheat database and load cheats.
 int cheatsOpenDatabase(const char* path);
 // Save cheat database to a file.
-int cheatsSaveDatabase(const char* path);
+int cheatsSaveDatabase();
 // Re-enable previously used cheats
 int cheatsLoadHistory();
 

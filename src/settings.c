@@ -147,7 +147,7 @@ int settingsSave()
     return 0;
 }
 
-char* settingsGetDatabasePath(char* property)
+char* settingsGetDatabasePath()
 {
     if(initialized)
     {
@@ -155,6 +155,16 @@ char* settingsGetDatabasePath(char* property)
     }
 
     return NULL;
+}
+
+void settingsSetDatabasePath(const char *path)
+{
+    if(path)
+    {
+        free(settings.databasePath);
+        settings.databasePath = strdup(path);
+        settingsChanged = 1;
+    }
 }
 
 char** settingsGetBootPaths(int *numPaths)

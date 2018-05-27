@@ -958,7 +958,7 @@ void replaceIllegalChars(const char *str, char* valid, char replacement)
     *cvalid = '\0';
 }
 
-char *rtrim(char *str)
+char* rtrim(char *str)
 {
     char *end;
     
@@ -969,7 +969,7 @@ char *rtrim(char *str)
     return str;
 }
 
-const char *getFileExtension(const char *filename)
+const char* getFileExtension(const char *filename)
 {
     const char *c;
 
@@ -984,6 +984,22 @@ const char *getFileExtension(const char *filename)
         return NULL;
     else
         return ++c;
+}
+
+char* getFileBasename(const char *filename)
+{
+    if(!filename)
+        return NULL;
+
+    const char *extensionStart = getFileExtension(filename);
+    if(!extensionStart)
+        return NULL;
+
+    int extensionIndex = extensionStart - filename;
+    char *ret = calloc(extensionIndex, 1);
+    strncpy(ret, filename, extensionIndex - 1);
+
+    return ret;
 }
 
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)

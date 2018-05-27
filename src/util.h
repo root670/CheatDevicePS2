@@ -57,9 +57,11 @@ int getNumLines(const char *str);
 // Replace illegal (reserved) characters in str with replacement. valid must point to a char array as large as str.
 void replaceIllegalChars(const char *str, char* valid, char replacement);
 // Remove trailing whitespace from str.
-char *rtrim(char *str);
+char* rtrim(char *str);
 // Get file extension from filename. Returns null if filename doesn't have an extension.
-const char *getFileExtension(const char *filename);
+const char* getFileExtension(const char *filename);
+// Get file path without extension.
+char* getFileBasename(const char *filename);
 
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen);
 

@@ -19,6 +19,8 @@ int settingsSave();
 
 // Get database path string.
 char* settingsGetDatabasePath();
+// Set database path string.
+void settingsSetDatabasePath();
 // Get string array containing numPaths boot paths.
 char** settingsGetBootPaths(int *numPaths);
 void settingsLoadBootMenu();

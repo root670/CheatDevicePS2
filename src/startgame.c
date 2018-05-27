@@ -128,6 +128,7 @@ void startgameExecute(char *path)
         strncpy(boot2, path, 100);
     }
 
+    cheatsSaveDatabase();
     settingsSave();
     cheatsInstallCodesForEngine();
     killMenus();
