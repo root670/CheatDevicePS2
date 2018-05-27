@@ -110,8 +110,8 @@ static void findEnableCodes()
             int numHookLines = 0;
             while(line < cheat->numCodeLines)
             {
-                u64 *code = codeLine + line;
-                if((code[line] & 0xF0000000) == 0x90000000)
+                u32 addr = codeLine[line];
+                if((addr & 0xF0000000) == 0x90000000)
                     numHookLines++;
 
                 line++;
