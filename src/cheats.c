@@ -164,7 +164,7 @@ int cheatsLoadHistory()
                 fread(&cheatHash, 4, 1, historyFile);
                 cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
 
-                if(cheat != NULL)
+                if(cheat != NULL && cheat->type != CHEAT_ENABLECODE)
                     cheatsToggleCheat(cheat);
             }
 
@@ -994,7 +994,7 @@ static void readCodes(cheatsCheat_t *cheats)
     {
         if(cheat->enabled)
         {
-            if(historyFile)
+            if(historyFile && cheat->type != CHEAT_ENABLECODE)
             {
                 // Save cheat's hash
                 unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
