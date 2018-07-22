@@ -4,6 +4,7 @@
 #include "version.h"
 #include "cheats.h"
 #include "util.h"
+#include "settings.h"
 #include <time.h>
 #include <graph.h>
 #include <stdio.h>
@@ -140,7 +141,7 @@ int initGraphics()
 
         graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
         graphicsDrawBackground();
-        graphicsDrawText(450, 400, "Please wait...", WHITE);
+        graphicsDrawText(450, 400, WHITE, "Please wait...");
         graphicsRenderNow();
 
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
@@ -439,15 +440,28 @@ void graphicsDrawChar(int x, int y, char c, graphicsColor_t color)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawText(int x, int y, const char *txt, graphicsColor_t color)
+void graphicsDrawText(int x, int y, graphicsColor_t color, const char *format, ...)
 {
-    graphicsPrintText(x, y, txt, graphicsColorTable[color]);
+    va_list args;
+    char buffer[4096];
+
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    graphicsPrintText(x, y, buffer, graphicsColorTable[color]);
+    va_end(args);
 }
 
-void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color)
+void graphicsDrawTextCentered(int y, graphicsColor_t color, const char *format, ...)
 {
-    char const *cptr = txt;
-    char const *start = txt;
+    va_list args;
+    char buffer[4096];
+    
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    char const *cptr = buffer;
+    char const *start = buffer;
     double lineWidth = 0;
     
     while(*cptr)
@@ -573,7 +587,7 @@ static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
                                             (icons[i].tex)->Height,
                                             1,
                                             (activeItem == i) ? selected : unselected);
-        if (activeItem == i) graphicsDrawTextCentered(265, icons[i].label, WHITE);
+        if (activeItem == i) graphicsDrawTextCentered(265, WHITE, icons[i].label);
         gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
     }
 }

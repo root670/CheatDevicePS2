@@ -80,7 +80,6 @@ struct gameSave {
 void savesDrawTicker()
 {
     char *deviceName;
-    char free[20];
     int freeSpace; // in cluster size. 1 cluster = 1024 bytes.
     
     switch(currentDevice)
@@ -104,9 +103,8 @@ void savesDrawTicker()
     
     if(currentDevice != FLASH_DRIVE)
     {
-        graphicsDrawTextCentered(47, deviceName, WHITE);
-        snprintf(free, 20, "%d KB free", freeSpace);
-        graphicsDrawText(30, 47, free, WHITE);
+        graphicsDrawTextCentered(47, WHITE, deviceName);
+        graphicsDrawText(30, 47, WHITE, "%d KB free", freeSpace);
     }
     
     static int ticker_x = 0;
@@ -115,7 +113,7 @@ void savesDrawTicker()
     else
         ticker_x = 0;
     
-    graphicsDrawText(640 - ticker_x, 405, "{CROSS} Copy     {CIRCLE} Device Menu", WHITE);
+    graphicsDrawText(graphicsGetDisplayWidth() - ticker_x, 405, WHITE, "{CROSS} Copy     {CIRCLE} Device Menu");
 }
 
 static char *getDevicePath(char *str, device_t dev)
@@ -401,7 +399,7 @@ void savesLoadSaveMenu(device_t dev)
     
     currentDevice = dev;
     
-    graphicsDrawText(450, 400, "Please wait...", WHITE);
+    graphicsDrawText(450, 400, WHITE, "Please wait...");
     graphicsRenderNow();
     
     available = savesGetAvailableDevices();
@@ -477,7 +475,7 @@ static int createPSU(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     psuFile = fopen(psuPath, "wb");
@@ -607,7 +605,7 @@ static int extractPSU(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Skip "." and ".."
@@ -702,7 +700,7 @@ static int extractCBS(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Get data for file entries
@@ -799,7 +797,7 @@ static int createCBS(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     cbsFile = fopen(cbsPath, "wb");
@@ -966,7 +964,7 @@ static int extractZIP(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Copy each file entry
@@ -1042,7 +1040,7 @@ static int createZIP(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, "Copying save...", YELLOW);
+    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
     graphicsRenderNow();
     
     zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
@@ -1149,9 +1147,9 @@ int savesCopySavePrompt(gameSave_t *save)
         pad_pressed = padPressed();
         
         graphicsDrawBackground();
-        graphicsDrawTextCentered(47, save->name, WHITE);
+        graphicsDrawTextCentered(47, WHITE, save->name);
         graphicsDrawDeviceMenu(selectedDevice);
-        graphicsDrawTextCentered(150, "Select device to copy save to", WHITE);
+        graphicsDrawTextCentered(150, WHITE, "Select device to copy save to");
         graphicsRender();
         
         if(pad_pressed & PAD_CROSS)

@@ -259,7 +259,7 @@ void handlePad()
     else if(currentMenu == SAVEDEVICEMENU)
     {
         graphicsDrawDeviceMenu(selectedDevice);
-        graphicsDrawTextCentered(150, "Select device to view saves", WHITE);
+        graphicsDrawTextCentered(150, WHITE, "Select device to view saves");
         if(pad_pressed & PAD_CROSS)
         {
             menuSetActive(SAVEMENU);
@@ -451,11 +451,11 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
 
         graphicsDrawPromptBoxBlack(width, 220);
-        graphicsDrawTextCentered(150, tmp, YELLOW);
+        graphicsDrawTextCentered(150, YELLOW, tmp);
         graphicsDrawQuad(cursorX, 150, cursorWidth, 25, BLUE);
 
         if(prompt)
-            graphicsDrawTextCentered(125, prompt, GREEN);
+            graphicsDrawTextCentered(125, GREEN, prompt);
 
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
@@ -602,8 +602,8 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         else if(row == CANCEL_ROW)
             graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, BLUE);
 
-        graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, "Accept", (row == ACCEPT_ROW) ? YELLOW : WHITE);
-        graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, "Cancel", (row == CANCEL_ROW) ? YELLOW : WHITE);
+        graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, (row == ACCEPT_ROW) ? YELLOW : WHITE, "Accept");
+        graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, (row == CANCEL_ROW) ? YELLOW : WHITE, "Cancel");
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
@@ -612,12 +612,12 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         else
             tickerX = 0;
 
-        char *helpText = "{L1}/{R1} Move Cursor     "
-                         "{TRIANGLE} Space     "
-                         "{SQUARE} Backspace     "
-                         "{R2} Toggle Upper/Lower Case     "
-                         "START Accept";
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, WHITE,
+            "{L1}/{R1} Move Cursor     "
+            "{TRIANGLE} Space     "
+            "{SQUARE} Backspace     "
+            "{R2} Toggle Upper/Lower Case     "
+            "START Accept");
 
         graphicsRender();
 
@@ -794,7 +794,7 @@ int displayCodeEditMenu(u64 *code)
             }
         }
 
-        graphicsDrawTextCentered(125, "Edit Code Line", GREEN);
+        graphicsDrawTextCentered(125, GREEN, "Edit Code Line");
 
         for(i = 0; i < 17; i++)
         {
@@ -811,8 +811,8 @@ int displayCodeEditMenu(u64 *code)
         else if(row == CODE_KEYBOARD_CANCEL_ROW)
             graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + (CODE_KEYBOARD_ROWS+1)*25, 200, 22, BLUE);
 
-        graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, "Accept", (row == CODE_KEYBOARD_ACCEPT_ROW) ? YELLOW : WHITE);
-        graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, "Cancel", (row == CODE_KEYBOARD_CANCEL_ROW) ? YELLOW : WHITE);
+        graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, (row == CODE_KEYBOARD_ACCEPT_ROW) ? YELLOW : WHITE, "Accept");
+        graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, (row == CODE_KEYBOARD_CANCEL_ROW) ? YELLOW : WHITE, "Cancel");
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
@@ -824,7 +824,7 @@ int displayCodeEditMenu(u64 *code)
         char *helpText = "{L1}/{R1} Move Cursor     "
                          "{CROSS} Set Value     "
                          "START Accept";
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, helpText, WHITE);
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, WHITE, helpText);
 
         graphicsRender();
 
@@ -862,13 +862,13 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         pad_pressed = padPressed();
         
         graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
-        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, header, GREEN);
+        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, GREEN, header);
         y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
         for(i = 0; i < numItems; i++)
         {
             if(i == selectedItem)
                 graphicsDrawQuad(320 - maxLength/2, y, maxLength, 22, BLUE);
-            graphicsDrawTextCentered(y - 1, items[i], i == selectedItem ? YELLOW : WHITE);
+            graphicsDrawTextCentered(y - 1, i == selectedItem ? YELLOW : WHITE, items[i]);
             y += 22;
         }
         graphicsRender();

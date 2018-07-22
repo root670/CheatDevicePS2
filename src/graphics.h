@@ -16,9 +16,9 @@ typedef enum { BLACK, WHITE, RED, GREEN, BLUE, YELLOW } graphicsColor_t;
 int initGraphics();
 
 // Draw text at (x,y) with a color
-void graphicsDrawText(int x, int y, const char *txt, graphicsColor_t color);
+void graphicsDrawText(int x, int y, graphicsColor_t color, const char *format, ...);
 // Draw centered text at y with a color
-void graphicsDrawTextCentered(int y, const char *txt, graphicsColor_t color);
+void graphicsDrawTextCentered(int y, graphicsColor_t color, const char *format, ...);
 // Draw a single character at (x, y) with a color
 void graphicsDrawChar(int x, int y, char c, graphicsColor_t color);
 // Draw transparent box to go behind text for use in a popup menu (not used)

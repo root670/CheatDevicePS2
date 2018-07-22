@@ -228,9 +228,6 @@ void settingsRenameBootPath()
 void settingsDrawBootMenuTicker()
 {
     static int x = 0;
-    const char *msg = "{CROSS} Boot     "
-                "{SQUARE} Options     "
-                "{CIRCLE} Main Menu";
 
     if(menuGetActive() != BOOTMENU)
         return;
@@ -240,6 +237,9 @@ void settingsDrawBootMenuTicker()
     else
         x = 0;
 
-    graphicsDrawText(640 - x, 405, msg, WHITE);
+    graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+        "{CROSS} Boot     "
+        "{SQUARE} Options     "
+        "{CIRCLE} Main Menu");
 }
 

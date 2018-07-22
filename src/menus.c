@@ -513,19 +513,19 @@ static void drawMenuItems()
             if(item->type == NORMAL)
             {
                 if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
-                    graphicsDrawText(50, y, item->text, YELLOW);
+                    graphicsDrawText(50, y, YELLOW, item->text);
                 else if(activeMenu->identifier == GAMEMENU &&
                         cheatsIsActiveGame((cheatsGame_t *) item->extra) &&
                         cheatsGetNumEnabledCheats() > 0)
                 {
-                    graphicsDrawText(50, y, item->text, YELLOW);
+                    graphicsDrawText(50, y, YELLOW, item->text);
                 }
                 else
-                    graphicsDrawText(50, y, item->text, WHITE);
+                    graphicsDrawText(50, y, WHITE, item->text);
             }
             else
             {
-                graphicsDrawText(50, y, item->text, GREEN);
+                graphicsDrawText(50, y, GREEN, item->text);
             }
 
             if(idx == activeMenu->currentItem)
@@ -553,7 +553,7 @@ int menuRender()
     {
         if(activeMenu->text != NULL)
         {
-            graphicsDrawTextCentered(47, activeMenu->text, WHITE);
+            graphicsDrawTextCentered(47, WHITE, activeMenu->text);
         }
     }
 

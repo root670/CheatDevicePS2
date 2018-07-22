@@ -79,7 +79,7 @@ void startgameExecute(char *path)
         if(!discPrompt())
             return;
 
-        graphicsDrawTextCentered(310, "Starting game...", YELLOW);
+        graphicsDrawTextCentered(310, YELLOW, "Starting game...");
         graphicsRenderNow();
 
         // wait for disc to be ready

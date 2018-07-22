@@ -818,20 +818,15 @@ void cheatsDrawStats()
     {
         if(numEnabledCheats > 0)
         {
-            char active_cheats[32];
             if(numEnabledCheats == 1)
-                snprintf(active_cheats, 32, "%i active cheat", numEnabledCheats);
+                graphicsDrawText(482, 25, WHITE, "%i active cheat", numEnabledCheats);
             else
-                snprintf(active_cheats, 32, "%i active cheats", numEnabledCheats);
-            
-            graphicsDrawText(482, 25, active_cheats, WHITE);
+                graphicsDrawText(482, 25, WHITE, "%i active cheats", numEnabledCheats);
         }
     }
     
     static menuID_t activeMenu = -1;
     static int x = 0;
-    char msg[200];
-    
     menuID_t oldMenu = activeMenu;
     activeMenu = menuGetActive();
     
@@ -845,11 +840,12 @@ void cheatsDrawStats()
         else
             x = 0;
 
-        snprintf(msg, 200, "{CROSS} Cheat List     "
-                           "{SQUARE} Options     "
-                           "{CIRCLE} Main Menu     "
-                           "{L1}/{R1} Page Up/Down     "
-                           "{L2}/{R2} Alphabetical Up/Down");
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+            "{CROSS} Cheat List     "
+            "{SQUARE} Options     "
+            "{CIRCLE} Main Menu     "
+            "{L1}/{R1} Page Up/Down     "
+            "{L2}/{R2} Alphabetical Up/Down");
     }
 
     else if(activeMenu == CHEATMENU)
@@ -859,10 +855,11 @@ void cheatsDrawStats()
         else
             x = 0;
 
-        snprintf(msg, 150, "{CROSS} Enable/Disable Cheat     "
-                           "{SQUARE} Options     "
-                           "{CIRCLE} Game List    "
-                           "{L1}/{R1} Page Up/Down");
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+            "{CROSS} Enable/Disable Cheat     "
+            "{SQUARE} Options     "
+            "{CIRCLE} Game List    "
+            "{L1}/{R1} Page Up/Down");
     }
 
     else if(activeMenu == CODEMENU)
@@ -872,12 +869,11 @@ void cheatsDrawStats()
         else
             x = 0;
 
-        snprintf(msg, 100, "{CROSS} Edit Code Line     "
-                           "{SQUARE} Options     "
-                           "{CIRCLE} Cheat Menu");
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+            "{CROSS} Edit Code Line     "
+            "{SQUARE} Options     "
+            "{CIRCLE} Cheat Menu");
     }
-
-    graphicsDrawText(640 - x, 405, msg, WHITE);
 }
 
 int cheatsIsActiveGame(const cheatsGame_t *game)
