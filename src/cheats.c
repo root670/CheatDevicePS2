@@ -579,7 +579,7 @@ int cheatsDeleteCheat()
     if(selectedCheat->enabled)
         cheatsToggleCheat(selectedCheat);
 
-    if(selectedCheat->type == NORMAL)
+    if(selectedCheat->type == CHEAT_NORMAL)
         selectedGame->numCheats--;
 
     if(selectedCheat == selectedGame->cheats)
