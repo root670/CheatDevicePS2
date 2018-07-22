@@ -121,6 +121,18 @@ void handlePad()
 
     if(currentMenu == MENU_GAMES)
     {
+        if(pad_rapid & PAD_R1)
+            menuDownRepeat(10);
+
+        else if(pad_rapid & PAD_L1)
+            menuUpRepeat(10);
+
+        if(pad_rapid & PAD_R2)
+            menuDownAlpha();
+
+        else if(pad_rapid & PAD_L2)
+            menuUpAlpha();
+
         if(pad_pressed & PAD_CROSS)
             menuSetActive(MENU_CHEATS);
 
@@ -135,34 +147,10 @@ void handlePad()
 
         else if(pad_pressed & PAD_SQUARE)
             displayContextMenu(MENU_GAMES);
-
-        if(pad_rapid & PAD_R1)
-            menuDownRepeat(10);
-
-        else if(pad_rapid & PAD_L1)
-            menuUpRepeat(10);
-
-        if(pad_rapid & PAD_R2)
-            menuDownAlpha();
-
-        else if(pad_rapid & PAD_L2)
-            menuUpAlpha();
     }
 
     else if(currentMenu == MENU_CHEATS)
     {
-        if(pad_pressed & PAD_CROSS)
-            menuToggleItem();
-
-        else if(pad_pressed & PAD_CIRCLE)
-            menuSetActive(MENU_GAMES);
-
-        else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(MENU_CHEATS);
-        
-        else if(pad_pressed & PAD_START)
-            menuSetActive(MENU_MAIN);
-
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
 
@@ -174,10 +162,34 @@ void handlePad()
 
         else if(pad_pressed & PAD_L2)
             menuGoToTop();
+        
+        if(pad_pressed & PAD_CROSS)
+            menuToggleItem();
+
+        else if(pad_pressed & PAD_CIRCLE)
+            menuSetActive(MENU_GAMES);
+
+        else if(pad_pressed & PAD_SQUARE)
+            displayContextMenu(MENU_CHEATS);
+        
+        else if(pad_pressed & PAD_START)
+            menuSetActive(MENU_MAIN);
     }
 
     else if(currentMenu == MENU_CODES)
     {
+        if(pad_rapid & PAD_R1)
+            menuDownRepeat(10);
+
+        else if(pad_rapid & PAD_L1)
+            menuUpRepeat(10);
+
+        if(pad_pressed & PAD_R2)
+            menuGoToBottom();
+
+        else if(pad_pressed & PAD_L2)
+            menuGoToTop();
+
         if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_CHEATS);
 
@@ -191,18 +203,6 @@ void handlePad()
             else
                 cheatsAddCodeLine();
         }
-
-        if(pad_rapid & PAD_R1)
-            menuDownRepeat(10);
-
-        else if(pad_rapid & PAD_L1)
-            menuUpRepeat(10);
-
-        if(pad_pressed & PAD_R2)
-            menuGoToBottom();
-
-        else if(pad_pressed & PAD_L2)
-            menuGoToTop();
     }
 
     else if(currentMenu == MENU_MAIN)
@@ -868,6 +868,8 @@ int displayPromptMenu(char **items, int numItems, const char *header)
             y += 22;
         }
         graphicsRender();
+        graphicsDrawBackground();
+        menuRender();
         
         if(pad_pressed & PAD_UP)
         {

@@ -101,11 +101,9 @@ void savesDrawTicker()
             freeSpace = 0;
     }
     
+    graphicsDrawTextCentered(47, COLOR_WHITE, deviceName);
     if(currentDevice != FLASH_DRIVE)
-    {
-        graphicsDrawTextCentered(47, COLOR_WHITE, deviceName);
         graphicsDrawText(30, 47, COLOR_WHITE, "%d KB free", freeSpace);
-    }
     
     static int ticker_x = 0;
     if (ticker_x < 1000)
@@ -1146,11 +1144,12 @@ int savesCopySavePrompt(gameSave_t *save)
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
         
-        graphicsDrawBackground();
         graphicsDrawTextCentered(47, COLOR_WHITE, save->name);
         graphicsDrawDeviceMenu(selectedDevice);
         graphicsDrawTextCentered(150, COLOR_WHITE, "Select device to copy save to");
         graphicsRender();
+        graphicsDrawBackground();
+        menuRender();
         
         if(pad_pressed & PAD_CROSS)
         {
