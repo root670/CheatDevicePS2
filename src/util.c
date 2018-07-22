@@ -108,11 +108,11 @@ void handlePad()
     u32 pad_rapid = padHeld();
     
     menuID_t currentMenu = menuGetActive();
-    if(currentMenu == GAMEMENU ||
-       currentMenu == CHEATMENU ||
-       currentMenu == CODEMENU ||
-       currentMenu == BOOTMENU ||
-       currentMenu == SAVEMENU)
+    if(currentMenu == MENU_GAMES ||
+       currentMenu == MENU_CHEATS ||
+       currentMenu == MENU_CODES ||
+       currentMenu == MENU_BOOT ||
+       currentMenu == MENU_SAVES)
     {
         if(pad_rapid & PAD_UP)
             menuUp();
@@ -121,14 +121,14 @@ void handlePad()
             menuDown();
     }
 
-    if(currentMenu == GAMEMENU)
+    if(currentMenu == MENU_GAMES)
     {
         if(pad_pressed & PAD_CROSS)
-            menuSetActive(CHEATMENU);
+            menuSetActive(MENU_CHEATS);
 
         else if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
         {
-            menuSetActive(MAINMENU);
+            menuSetActive(MENU_MAIN);
             selected = 0;
         }
 
@@ -136,7 +136,7 @@ void handlePad()
             graphicsDrawAboutPage();
 
         else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(GAMEMENU);
+            displayContextMenu(MENU_GAMES);
 
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
@@ -151,19 +151,19 @@ void handlePad()
             menuUpAlpha();
     }
 
-    else if(currentMenu == CHEATMENU)
+    else if(currentMenu == MENU_CHEATS)
     {
         if(pad_pressed & PAD_CROSS)
             menuToggleItem();
 
         else if(pad_pressed & PAD_CIRCLE)
-            menuSetActive(GAMEMENU);
+            menuSetActive(MENU_GAMES);
 
         else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(CHEATMENU);
+            displayContextMenu(MENU_CHEATS);
         
         else if(pad_pressed & PAD_START)
-            menuSetActive(MAINMENU);
+            menuSetActive(MENU_MAIN);
 
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
@@ -178,13 +178,13 @@ void handlePad()
             menuGoToTop();
     }
 
-    else if(currentMenu == CODEMENU)
+    else if(currentMenu == MENU_CODES)
     {
         if(pad_pressed & PAD_CIRCLE)
-            menuSetActive(CHEATMENU);
+            menuSetActive(MENU_CHEATS);
 
         else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(CODEMENU);
+            displayContextMenu(MENU_CODES);
 
         else if(pad_pressed & PAD_CROSS)
         {
@@ -205,24 +205,24 @@ void handlePad()
             menuGoToTop();
     }
 
-    else if(currentMenu == MAINMENU)
+    else if(currentMenu == MENU_MAIN)
     {
         graphicsDrawMainMenu(selected);
         if(pad_pressed & PAD_CROSS)
         {
             if(selected == 0) // boot game
-                menuSetActive(BOOTMENU);
+                menuSetActive(MENU_BOOT);
             if(selected == 1) // game menu
-                menuSetActive(GAMEMENU);
+                menuSetActive(MENU_GAMES);
             if(selected == 2) // save manager (device menu)
-                menuSetActive(SAVEDEVICEMENU);
+                menuSetActive(MENU_SAVE_DEVICES);
         }
 
         else if(pad_pressed & PAD_SELECT)
             graphicsDrawAboutPage();
 
         else if(pad_pressed & PAD_CIRCLE)
-            menuSetActive(GAMEMENU);
+            menuSetActive(MENU_GAMES);
 
         else if(pad_pressed & PAD_RIGHT)
         {
@@ -241,7 +241,7 @@ void handlePad()
         }
     }
     
-    else if(currentMenu == BOOTMENU)
+    else if(currentMenu == MENU_BOOT)
     {
         if(pad_pressed & PAD_CROSS)
             menuToggleItem();
@@ -249,20 +249,20 @@ void handlePad()
         else if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
-            menuSetActive(MAINMENU);
+            menuSetActive(MENU_MAIN);
         }
 
         else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(BOOTMENU);
+            displayContextMenu(MENU_BOOT);
     }
     
-    else if(currentMenu == SAVEDEVICEMENU)
+    else if(currentMenu == MENU_SAVE_DEVICES)
     {
         graphicsDrawDeviceMenu(selectedDevice);
-        graphicsDrawTextCentered(150, WHITE, "Select device to view saves");
+        graphicsDrawTextCentered(150, COLOR_WHITE, "Select device to view saves");
         if(pad_pressed & PAD_CROSS)
         {
-            menuSetActive(SAVEMENU);
+            menuSetActive(MENU_SAVES);
             if(selectedDevice == 0)
                 savesLoadSaveMenu(MC_SLOT_1);
             if(selectedDevice == 1)
@@ -273,7 +273,7 @@ void handlePad()
         
         if(pad_pressed & PAD_CIRCLE)
         {
-            menuSetActive(MAINMENU);
+            menuSetActive(MENU_MAIN);
         }
         
         else if(pad_pressed & PAD_RIGHT)
@@ -293,7 +293,7 @@ void handlePad()
         }
     }
     
-    else if(currentMenu == SAVEMENU)
+    else if(currentMenu == MENU_SAVES)
     {
         if(pad_pressed & PAD_CROSS)
             menuToggleItem();
@@ -301,7 +301,7 @@ void handlePad()
         else if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
-            menuSetActive(SAVEDEVICEMENU);
+            menuSetActive(MENU_SAVE_DEVICES);
         }
     }
 }
@@ -310,7 +310,7 @@ void displayContextMenu(int menuID)
 {
     int ret;
 
-    if(menuID == GAMEMENU)
+    if(menuID == MENU_GAMES)
     {
         char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
         ret = displayPromptMenu(items, 4, "Game Options");
@@ -329,7 +329,7 @@ void displayContextMenu(int menuID)
         }
     }
 
-    else if(menuID == CHEATMENU)
+    else if(menuID == MENU_CHEATS)
     {
         if(cheatsGetNumCheats() > 0)
         {
@@ -339,7 +339,7 @@ void displayContextMenu(int menuID)
             if(ret == 0)
                 cheatsAddCheat();
             else if(ret == 1)
-                menuSetActive(CODEMENU);
+                menuSetActive(MENU_CODES);
             else if(ret == 2)
                 cheatsRenameCheat();
             else if(ret == 3)
@@ -361,7 +361,7 @@ void displayContextMenu(int menuID)
         }
     }
 
-    else if(menuID == CODEMENU)
+    else if(menuID == MENU_CODES)
     {
         if(cheatsGetNumCodeLines() > 0)
         {
@@ -391,7 +391,7 @@ void displayContextMenu(int menuID)
         }
     }
 
-    else if(menuID == BOOTMENU)
+    else if(menuID == MENU_BOOT)
     {
         char *items[] = {"Edit Path", "Cancel"};
         ret = displayPromptMenu(items, 2, "Boot Options");
@@ -451,11 +451,11 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
 
         graphicsDrawPromptBoxBlack(width, 220);
-        graphicsDrawTextCentered(150, YELLOW, tmp);
-        graphicsDrawQuad(cursorX, 150, cursorWidth, 25, BLUE);
+        graphicsDrawTextCentered(150, COLOR_YELLOW, tmp);
+        graphicsDrawQuad(cursorX, 150, cursorWidth, 25, COLOR_BLUE);
 
         if(prompt)
-            graphicsDrawTextCentered(125, GREEN, prompt);
+            graphicsDrawTextCentered(125, COLOR_GREEN, prompt);
 
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
@@ -584,11 +584,11 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
             {
                 if(i == row && j == column)
                 {
-                    color = YELLOW;
-                    graphicsDrawQuad(162 + j*25, 175 + i*25, 25, 25, BLUE);
+                    color = COLOR_YELLOW;
+                    graphicsDrawQuad(162 + j*25, 175 + i*25, 25, 25, COLOR_BLUE);
                 }
                 else
-                    color = WHITE;
+                    color = COLOR_WHITE;
 
                 if(upper)
                     graphicsDrawChar(162 + j*25, 175 + i*25, keyBoardCharsUpper[i*KEYBOARD_COLUMNS + j], color);
@@ -598,12 +598,12 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         }
 
         if(row == ACCEPT_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, COLOR_BLUE);
         else if(row == CANCEL_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, COLOR_BLUE);
 
-        graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, (row == ACCEPT_ROW) ? YELLOW : WHITE, "Accept");
-        graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, (row == CANCEL_ROW) ? YELLOW : WHITE, "Cancel");
+        graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, (row == ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
+        graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, (row == CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
@@ -612,7 +612,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         else
             tickerX = 0;
 
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, WHITE,
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE,
             "{L1}/{R1} Move Cursor     "
             "{TRIANGLE} Space     "
             "{SQUARE} Backspace     "
@@ -782,37 +782,37 @@ int displayCodeEditMenu(u64 *code)
                 {
                     // 320 - 25*2
                     // 224 - 25*2
-                    color = YELLOW;
-                    graphicsDrawQuad(270 + j*25, 175 + i*25, 25, 25, BLUE);
+                    color = COLOR_YELLOW;
+                    graphicsDrawQuad(270 + j*25, 175 + i*25, 25, 25, COLOR_BLUE);
                 }
                 else
                 {
-                    color = WHITE;
+                    color = COLOR_WHITE;
                 }
 
                 graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - 45 + j*25, 175 + i*25, codeKeyboardChars[i*CODE_KEYBOARD_COLUMNS + j], color);
             }
         }
 
-        graphicsDrawTextCentered(125, GREEN, "Edit Code Line");
+        graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
 
         for(i = 0; i < 17; i++)
         {
             if(i == codeLoc)
             {
-                graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, BLUE);
+                graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, COLOR_BLUE);
             }
 
-            graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], WHITE);
+            graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], COLOR_WHITE);
         }
 
         if(row == CODE_KEYBOARD_ACCEPT_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + CODE_KEYBOARD_ROWS*25, 200, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + CODE_KEYBOARD_ROWS*25, 200, 22, COLOR_BLUE);
         else if(row == CODE_KEYBOARD_CANCEL_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + (CODE_KEYBOARD_ROWS+1)*25, 200, 22, BLUE);
+            graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - 100, 175 + (CODE_KEYBOARD_ROWS+1)*25, 200, 22, COLOR_BLUE);
 
-        graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, (row == CODE_KEYBOARD_ACCEPT_ROW) ? YELLOW : WHITE, "Accept");
-        graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, (row == CODE_KEYBOARD_CANCEL_ROW) ? YELLOW : WHITE, "Cancel");
+        graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, (row == CODE_KEYBOARD_ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
+        graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, (row == CODE_KEYBOARD_CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
@@ -824,7 +824,7 @@ int displayCodeEditMenu(u64 *code)
         char *helpText = "{L1}/{R1} Move Cursor     "
                          "{CROSS} Set Value     "
                          "START Accept";
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, WHITE, helpText);
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE, helpText);
 
         graphicsRender();
 
@@ -862,13 +862,13 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         pad_pressed = padPressed();
         
         graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
-        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, GREEN, header);
+        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, COLOR_GREEN, header);
         y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
         for(i = 0; i < numItems; i++)
         {
             if(i == selectedItem)
-                graphicsDrawQuad(320 - maxLength/2, y, maxLength, 22, BLUE);
-            graphicsDrawTextCentered(y - 1, i == selectedItem ? YELLOW : WHITE, items[i]);
+                graphicsDrawQuad(320 - maxLength/2, y, maxLength, 22, COLOR_BLUE);
+            graphicsDrawTextCentered(y - 1, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
             y += 22;
         }
         graphicsRender();

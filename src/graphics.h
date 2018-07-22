@@ -11,7 +11,14 @@
 #include "dmaKit.h"
 #include "gsToolkit.h"
 
-typedef enum { BLACK, WHITE, RED, GREEN, BLUE, YELLOW } graphicsColor_t;
+typedef enum {
+    COLOR_BLACK,
+    COLOR_WHITE,
+    COLOR_RED,
+    COLOR_GREEN,
+    COLOR_BLUE,
+    COLOR_YELLOW
+} graphicsColor_t;
 
 int initGraphics();
 

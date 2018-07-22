@@ -9,10 +9,24 @@
 #include <tamtypes.h>
 #include "cheats.h"
 
-typedef enum { GAMEMENU, CHEATMENU, CODEMENU, MAINMENU, BOOTMENU, SAVEDEVICEMENU, SAVEMENU, NUMMENUS } menuID_t;
-typedef enum { NORMAL, HEADER } menutype_t;
+typedef enum {
+    MENU_GAMES,
+    MENU_CHEATS,
+    MENU_CODES,
+    MENU_MAIN,
+    MENU_BOOT,
+    MENU_SAVE_DEVICES,
+    MENU_SAVES,
+    NUMMENUS
+} menuID_t;
+
+typedef enum {
+    MENU_ITEM_NORMAL,
+    MENU_ITEM_HEADER
+} menuItemType_t;
+
 typedef struct menuItem {
-    menutype_t type;
+    menuItemType_t type;
     char *text;
     void *extra; // Optional: Associate additional data with the menuItem.
 } menuItem_t;
@@ -27,7 +41,7 @@ typedef struct menuState {
     menuItem_t **items;
     unsigned int currentItem;
     unsigned int numItems;
-    unsigned int chunks;
+    unsigned int numChunks;
 } menuState_t;
 
 int initMenus();

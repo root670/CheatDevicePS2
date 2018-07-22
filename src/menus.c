@@ -28,15 +28,15 @@ int initMenus()
             menues[i].items = calloc(CHUNK_SIZE, sizeof(menuItem_t *));
             menues[i].currentItem = 0;
             menues[i].numItems = 0;
-            menues[i].chunks = 1;
+            menues[i].numChunks = 1;
         }
 
-        menues[GAMEMENU].isSorted = 1;
-        menues[SAVEMENU].isSorted = 1;
-        menues[CODEMENU].freeTextWhenRemoved = 1;
-        menues[SAVEMENU].freeTextWhenRemoved = 1;
+        menues[MENU_GAMES].isSorted = 1;
+        menues[MENU_SAVES].isSorted = 1;
+        menues[MENU_CODES].freeTextWhenRemoved = 1;
+        menues[MENU_SAVES].freeTextWhenRemoved = 1;
 
-        activeMenu = &menues[GAMEMENU];
+        activeMenu = &menues[MENU_GAMES];
         initialized = 1;
         return 1;
     }
@@ -67,11 +67,11 @@ int menuInsertItem(menuItem_t *item)
 {
     if(initialized)
     {
-        if(activeMenu->numItems == (activeMenu->chunks * CHUNK_SIZE))
+        if(activeMenu->numItems == (activeMenu->numChunks * CHUNK_SIZE))
         {
-            activeMenu->chunks++;
-            printf("increasing menu size to %d chunks\n", activeMenu->chunks);
-            activeMenu->items = realloc(activeMenu->items, CHUNK_SIZE * sizeof(menuItem_t *) * activeMenu->chunks);
+            activeMenu->numChunks++;
+            printf("increasing menu size to %d chunks\n", activeMenu->numChunks);
+            activeMenu->items = realloc(activeMenu->items, CHUNK_SIZE * sizeof(menuItem_t *) * activeMenu->numChunks);
         }
 
         if(activeMenu->numItems == 0 || !activeMenu->isSorted)
@@ -113,7 +113,7 @@ int menuRemoveActiveItem()
         if(activeMenu->freeTextWhenRemoved && activeMenu->items[activeMenu->currentItem]->text)
             free(activeMenu->items[activeMenu->currentItem]->text);
         
-        if(activeMenu->identifier != GAMEMENU && activeMenu->identifier != CHEATMENU && activeMenu->identifier != BOOTMENU)
+        if(activeMenu->identifier != MENU_GAMES && activeMenu->identifier != MENU_CHEATS && activeMenu->identifier != MENU_BOOT)
             free(activeMenu->items[activeMenu->currentItem]);
         
         activeMenu->numItems--;
@@ -145,7 +145,7 @@ int menuRemoveAllItems()
             free(item->text);
     }
 
-    if(activeMenu->identifier == CHEATMENU && activeMenu->items[0])
+    if(activeMenu->identifier == MENU_CHEATS && activeMenu->items[0])
     {
         free(activeMenu->items[0]);
     }
@@ -275,39 +275,39 @@ int menuSetActive(menuID_t id)
     if( id > NUMMENUS-1 )
         return 0;
 
-    if(id == CHEATMENU && cheatsGetNumGames() == 0)
+    if(id == MENU_CHEATS && cheatsGetNumGames() == 0)
         return 0;
 
     activeMenu = &menues[id];
 
-    if(id == CHEATMENU && (activeMenu->text != menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text)) // Refresh cheat menu if a new game was chosen
+    if(id == MENU_CHEATS && (activeMenu->text != menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->text)) // Refresh cheat menu if a new game was chosen
     {
         menuRemoveAllItems();
-        activeMenu->text = menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->text;
-        activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[GAMEMENU].items[menues[GAMEMENU].currentItem]->extra);
+        activeMenu->text = menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->text;
+        activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->extra);
     }
-    else if(id == CODEMENU && (activeMenu->text != menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text)) // Refresh code menu if a new cheat was chosen
+    else if(id == MENU_CODES && (activeMenu->text != menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text)) // Refresh code menu if a new cheat was chosen
     {
-        if(menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->type == NORMAL)
+        if(menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->type == MENU_ITEM_NORMAL)
         {
             menuRemoveAllItems();
-            activeMenu->text = menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->text;
-            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[CHEATMENU].items[menues[CHEATMENU].currentItem]->extra,
-            (cheatsGame_t *) menues[CHEATMENU].extra);
+            activeMenu->text = menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text;
+            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->extra,
+            (cheatsGame_t *) menues[MENU_CHEATS].extra);
         }
         else
         {
-            activeMenu = &menues[CHEATMENU]; // Header doesn't have any codes to see, so go back
+            activeMenu = &menues[MENU_CHEATS]; // Header doesn't have any codes to see, so go back
         }
     }
-    else if(id == BOOTMENU)
+    else if(id == MENU_BOOT)
     {
         activeMenu->text = menuTitleBootMenu;
         menuRemoveAllItems();
         settingsLoadBootMenu();
     }
     
-    else if (id == SAVEDEVICEMENU)
+    else if (id == MENU_SAVE_DEVICES)
     {
         activeMenu->text = menuTitleSaveMenu;
     }
@@ -427,7 +427,7 @@ void menuToggleItem()
 {
     void *extra;
     char *text;
-    menutype_t type;
+    menuItemType_t type;
 
     if(activeMenu->numItems > 0)
     {
@@ -435,16 +435,16 @@ void menuToggleItem()
         text = activeMenu->items[activeMenu->currentItem]->text;
         type = activeMenu->items[activeMenu->currentItem]->type;
 
-        if(activeMenu->identifier == CHEATMENU && ((cheatsCheat_t *) extra)->type == CHEAT_NORMAL)
+        if(activeMenu->identifier == MENU_CHEATS && ((cheatsCheat_t *) extra)->type == CHEAT_NORMAL)
         {
             cheatsSetActiveGame(activeMenu->extra);
             cheatsToggleCheat((cheatsCheat_t *) extra);
         }
-        else if(activeMenu->identifier == BOOTMENU)
+        else if(activeMenu->identifier == MENU_BOOT)
         {
             startgameExecute(text);
         }
-        else if(activeMenu->identifier == SAVEMENU && type != HEADER)
+        else if(activeMenu->identifier == MENU_SAVES && type != MENU_ITEM_HEADER)
         {
             savesCopySavePrompt((gameSave_t *) extra);
         }
@@ -479,9 +479,9 @@ static void drawScrollBar()
     float gripPositionOnTrack = trackScrollAreaSize * windowPositionRatio;
 
     // Draw track w/ 2px padding around grip
-    graphicsDrawQuad(graphicsGetDisplayWidth() - 40, 76, 10, trackSize + 4, BLUE);
+    graphicsDrawQuad(graphicsGetDisplayWidth() - 40, 76, 10, trackSize + 4, COLOR_BLUE);
     // Draw grip
-    graphicsDrawQuad(graphicsGetDisplayWidth() - 38, 78 + gripPositionOnTrack, 6, gripSize, WHITE);
+    graphicsDrawQuad(graphicsGetDisplayWidth() - 38, 78 + gripPositionOnTrack, 6, gripSize, COLOR_WHITE);
 }
 
 static void drawMenuItems()
@@ -510,22 +510,22 @@ static void drawMenuItems()
         {
             menuItem_t *item = activeMenu->items[idx];
 
-            if(item->type == NORMAL)
+            if(item->type == MENU_ITEM_NORMAL)
             {
-                if(activeMenu->identifier == CHEATMENU && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
-                    graphicsDrawText(50, y, YELLOW, item->text);
-                else if(activeMenu->identifier == GAMEMENU &&
+                if(activeMenu->identifier == MENU_CHEATS && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
+                    graphicsDrawText(50, y, COLOR_YELLOW, item->text);
+                else if(activeMenu->identifier == MENU_GAMES &&
                         cheatsIsActiveGame((cheatsGame_t *) item->extra) &&
                         cheatsGetNumEnabledCheats() > 0)
                 {
-                    graphicsDrawText(50, y, YELLOW, item->text);
+                    graphicsDrawText(50, y, COLOR_YELLOW, item->text);
                 }
                 else
-                    graphicsDrawText(50, y, WHITE, item->text);
+                    graphicsDrawText(50, y, COLOR_WHITE, item->text);
             }
             else
             {
-                graphicsDrawText(50, y, GREEN, item->text);
+                graphicsDrawText(50, y, COLOR_GREEN, item->text);
             }
 
             if(idx == activeMenu->currentItem)
@@ -541,23 +541,23 @@ int menuRender()
 {
     cheatsDrawStats();
     
-    if(activeMenu->identifier == MAINMENU)
+    if(activeMenu->identifier == MENU_MAIN)
     {
         return 1;
     }
-    else if(activeMenu->identifier == SAVEMENU)
+    else if(activeMenu->identifier == MENU_SAVES)
     {
         savesDrawTicker();
     }
-    else if(activeMenu->identifier != GAMEMENU)
+    else if(activeMenu->identifier != MENU_GAMES)
     {
         if(activeMenu->text != NULL)
         {
-            graphicsDrawTextCentered(47, WHITE, activeMenu->text);
+            graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
         }
     }
 
-    if(activeMenu->identifier == BOOTMENU)
+    if(activeMenu->identifier == MENU_BOOT)
     {
         settingsDrawBootMenuTicker();
     }

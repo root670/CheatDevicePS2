@@ -294,7 +294,7 @@ int cheatsLoadGameMenu()
         
         while(node)
         {
-            item->type = NORMAL;
+            item->type = MENU_ITEM_NORMAL;
             item->text = node->title;
             item->extra = node;
 
@@ -324,9 +324,9 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         while(cheat != NULL)
         {
             if(cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE)
-                item->type = NORMAL;
+                item->type = MENU_ITEM_NORMAL;
             else
-                item->type = HEADER;
+                item->type = MENU_ITEM_HEADER;
 
             item->text = cheat->title;
             item->extra = (void *)cheat;
@@ -361,7 +361,7 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
             item->text = malloc(18);
             snprintf(item->text, 18, "%08X %08X", addr, val);
 
-            item->type = NORMAL;
+            item->type = MENU_ITEM_NORMAL;
             item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
 
             menuInsertItem(item);
@@ -414,7 +414,7 @@ int cheatsAddGame()
     numGames++;
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
-    item->type = NORMAL;
+    item->type = MENU_ITEM_NORMAL;
     item->text = strdup(newGame->title);
     item->extra = newGame;
     menuInsertItem(item);
@@ -429,7 +429,7 @@ int cheatsRenameGame()
 {
     char title[80];
 
-    if(menuGetActive() != GAMEMENU)
+    if(menuGetActive() != MENU_GAMES)
         return 0;
 
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
@@ -458,7 +458,7 @@ int cheatsRenameGame()
 
 int cheatsDeleteGame()
 {
-    if(menuGetActive() != GAMEMENU)
+    if(menuGetActive() != MENU_GAMES)
         return 0;
 
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
@@ -536,7 +536,7 @@ int cheatsAddCheat()
     newCheat->codeLinesOffset = game->codeLinesUsed;
 
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
-    item->type = NORMAL;
+    item->type = MENU_ITEM_NORMAL;
     item->text = strdup(newCheat->title);
     item->extra = newCheat;
     menuInsertItem(item);
@@ -550,7 +550,7 @@ int cheatsRenameCheat()
 {
     char title[80];
 
-    if(menuGetActive() != CHEATMENU)
+    if(menuGetActive() != MENU_CHEATS)
         return 0;
 
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
@@ -570,7 +570,7 @@ int cheatsRenameCheat()
 
 int cheatsDeleteCheat()
 {
-    if(menuGetActive() != CHEATMENU)
+    if(menuGetActive() != MENU_CHEATS)
         return 0;
 
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
@@ -621,14 +621,14 @@ int cheatsAddCodeLine()
 {
     u64 newCode = lastSelectedCode;
 
-    if(menuGetActive() != CODEMENU)
+    if(menuGetActive() != MENU_CODES)
         return 0;
     
     if(displayCodeEditMenu(&newCode) == 0)
         return 0;
 
     cheatsCheat_t *cheat = menuGetActiveExtra();
-    cheatsGame_t *game = menuGetExtra(CHEATMENU);
+    cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
     if(!game)
         return 0;
 
@@ -672,7 +672,7 @@ int cheatsEditCodeLine()
 {
     char newCodeLine[18];
 
-    if(menuGetActive() != CODEMENU)
+    if(menuGetActive() != MENU_CODES)
         return 0;
 
     u64 *selectedCode = menuGetActiveItemExtra();
@@ -697,11 +697,11 @@ int cheatsEditCodeLine()
 // Delete currently selected code line
 int cheatsDeleteCodeLine()
 {
-    if(menuGetActive() != CODEMENU)
+    if(menuGetActive() != MENU_CODES)
         return 0;
 
     cheatsCheat_t *cheat = menuGetActiveExtra();
-    cheatsGame_t *game = menuGetExtra(CHEATMENU);
+    cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
     if(!game)
         return 0;
 
@@ -727,7 +727,7 @@ int cheatsDeleteCodeLine()
 
 int cheatsGetNumCodeLines()
 {
-    if(menuGetActive() != CODEMENU)
+    if(menuGetActive() != MENU_CODES)
         return 0;
 
     cheatsCheat_t *cheat = (cheatsCheat_t *)menuGetActiveExtra();
@@ -739,7 +739,7 @@ int cheatsGetNumCodeLines()
 
 int cheatsGetNumCheats()
 {
-    if(menuGetActive() != CHEATMENU)
+    if(menuGetActive() != MENU_CHEATS)
         return 0;
     
     cheatsGame_t *game = (cheatsGame_t *)menuGetActiveExtra();
@@ -768,7 +768,7 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
             else if(cheat->numCodeLines == 0)
             {
                 displayError("This cheat doesn't contain any code lines.\nPlease add some on the next screen.");
-                menuSetActive(CODEMENU);
+                menuSetActive(MENU_CODES);
                 return 0;
             }
             
@@ -819,9 +819,9 @@ void cheatsDrawStats()
         if(numEnabledCheats > 0)
         {
             if(numEnabledCheats == 1)
-                graphicsDrawText(482, 25, WHITE, "%i active cheat", numEnabledCheats);
+                graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheat", numEnabledCheats);
             else
-                graphicsDrawText(482, 25, WHITE, "%i active cheats", numEnabledCheats);
+                graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheats", numEnabledCheats);
         }
     }
     
@@ -833,14 +833,14 @@ void cheatsDrawStats()
     if(activeMenu != oldMenu)
         x = 0;
 
-    if(activeMenu == GAMEMENU)
+    if(activeMenu == MENU_GAMES)
     {
         if (x < 1700)
             x+= 2;
         else
             x = 0;
 
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
             "{CROSS} Cheat List     "
             "{SQUARE} Options     "
             "{CIRCLE} Main Menu     "
@@ -848,28 +848,28 @@ void cheatsDrawStats()
             "{L2}/{R2} Alphabetical Up/Down");
     }
 
-    else if(activeMenu == CHEATMENU)
+    else if(activeMenu == MENU_CHEATS)
     {
         if (x < 1500)
             x+= 2;
         else
             x = 0;
 
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
             "{CROSS} Enable/Disable Cheat     "
             "{SQUARE} Options     "
             "{CIRCLE} Game List    "
             "{L1}/{R1} Page Up/Down");
     }
 
-    else if(activeMenu == CODEMENU)
+    else if(activeMenu == MENU_CODES)
     {
         if(x < 1200)
             x += 2;
         else
             x = 0;
 
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
             "{CROSS} Edit Code Line     "
             "{SQUARE} Options     "
             "{CIRCLE} Cheat Menu");

@@ -75,13 +75,14 @@ extern int _buttonR2_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
-static u64 graphicsColorTable[] =
-		{ GS_SETREG_RGBAQ(0x00,0x00,0x00,0x80,0x80), // BLACK
-         GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0x80,0x80), // WHITE
-         GS_SETREG_RGBAQ(0xF0,0x00,0x00,0x80,0x80), // RED
-         GS_SETREG_RGBAQ(0x00,0xF0,0x00,0x80,0x80), // GREEN
-         GS_SETREG_RGBAQ(0x20,0x20,0xA0,0x80,0x80), // BLUE
-         GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80) }; // YELLOW
+static u64 graphicsColorTable[] = {
+    GS_SETREG_RGBAQ(0x00,0x00,0x00,0x80,0x80), // COLOR_BLACK
+    GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0x80,0x80), // COLOR_WHITE
+    GS_SETREG_RGBAQ(0xF0,0x00,0x00,0x80,0x80), // COLOR_RED
+    GS_SETREG_RGBAQ(0x00,0xF0,0x00,0x80,0x80), // COLOR_GREEN
+    GS_SETREG_RGBAQ(0x20,0x20,0xA0,0x80,0x80), // COLOR_BLUE
+    GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80)  // COLOR_YELLOW
+};
 
 static int vsync_callback()
 {
@@ -141,7 +142,7 @@ int initGraphics()
 
         graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
         graphicsDrawBackground();
-        graphicsDrawText(450, 400, WHITE, "Please wait...");
+        graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");
         graphicsRenderNow();
 
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
@@ -381,7 +382,7 @@ static void graphicsPrintText(int x, int y, const char *txt, u64 color)
             if(ret != NULL)
             {
                 u64 graphicColor;
-                if(color == graphicsColorTable[YELLOW])
+                if(color == graphicsColorTable[COLOR_YELLOW])
                 {
                     graphicColor = color;
                 }
@@ -561,7 +562,7 @@ void graphicsDrawPromptBox(int width, int height)
 
 void graphicsDrawPromptBoxBlack(int width, int height)
 {
-    drawPromptBox(width, height, graphicsColorTable[BLACK]);
+    drawPromptBox(width, height, graphicsColorTable[COLOR_BLACK]);
 }
 
 static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
@@ -587,7 +588,7 @@ static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
                                             (icons[i].tex)->Height,
                                             1,
                                             (activeItem == i) ? selected : unselected);
-        if (activeItem == i) graphicsDrawTextCentered(265, WHITE, icons[i].label);
+        if (activeItem == i) graphicsDrawTextCentered(265, COLOR_WHITE, icons[i].label);
         gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
     }
 }

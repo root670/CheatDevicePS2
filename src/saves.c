@@ -103,8 +103,8 @@ void savesDrawTicker()
     
     if(currentDevice != FLASH_DRIVE)
     {
-        graphicsDrawTextCentered(47, WHITE, deviceName);
-        graphicsDrawText(30, 47, WHITE, "%d KB free", freeSpace);
+        graphicsDrawTextCentered(47, COLOR_WHITE, deviceName);
+        graphicsDrawText(30, 47, COLOR_WHITE, "%d KB free", freeSpace);
     }
     
     static int ticker_x = 0;
@@ -113,7 +113,7 @@ void savesDrawTicker()
     else
         ticker_x = 0;
     
-    graphicsDrawText(graphicsGetDisplayWidth() - ticker_x, 405, WHITE, "{CROSS} Copy     {CIRCLE} Device Menu");
+    graphicsDrawText(graphicsGetDisplayWidth() - ticker_x, 405, COLOR_WHITE, "{CROSS} Copy     {CIRCLE} Device Menu");
 }
 
 static char *getDevicePath(char *str, device_t dev)
@@ -399,7 +399,7 @@ void savesLoadSaveMenu(device_t dev)
     
     currentDevice = dev;
     
-    graphicsDrawText(450, 400, WHITE, "Please wait...");
+    graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");
     graphicsRenderNow();
     
     available = savesGetAvailableDevices();
@@ -407,7 +407,7 @@ void savesLoadSaveMenu(device_t dev)
     if(!(available & dev))
     {
         menuItem_t *item = calloc(1, sizeof(menuItem_t));
-        item->type = HEADER;
+        item->type = MENU_ITEM_HEADER;
         item->text = strdup("Unable to access device.\n");
         menuInsertItem(item);
         return;
@@ -419,7 +419,7 @@ void savesLoadSaveMenu(device_t dev)
     if(!save)
     {
         menuItem_t *item = calloc(1, sizeof(menuItem_t));
-        item->type = HEADER;
+        item->type = MENU_ITEM_HEADER;
         item->text = strdup("No saves on this device\n");
         menuInsertItem(item);
         return;
@@ -428,7 +428,7 @@ void savesLoadSaveMenu(device_t dev)
     while(save)
     {
         menuItem_t *item = calloc(1, sizeof(menuItem_t));
-        item->type = NORMAL;
+        item->type = MENU_ITEM_NORMAL;
         item->text = strdup(save->name);
         item->extra = save;
         menuInsertItem(item);
@@ -475,7 +475,7 @@ static int createPSU(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     psuFile = fopen(psuPath, "wb");
@@ -605,7 +605,7 @@ static int extractPSU(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Skip "." and ".."
@@ -700,7 +700,7 @@ static int extractCBS(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Get data for file entries
@@ -797,7 +797,7 @@ static int createCBS(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     cbsFile = fopen(cbsPath, "wb");
@@ -964,7 +964,7 @@ static int extractZIP(gameSave_t *save, device_t dst)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     // Copy each file entry
@@ -1040,7 +1040,7 @@ static int createZIP(gameSave_t *save, device_t src)
     }
     
     graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, YELLOW, "Copying save...");
+    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
     graphicsRenderNow();
     
     zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
@@ -1147,9 +1147,9 @@ int savesCopySavePrompt(gameSave_t *save)
         pad_pressed = padPressed();
         
         graphicsDrawBackground();
-        graphicsDrawTextCentered(47, WHITE, save->name);
+        graphicsDrawTextCentered(47, COLOR_WHITE, save->name);
         graphicsDrawDeviceMenu(selectedDevice);
-        graphicsDrawTextCentered(150, WHITE, "Select device to copy save to");
+        graphicsDrawTextCentered(150, COLOR_WHITE, "Select device to copy save to");
         graphicsRender();
         
         if(pad_pressed & PAD_CROSS)

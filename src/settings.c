@@ -186,14 +186,14 @@ void settingsLoadBootMenu()
     
     menuItem_t *items = calloc(numPaths + 1, sizeof(menuItem_t));
     /* Disc boot; default option */
-    items[0].type = NORMAL;
+    items[0].type = MENU_ITEM_NORMAL;
     items[0].text = diskBootStr;
     menuInsertItem(&items[0]);
     
     int i;
     for(i = 1; i < numPaths + 1; i++)
     {
-        items[i].type = NORMAL;
+        items[i].type = MENU_ITEM_NORMAL;
         items[i].text = paths[i-1];
         items[i].extra = (void *)&paths[i-1];
         menuInsertItem(&items[i]);
@@ -206,7 +206,7 @@ void settingsRenameBootPath()
 
     if(initialized)
     {
-        if(menuGetActive() != BOOTMENU)
+        if(menuGetActive() != MENU_BOOT)
             return;
 
         char **bootPath = (char **)menuGetActiveItemExtra();
@@ -229,7 +229,7 @@ void settingsDrawBootMenuTicker()
 {
     static int x = 0;
 
-    if(menuGetActive() != BOOTMENU)
+    if(menuGetActive() != MENU_BOOT)
         return;
 
     if (x < 1200)
@@ -237,7 +237,7 @@ void settingsDrawBootMenuTicker()
     else
         x = 0;
 
-    graphicsDrawText(graphicsGetDisplayWidth() - x, 405, WHITE,
+    graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
         "{CROSS} Boot     "
         "{SQUARE} Options     "
         "{CIRCLE} Main Menu");
