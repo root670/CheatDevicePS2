@@ -35,7 +35,7 @@ OBJS += src/settings.o
 
 # IRX Modules
 IRX_OBJS += resources/usbd_irx.o
-IRX_OBJS += resources/usb_mass_irx.o
+IRX_OBJS += resources/usbhdfsd_irx.o
 IRX_OBJS += resources/iomanX_irx.o
 ifeq ($(DTL_T10000),1)
 	IRX_OBJS += resources/sio2man_irx.o
@@ -88,8 +88,8 @@ all: modules version main
 modules:
 	@# IRX Modules
 	@bin2o resources/iomanX.irx resources/iomanX_irx.o _iomanX_irx
-	@bin2o resources/usbd.irx resources/usbd_irx.o _usbd_irx
-	@bin2o resources/usb_mass.irx resources/usb_mass_irx.o _usb_mass_irx
+	@bin2o $(PS2SDK)/iop/irx/usbd.irx resources/usbd_irx.o _usbd_irx
+	@bin2o $(PS2SDK)/iop/irx/usbhdfsd.irx resources/usbhdfsd_irx.o _usbhdfsd_irx
 ifeq ($(DTL_T10000),1)
 	@bin2o $(PS2SDK)/iop/irx/freesio2.irx resources/sio2man_irx.o _sio2man_irx
 	@bin2o $(PS2SDK)/iop/irx/mcman.irx resources/mcman_irx.o _mcman_irx

@@ -29,12 +29,10 @@ extern int _padman_irx_size;
 
 extern u8  _iomanX_irx_start[];
 extern int _iomanX_irx_size;
-extern u8  _ps2kbd_irx_start[];
-extern int _ps2kbd_irx_size;
 extern u8  _usbd_irx_start[];
 extern int _usbd_irx_size;
-extern u8  _usb_mass_irx_start[];
-extern int _usb_mass_irx_size;
+extern u8  _usbhdfsd_irx_start[];
+extern int _usbhdfsd_irx_size;
 
 void loadModules()
 {
@@ -78,7 +76,6 @@ void loadModules()
     SifExecModuleBuffer(_padman_irx_start, _padman_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_mcman_irx_start, _mcman_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_mcserv_irx_start, _mcserv_irx_size, 0, NULL, &ret);
-
     #else
     SifLoadModule("rom0:SIO2MAN", 0, NULL);
     SifLoadModule("rom0:PADMAN", 0, NULL);
@@ -87,7 +84,8 @@ void loadModules()
     #endif
     SifExecModuleBuffer(_iomanX_irx_start, _iomanX_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_usbd_irx_start, _usbd_irx_size, 0, NULL, &ret);
-    SifExecModuleBuffer(_usb_mass_irx_start, _usb_mass_irx_size, 0, NULL, &ret);
+    SifExecModuleBuffer(_usbhdfsd_irx_start, _usbhdfsd_irx_size, 0, NULL, &ret);
+    sleep(1); // Allow USB devices some time to be detected
 
     #ifdef _DTL_T10000
     mcInit(MC_TYPE_XMC);
