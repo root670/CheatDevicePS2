@@ -505,36 +505,26 @@ void graphicsDrawLoadingBar(int x, int y, float progress)
 {
     int height = 10;
     int width = gsGlobal->Width - 2*x;
-    u64 color = GS_SETREG_RGBAQ(0x22, 0x22, 0xee, 0x00, 0x80);
-    u64 outline = GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x80);
+    u64 color = graphicsColorTable[COLOR_BLUE];
+    u64 outline = graphicsColorTable[COLOR_BLACK];
 
     if(progress < 0.0)
         progress = 0.0;
     if(progress > 1.0)
         progress = 1.0;
 
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     // outline
-    gsKit_prim_quad(gsGlobal, x-5, y-5,
-                              x-5, y+height+5,
-                              x+5+width, y-5,
-                              x+5+width, y+height+5, 1, outline);
-
+    gsKit_prim_sprite(gsGlobal, x-5, y-5, x+5+width, y+5+height, 1, outline);
     // progress bar
-    gsKit_prim_quad(gsGlobal, x, y,
-                              x, y+height,
-                              x + (progress * width), y,
-                              x + (progress * width), y+height, 1, color);
+    gsKit_prim_sprite(gsGlobal, x, y, x + (progress * width), y + height, 1, color);
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
 void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_t color)
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
-
-    gsKit_prim_quad(gsGlobal, x, y,
-                              x + xsize, y,
-                              x, y + ysize,
-                              x + xsize, y + ysize, 1, graphicsColorTable[color]);
-
+    gsKit_prim_sprite(gsGlobal, x, y, x + xsize, y + ysize, 1, graphicsColorTable[color]);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
@@ -546,18 +536,13 @@ static void drawPromptBox(int width, int height, u64 color)
     const int y1 = (gsGlobal->Height/2.0) + (height/2.0);
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
-
-    gsKit_prim_quad(gsGlobal, x0, y0,
-                              x1, y0,
-                              x0, y1,
-                              x1, y1, 1, color);
-
+    gsKit_prim_sprite(gsGlobal, x0, y0, x1, y1, 1, color);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
 void graphicsDrawPromptBox(int width, int height)
 {
-    drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x25, 0x80));
+    drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x60, 0x80));
 }
 
 void graphicsDrawPromptBoxBlack(int width, int height)
@@ -618,7 +603,6 @@ void graphicsClearScreen(int r, int g, int b)
 
 void graphicsDrawBackground()
 {
-    graphicsClearScreen(0, 0, 0);
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
@@ -750,8 +734,11 @@ void graphicsDrawAboutPage()
 
 void graphicsRenderNow()
 {
-    gsKit_queue_exec( gsGlobal );
-    gsKit_lock_buffer( gsGlobal );
+    if(gsKit_lock_status(gsGlobal) == GS_SETTING_OFF)
+    {
+        gsKit_queue_exec( gsGlobal );
+        gsKit_lock_buffer( gsGlobal );
+    }
 }
 
 void graphicsRender()
