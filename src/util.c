@@ -190,6 +190,8 @@ void handlePad()
         {
             if(cheatsGetNumCodeLines() > 0)
                 cheatsEditCodeLine();
+            else
+                cheatsAddCodeLine();
         }
 
         if(pad_rapid & PAD_R1)
@@ -635,7 +637,7 @@ char *codeKeyboardChars = "0123" \
 #define CODE_KEYBOARD_ACCEPT_ROW CODE_KEYBOARD_ROWS
 #define CODE_KEYBOARD_CANCEL_ROW CODE_KEYBOARD_ACCEPT_ROW + 1
 
-int displayCodeEditMenu(u64 *code)
+static int displayCodeEditMenu(u64 *code, const int isNewCode)
 {
     u32 pad_pressed;
     u32 pad_rapid;
@@ -656,6 +658,10 @@ int displayCodeEditMenu(u64 *code)
     do
     {
         graphicsDrawPromptBoxBlack(285, 220);
+        if(isNewCode)
+            graphicsDrawTextCentered(125, COLOR_GREEN, "Add Code Line");
+        else
+            graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
 
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
@@ -667,15 +673,10 @@ int displayCodeEditMenu(u64 *code)
             {
                 codeString[codeLoc] = codeKeyboardChars[row*CODE_KEYBOARD_COLUMNS + column];
 
-                if(codeLoc == 7)
-                {
-                    // Skip past space in the center
-                    codeLoc += 2;
-                }
+                if(codeLoc == 7)   
+                    codeLoc += 2; // Skip past space in the center
                 else if(codeLoc < 16)
-                {
                     codeLoc++;
-                }
             }
             else if(row == CODE_KEYBOARD_ACCEPT_ROW)
             {
@@ -701,13 +702,9 @@ int displayCodeEditMenu(u64 *code)
             if(codeLoc > 0)
             {
                 if(codeLoc == 9)
-                {
-                    codeLoc -= 2;
-                }
+                    codeLoc -= 2; // Skip past center space
                 else
-                {
                     codeLoc--;
-                }
             }
             else
             {
@@ -720,14 +717,9 @@ int displayCodeEditMenu(u64 *code)
             if(codeLoc < 16)
             {
                 if(codeLoc == 7)
-                {
-                    // Skip past center space
-                    codeLoc += 2;
-                }
+                    codeLoc += 2; // Skip past center space
                 else
-                {
                     codeLoc++;
-                }
             }
             else
             {
@@ -794,14 +786,10 @@ int displayCodeEditMenu(u64 *code)
             }
         }
 
-        graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
-
         for(i = 0; i < 17; i++)
         {
             if(i == codeLoc)
-            {
                 graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, COLOR_BLUE);
-            }
 
             graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], COLOR_WHITE);
         }
@@ -821,17 +809,27 @@ int displayCodeEditMenu(u64 *code)
         else
             tickerX = 0;
 
-        char *helpText = "{L1}/{R1} Move Cursor     "
-                         "{CROSS} Set Value     "
-                         "START Accept";
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE, helpText);
+        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE,
+            "{L1}/{R1} Move Cursor     "
+            "{CROSS} Set Value     "
+            "START Accept");
 
         graphicsRender();
-
 
     } while (!(pad_pressed & PAD_CIRCLE));
 
     return 0;
+}
+
+int displayNewCodeEditMenu(u64 *code)
+{
+    return displayCodeEditMenu(code, 1);
+}
+
+int displayExistingCodeEditMenu(u64 *code)
+{
+    graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
+    return displayCodeEditMenu(code, 0);
 }
 
 int displayPromptMenu(char **items, int numItems, const char *header)
@@ -916,13 +914,9 @@ int getNumLines(const char *str)
     while(*cptr)
     {
         if(numLines == 0)
-        {
             numLines++;
-        }
         if(*cptr == '\n')
-        {
             numLines++;
-        }
 
         cptr++;
     }

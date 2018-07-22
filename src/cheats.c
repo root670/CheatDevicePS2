@@ -624,7 +624,7 @@ int cheatsAddCodeLine()
     if(menuGetActive() != MENU_CODES)
         return 0;
     
-    if(displayCodeEditMenu(&newCode) == 0)
+    if(displayNewCodeEditMenu(&newCode) == 0)
         return 0;
 
     cheatsCheat_t *cheat = menuGetActiveExtra();
@@ -682,7 +682,7 @@ int cheatsEditCodeLine()
 
     lastSelectedCode = *selectedCode;
 
-    if(displayCodeEditMenu(selectedCode) == 0)
+    if(displayExistingCodeEditMenu(selectedCode) == 0)
         return 0;
     
     u32 addr = (u32)*((u32 *)selectedCode);
@@ -869,10 +869,20 @@ void cheatsDrawStats()
         else
             x = 0;
 
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-            "{CROSS} Edit Code Line     "
-            "{SQUARE} Options     "
-            "{CIRCLE} Cheat Menu");
+        if(cheatsGetNumCodeLines() > 0)
+        {
+            graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
+                "{CROSS} Edit Code Line     "
+                "{SQUARE} Options     "
+                "{CIRCLE} Cheat Menu");
+        }
+        else
+        {
+                graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
+                "{CROSS} Add Code Line     "
+                "{SQUARE} Options     "
+                "{CIRCLE} Cheat Menu");
+        }
     }
 }
 

@@ -49,8 +49,10 @@ int displayError(const char *error);
 void displayContextMenu(int menuID);
 // Get user input for a string
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt);
-// Get user input for a code line
-int displayCodeEditMenu(u64 *code);
+// Get user input for an existing code line.
+int displayExistingCodeEditMenu(u64 *code);
+// Get user input for a new code line
+int displayNewCodeEditMenu(u64 *code);
 
 // Get number of lines in str.
 int getNumLines(const char *str);
