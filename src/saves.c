@@ -17,39 +17,6 @@
 static device_t currentDevice;
 static int mc1Free, mc2Free;
 
-typedef struct dirEntry {
-    u32 mode;
-    u32 length;
-    
-    struct {
-        u8 unknown1;
-        u8 sec;      // Entry creation date/time (second)
-        u8 min;      // Entry creation date/time (minute)
-        u8 hour;     // Entry creation date/time (hour)
-        u8 day;      // Entry creation date/time (day)
-        u8 month;    // Entry creation date/time (month)
-        u16 year;    // Entry creation date/time (year)
-    } _create;
-    
-    u32 cluster;
-    u32 dirEntry;
-
-    struct {
-        u8 unknown2;
-        u8 sec;      // Entry modification date/time (second)
-        u8 min;      // Entry modification date/time (minute)
-        u8 hour;     // Entry modification date/time (hour)
-        u8 day;      // Entry modification date/time (day)
-        u8 month;    // Entry modification date/time (month)
-        u16 year;    // Entry modification date/time (year)
-    } _modify;
-    
-    u32 attr;
-    u8 padding1[0x20 - 4];
-    char name[32];
-    u8 padding2[0x1A0];
-} dirEntry_t;
-
 typedef struct saveHandler {
     char name[28]; // save format name
     char extention[4]; // file extention
@@ -441,7 +408,7 @@ static int createPSU(gameSave_t *save, device_t src)
 {
     FILE *psuFile, *mcFile;
     sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
-    dirEntry_t dir, file;
+    McFsEntry dir, file;
     fio_stat_t stat;
     char mcPath[100];
     char psuPath[100];
@@ -456,8 +423,8 @@ static int createPSU(gameSave_t *save, device_t src)
     if(!save || !(src & (MC_SLOT_1|MC_SLOT_2)))
         return 0;
     
-    memset(&dir, 0, sizeof(dirEntry_t));
-    memset(&file, 0, sizeof(dirEntry_t));
+    memset(&dir, 0, sizeof(McFsEntry));
+    memset(&file, 0, sizeof(McFsEntry));
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
@@ -494,18 +461,8 @@ static int createPSU(gameSave_t *save, device_t src)
         if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
         {
             dir.mode = 0x8427;
-            dir._create.year = mcDir[i]._Create.Year;
-            dir._create.month = mcDir[i]._Create.Month;
-            dir._create.day = mcDir[i]._Create.Day;
-            dir._create.hour = mcDir[i]._Create.Hour;
-            dir._create.min = mcDir[i]._Create.Min;
-            dir._create.sec = mcDir[i]._Create.Sec;
-            dir._modify.year = mcDir[i]._Modify.Year;
-            dir._modify.month = mcDir[i]._Modify.Month;
-            dir._modify.day = mcDir[i]._Modify.Day;
-            dir._modify.hour = mcDir[i]._Modify.Hour;
-            dir._modify.min = mcDir[i]._Modify.Min;
-            dir._modify.sec = mcDir[i]._Modify.Sec;
+            memcpy(&dir.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
+            memcpy(&dir.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
         }
         
         else if(mcDir[i].AttrFile & MC_ATTR_FILE)
@@ -516,19 +473,9 @@ static int createPSU(gameSave_t *save, device_t src)
             
             file.mode = mcDir[i].AttrFile;
             file.length = mcDir[i].FileSizeByte;
-            file._create.year = mcDir[i]._Create.Year;
-            file._create.month = mcDir[i]._Create.Month;
-            file._create.day = mcDir[i]._Create.Day;
-            file._create.hour = mcDir[i]._Create.Hour;
-            file._create.min = mcDir[i]._Create.Min;
-            file._create.sec = mcDir[i]._Create.Sec;
-            file._modify.year = mcDir[i]._Modify.Year;
-            file._modify.month = mcDir[i]._Modify.Month;
-            file._modify.day = mcDir[i]._Modify.Day;
-            file._modify.hour = mcDir[i]._Modify.Hour;
-            file._modify.min = mcDir[i]._Modify.Min;
-            file._modify.sec = mcDir[i]._Modify.Sec;
-            strncpy(file.name, mcDir[i].EntryName, 32);          
+            memcpy(&file.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
+            memcpy(&file.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
+            strncpy(file.name, mcDir[i].EntryName, 32);         
             
             snprintf(filePath, 100, "%s/%s", save->path, file.name);
             mcFile = fopen(filePath, "rb");
@@ -572,7 +519,7 @@ static int extractPSU(gameSave_t *save, device_t dst)
     char *dirName;
     char dstName[100];
     u8 *data;
-    dirEntry_t entry;
+    McFsEntry entry;
     float progress = 0.0;
     
     if(!save || !(dst & (MC_SLOT_1|MC_SLOT_2)))
