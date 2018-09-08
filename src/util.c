@@ -831,35 +831,31 @@ int displayExistingCodeEditMenu(u64 *code)
 }
 
 int displayPromptMenu(char **items, int numItems, const char *header)
-{
-    u32 pad_pressed = 0;
-    int i, y;
-    int selectedItem = 0;
-    
+{   
     if(!items || numItems <= 0 || !header)
-        return 0;
-    
-    float maxLength = graphicsGetWidth(header);
-    int numHeaderLines = getNumLines(header);
+        return -1;
 
+    int i;
+    float maxLength = graphicsGetWidth(header);
     for(i = 0; i < numItems; i++)
     {
-        float length = 0;
-
-        length = graphicsGetWidth(items[i]);
+        float length = graphicsGetWidth(items[i]);
 
         if(length > maxLength)
             maxLength = length;
     }
 
+    u32 pad_held;
+    int selectedItem = 0;
+    int numHeaderLines = getNumLines(header);
     do
     {
         padPoll(DELAYTIME_SLOW);
-        pad_pressed = padPressed();
+        pad_held = padHeld();
         
         graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
         graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, COLOR_GREEN, header);
-        y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
+        int y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
         for(i = 0; i < numItems; i++)
         {
             if(i == selectedItem)
@@ -871,7 +867,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         graphicsDrawBackground();
         menuRender();
         
-        if(pad_pressed & PAD_UP)
+        if(pad_held & PAD_UP)
         {
             if(selectedItem == 0)
                 selectedItem = numItems - 1;
@@ -879,7 +875,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
                 --selectedItem;
         }
 
-        else if(pad_pressed & PAD_DOWN)
+        else if(pad_held & PAD_DOWN)
         {
             if (selectedItem == numItems - 1)
                 selectedItem = 0;
@@ -887,12 +883,12 @@ int displayPromptMenu(char **items, int numItems, const char *header)
                 ++selectedItem;
         }
 
-        else if(pad_pressed & PAD_CIRCLE)
+        else if(pad_held & PAD_CIRCLE)
         {
             // Exit menu
             return -1;
         }
-    } while(!(pad_pressed & PAD_CROSS));
+    } while(!(pad_held & PAD_CROSS));
     
     return selectedItem;
 }

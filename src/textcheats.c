@@ -35,6 +35,9 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
         return NULL;
     
     txtFile = fopen(path, "r");
+    if(!txtFile)
+        return NULL;
+
     fseek(txtFile, 0, SEEK_END);
     txtLen = ftell(txtFile);
     fseek(txtFile, 0, SEEK_SET);
