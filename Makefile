@@ -69,14 +69,19 @@ OBJS += engine/engine_erl.o
 # Bootstrap ELF
 OBJS += bootstrap/bootstrap_elf.o
 
-GSKIT = $(PS2DEV)/gsKit
-
 ifeq ($(DTL_T10000),1)
 	EE_CFLAGS += -D_DTL_T10000 -g
 	EE_LIBS += -lpadx
 else
 	EE_LIBS += -lpad
 endif
+
+# Replace uses of "mass" with "host"
+ifeq ($(NO_MASS),1)
+	EE_CFLAGS += -D_NO_MASS
+endif
+
+GSKIT = $(PS2DEV)/gsKit
 EE_LIBS += -lgskit_toolkit -lgskit -ldmakit -lc -lkernel -lmc -lpatches -lerl -lcdvd -lz -lmf
 EE_LDFLAGS += -L$(PS2SDK)/ee/lib -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib -s
 EE_INCS += -I$(GSKIT)/include -I$(PS2SDK)/ports/include

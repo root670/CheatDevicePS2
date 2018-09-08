@@ -39,10 +39,16 @@ static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", createZIP, extractZIP};
 struct gameSave {
     char name[100];
     char path[64];
-    saveHandler_t *_handler;
+    saveHandler_t *handler;
     
     struct gameSave *next;
 };
+
+#ifdef _NO_MASS
+const char *flashDriveDevice = "host";
+#else
+const char *flashDriveDevice = "mass";
+#endif
 
 void savesDrawTicker()
 {
@@ -83,7 +89,8 @@ void savesDrawTicker()
 
 static char *getDevicePath(char *str, device_t dev)
 {
-    char *ret, *mountPath;
+    char *ret;
+    const char *mountPath;
     int len;
     
     if(!str)
@@ -97,7 +104,7 @@ static char *getDevicePath(char *str, device_t dev)
     else if(dev == MC_SLOT_2)
         mountPath = "mc1";
     else if(dev == FLASH_DRIVE)
-        mountPath = "mass";
+        mountPath = flashDriveDevice;
     else
         mountPath = "unk";
     
@@ -163,7 +170,7 @@ gameSave_t *savesGetSaves(device_t dev)
     if(dev == FLASH_DRIVE)
     {
         fio_dirent_t record;
-        int fs = fioDopen("mass:");
+        int fs = fioDopen(flashDriveDevice);
         
         if(!fs)
         {
@@ -191,10 +198,10 @@ gameSave_t *savesGetSaves(device_t dev)
                 next->next = NULL;
             }
             
-            save->_handler = handler;
+            save->handler = handler;
             strncpy(save->name, record.name, 100);
             rtrim(save->name);
-            snprintf(save->path, 64, "mass:%s", record.name);
+            snprintf(save->path, 64, "%s:%s", flashDriveDevice, record.name);
             
             first = 0;
         }
@@ -246,7 +253,7 @@ gameSave_t *savesGetSaves(device_t dev)
                     
                     for(j = 0; j < 100; j++)
                     {
-                        if(j == iconSys.nlOffset/2)
+                        if(j > 0 && j == iconSys.nlOffset/2)
                             ascii[asciiOffset++] = ' ';
                         
                         if(*jp == 0x82)
@@ -346,12 +353,17 @@ int savesGetAvailableDevices()
     mc2Free = mcFree;
     
     // Flash drive
-    int f = fioDopen("mass:");
+    #ifdef _NO_MASS
+    // In PCSX2 host doesn't support dopen, so just assume it's available.
+    available |= FLASH_DRIVE;
+    #else
+    int f = fioDopen(flashDriveDevice);
     if(f > 0)
     {
         available |= FLASH_DRIVE;
         fioDclose(f);
     }
+    #endif
     
     return available;
 }
@@ -428,7 +440,7 @@ static int createPSU(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(psuPath, 100, "mass:%s.psu", validName);
+    snprintf(psuPath, 100, "%s:%s.psu", flashDriveDevice, validName);
     
     if(fioGetstat(psuPath, &stat) == 0)
     {
@@ -730,7 +742,7 @@ static int createCBS(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(cbsPath, 100, "mass:%s.cbs", validName);
+    snprintf(cbsPath, 100, "%s:%s.cbs", flashDriveDevice ,validName);
     
     if(fioGetstat(cbsPath, &stat) == 0)
     {
@@ -770,18 +782,8 @@ static int createCBS(gameSave_t *save, device_t src)
             header.unk1 = 0x1F40;
             header.dataOffset = 0x128;
             strncpy(header.name, strstr(save->path, ":") + 1, 32);
-            header.create.year = mcDir[i]._Create.Year;
-            header.create.month = mcDir[i]._Create.Month;
-            header.create.day = mcDir[i]._Create.Day;
-            header.create.hour = mcDir[i]._Create.Hour;
-            header.create.min = mcDir[i]._Create.Min;
-            header.create.sec = mcDir[i]._Create.Sec;
-            header.modify.year = mcDir[i]._Modify.Year;
-            header.modify.month = mcDir[i]._Modify.Month;
-            header.modify.day = mcDir[i]._Modify.Day;
-            header.modify.hour = mcDir[i]._Modify.Hour;
-            header.modify.min = mcDir[i]._Modify.Min;
-            header.modify.sec = mcDir[i]._Modify.Sec;
+            memcpy(&header.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
+            memcpy(&header.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
             header.mode = 0x8427;
             strncpy(header.title, save->name, 32);
         }
@@ -792,18 +794,8 @@ static int createCBS(gameSave_t *save, device_t src)
             graphicsDrawLoadingBar(50, 350, progress);
             graphicsRenderNow();
             
-            entryHeader.create.year = mcDir[i]._Create.Year;
-            entryHeader.create.month = mcDir[i]._Create.Month;
-            entryHeader.create.day = mcDir[i]._Create.Day;
-            entryHeader.create.hour = mcDir[i]._Create.Hour;
-            entryHeader.create.min = mcDir[i]._Create.Min;
-            entryHeader.create.sec = mcDir[i]._Create.Sec;
-            entryHeader.modify.year = mcDir[i]._Modify.Year;
-            entryHeader.modify.month = mcDir[i]._Modify.Month;
-            entryHeader.modify.day = mcDir[i]._Modify.Day;
-            entryHeader.modify.hour = mcDir[i]._Modify.Hour;
-            entryHeader.modify.min = mcDir[i]._Modify.Min;
-            entryHeader.modify.sec = mcDir[i]._Modify.Sec;
+            memcpy(&entryHeader.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
+            memcpy(&entryHeader.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
             entryHeader.length = mcDir[i].FileSizeByte;
             entryHeader.mode = mcDir[i].AttrFile;
             strncpy(entryHeader.name, mcDir[i].EntryName, 32);
@@ -973,7 +965,7 @@ static int createZIP(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(zipPath, 100, "mass:%s.zip", validName);
+    snprintf(zipPath, 100, "%s:%s.zip", flashDriveDevice, validName);
     
     if(fioGetstat(zipPath, &stat) == 0)
     {
@@ -1068,13 +1060,13 @@ static int doCopy(device_t src, device_t dst, gameSave_t *save)
     
     if((src & (MC_SLOT_1|MC_SLOT_2)) && (dst == FLASH_DRIVE))
     {
-        save->_handler = promptSaveHandler();
-        if(!save->_handler->create(save, src))
+        save->handler = promptSaveHandler();
+        if(save->handler && !save->handler->create(save, src))
             displayError("Error creating save file.");
     }
     else if((src == FLASH_DRIVE) && (dst & (MC_SLOT_1|MC_SLOT_2)))
     {
-        if(!save->_handler->extract(save, dst))
+        if(save->handler && !save->handler->extract(save, dst))
             displayError("Error extracting save file.");
     }
     

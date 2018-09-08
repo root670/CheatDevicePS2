@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include <tamtypes.h>
+#include <libmc-common.h>
 
 typedef struct cbsHeader {
     char magic[4];
@@ -16,27 +17,10 @@ typedef struct cbsHeader {
     u32 decompressedSize;
     u32 compressedSize;
     char name[32];
-    
-    struct {
-        u8 unknown1;
-        u8 sec;
-        u8 min;
-        u8 hour;
-        u8 day;
-        u8 month;
-        u16 year;
-    } create;
-    
-    struct {
-        u8 unknown1;
-        u8 sec;
-        u8 min;
-        u8 hour;
-        u8 day;
-        u8 month;
-        u16 year;
-    } modify;
-    
+
+    sceMcStDateTime created;
+    sceMcStDateTime modified;
+
     u32 unk2;
     u32 mode;
     char unk3[16];
@@ -45,26 +29,9 @@ typedef struct cbsHeader {
 } cbsHeader_t;
 
 typedef struct cbsEntry {
-    struct {
-        u8 unknown1;
-        u8 sec;
-        u8 min;
-        u8 hour;
-        u8 day;
-        u8 month;
-        u16 year;
-    } create;
-    
-    struct {
-        u8 unknown1;
-        u8 sec;
-        u8 min;
-        u8 hour;
-        u8 day;
-        u8 month;
-        u16 year;
-    } modify;
-    
+    sceMcStDateTime created;
+    sceMcStDateTime modified;
+
     u32 length;
     u32 mode;
     char unk1[8];
