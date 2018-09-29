@@ -6,29 +6,25 @@
 #include <sys/stat.h>
 #include "saves.h"
 #include "pad.h"
-#include "saveutil.h"
 #include "menus.h"
 #include "graphics.h"
 #include "util.h"
 #include "zlib.h"
 #include "libraries/minizip/zip.h"
 #include "libraries/minizip/unzip.h"
+#include "saveformats/cbs.h"
 
 static device_t currentDevice;
 static int mc1Free, mc2Free;
 
-typedef struct saveHandler {
-    char name[28]; // save format name
-    char extention[4]; // file extention
-    
-    int (*create)(gameSave_t *, device_t);
-    int (*extract)(gameSave_t *, device_t);
-} saveHandler_t;
+#ifdef _NO_MASS
+const char *flashDriveDevice = "host";
+#else
+const char *flashDriveDevice = "mass";
+#endif
 
 static int extractPSU(gameSave_t *save, device_t dst);
 static int createPSU(gameSave_t *save, device_t src);
-static int extractCBS(gameSave_t *save, device_t dst);
-static int createCBS(gameSave_t *save, device_t src);
 static int extractZIP(gameSave_t *save, device_t dst);
 static int createZIP(gameSave_t *save, device_t src);
 
@@ -36,19 +32,35 @@ static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extra
 static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", createCBS, extractCBS};
 static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", createZIP, extractZIP};
 
-struct gameSave {
-    char name[100];
-    char path[64];
-    saveHandler_t *handler;
+char *savesGetDevicePath(char *str, device_t dev)
+{
+    char *ret;
+    const char *mountPath;
+    int len;
     
-    struct gameSave *next;
-};
-
-#ifdef _NO_MASS
-const char *flashDriveDevice = "host";
-#else
-const char *flashDriveDevice = "mass";
-#endif
+    if(!str)
+        return NULL;
+    
+    if (!(dev & (MC_SLOT_1|MC_SLOT_2|FLASH_DRIVE)))
+        return NULL; // invalid device
+    
+    if(dev == MC_SLOT_1)
+        mountPath = "mc0";
+    else if(dev == MC_SLOT_2)
+        mountPath = "mc1";
+    else if(dev == FLASH_DRIVE)
+        mountPath = flashDriveDevice;
+    else
+        mountPath = "unk";
+    
+    len = strlen(str) + 10;
+    ret = malloc(len);
+    
+    if(ret)
+        snprintf(ret, len, "%s:%s", mountPath, str);
+    
+    return ret;
+}
 
 void savesDrawTicker()
 {
@@ -85,36 +97,6 @@ void savesDrawTicker()
         ticker_x = 0;
     
     graphicsDrawText(graphicsGetDisplayWidth() - ticker_x, 405, COLOR_WHITE, "{CROSS} Copy     {CIRCLE} Device Menu");
-}
-
-static char *getDevicePath(char *str, device_t dev)
-{
-    char *ret;
-    const char *mountPath;
-    int len;
-    
-    if(!str)
-        return 0;
-    
-    if (!(dev & (MC_SLOT_1|MC_SLOT_2|FLASH_DRIVE)))
-        return 0; // invalid device
-    
-    if(dev == MC_SLOT_1)
-        mountPath = "mc0";
-    else if(dev == MC_SLOT_2)
-        mountPath = "mc1";
-    else if(dev == FLASH_DRIVE)
-        mountPath = flashDriveDevice;
-    else
-        mountPath = "unk";
-    
-    len = strlen(str) + 10;
-    ret = malloc(len);
-    
-    if(ret)
-        snprintf(ret, len, "%s:%s", mountPath, str);
-    
-    return ret;
 }
 
 // Determine save handler by filename.
@@ -232,7 +214,7 @@ gameSave_t *savesGetSaves(device_t dev)
         {
             if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
             {
-                char *path = getDevicePath(mcDir[i].EntryName, dev);
+                char *path = savesGetDevicePath(mcDir[i].EntryName, dev);
                 strncpy(save->path, path, 64);
                 free(path);
                 
@@ -545,7 +527,7 @@ static int extractPSU(gameSave_t *save, device_t dst)
     fread(&entry, 1, 512, psuFile);
     numFiles = entry.length - 2;
     
-    dirName = getDevicePath(entry.name, dst);
+    dirName = savesGetDevicePath(entry.name, dst);
     int ret = fioMkdir(dirName);
     
     // Prompt user to overwrite save if it already exists
@@ -604,246 +586,6 @@ static int extractPSU(gameSave_t *save, device_t dst)
     return 1;
 }
 
-static int extractCBS(gameSave_t *save, device_t dst)
-{
-    FILE *cbsFile, *dstFile;
-    u8 *cbsData;
-    u8 *compressed;
-    u8 *decompressed;
-    u8 *entryData;
-    cbsHeader_t *header;
-    cbsEntry_t entryHeader;
-    unsigned long decompressedSize;
-    int cbsLen, offset = 0;
-    char *dirName;
-    char dstName[100];
-    
-    if(!save || !(dst & (MC_SLOT_1|MC_SLOT_2)))
-        return 0;
-    
-    cbsFile = fopen(save->path, "rb");
-    if(!cbsFile)
-        return 0;
-    
-    fseek(cbsFile, 0, SEEK_END);
-    cbsLen = ftell(cbsFile);
-    fseek(cbsFile, 0, SEEK_SET);
-    cbsData = malloc(cbsLen);
-    fread(cbsData, 1, cbsLen, cbsFile);
-    fclose(cbsFile);
-    
-    header = (cbsHeader_t *)cbsData;
-    if(strncmp(header->magic, "CFU", 3) != 0)
-    {
-        free(cbsData);
-        return 0;
-    }
-    
-    dirName = getDevicePath(header->name, dst);
-    
-    int ret = fioMkdir(dirName);
-    
-    // Prompt user to overwrite save if it already exists
-    if(ret == -4)
-    {
-        char *items[] = {"Yes", "No"};
-        int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
-        if(choice == 1)
-        {
-            free(dirName);
-            free(cbsData);
-            return 0;
-        }
-    }
-    
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
-    
-    // Get data for file entries
-    compressed = cbsData + 0x128;
-    // Some tools create .CBS saves with an incorrect compressed size in the header.
-    // It can't be trusted!
-    cbsCrypt(compressed, cbsLen - 0x128);
-    decompressedSize = (unsigned long)header->decompressedSize;
-    decompressed = malloc(decompressedSize);
-    int z_ret = uncompress(decompressed, &decompressedSize, compressed, cbsLen - 0x128);
-    
-    if(z_ret != 0)
-    {
-        // Compression failed.
-        free(dirName);
-        free(cbsData);
-        free(decompressed);
-        return 0;
-    }
-    
-    while(offset < (decompressedSize - 64))
-    {
-        graphicsDrawLoadingBar(50, 350, (float)offset/decompressedSize);
-        graphicsRenderNow();
-        
-        /* Entry header can't be read directly because it might not be 32-bit aligned.
-        GCC will likely emit an lw instruction for reading the 32-bit variables in the
-        struct which will halt the processor if it tries to load from an address
-        that's misaligned. */
-        memcpy(&entryHeader, &decompressed[offset], 64);
-        
-        offset += 64;
-        entryData = &decompressed[offset];
-        
-        snprintf(dstName, 100, "%s/%s", dirName, entryHeader.name);
-        
-        dstFile = fopen(dstName, "wb");
-        if(!dstFile)
-        {
-            free(dirName);
-            free(cbsData);
-            free(decompressed);
-            return 0;
-        }
-        
-        fwrite(entryData, 1, entryHeader.length, dstFile);
-        fclose(dstFile);
-        
-        offset += entryHeader.length;
-    }
-    
-    free(dirName);
-    free(decompressed);
-    free(cbsData);
-    return 1;
-}
-
-static int createCBS(gameSave_t *save, device_t src)
-{
-    FILE *cbsFile, *mcFile;
-    sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
-    cbsHeader_t header;
-    cbsEntry_t entryHeader;
-    fio_stat_t stat;
-    u8 *dataBuff;
-    u8 *dataCompressed;
-    unsigned long compressedSize;
-    int dataOffset = 0;
-    char mcPath[100];
-    char cbsPath[100];
-    char filePath[150];
-    char validName[32];
-    int i;
-    int ret;
-    float progress = 0.0;
-    
-    if(!save || !(src & (MC_SLOT_1|MC_SLOT_2)))
-        return 0;
-    
-    memset(&header, 0, sizeof(cbsHeader_t));
-    memset(&entryHeader, 0, sizeof(cbsEntry_t));
-    
-    replaceIllegalChars(save->name, validName, '-');
-    rtrim(validName);
-    snprintf(cbsPath, 100, "%s:%s.cbs", flashDriveDevice ,validName);
-    
-    if(fioGetstat(cbsPath, &stat) == 0)
-    {
-        char *items[] = {"Yes", "No"};
-        int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
-        
-        if(choice == 1)
-            return 0;
-    }
-    
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
-    
-    cbsFile = fopen(cbsPath, "wb");
-    if(!cbsFile)
-        return 0;
-    
-    snprintf(mcPath, 100, "%s/*", strstr(save->path, ":") + 1);
-    
-    mcGetDir((src == MC_SLOT_1) ? 0 : 1, 0, mcPath, 0, 54, mcDir);
-    mcSync(0, NULL, &ret);
-    
-    for(i = 0; i < ret; i++)
-    {
-        if(mcDir[i].AttrFile & MC_ATTR_FILE)
-            header.decompressedSize += mcDir[i].FileSizeByte + sizeof(cbsEntry_t);
-    }
-    
-    dataBuff = malloc(header.decompressedSize);
-    
-    for(i = 0; i < ret; i++)
-    {
-        if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
-        {
-            strncpy(header.magic, "CFU\0", 4);
-            header.unk1 = 0x1F40;
-            header.dataOffset = 0x128;
-            strncpy(header.name, strstr(save->path, ":") + 1, 32);
-            memcpy(&header.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
-            memcpy(&header.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
-            header.mode = 0x8427;
-            strncpy(header.title, save->name, 32);
-        }
-        
-        else if(mcDir[i].AttrFile & MC_ATTR_FILE)
-        {
-            progress += (float)1/(ret-2);
-            graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRenderNow();
-            
-            memcpy(&entryHeader.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
-            memcpy(&entryHeader.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));
-            entryHeader.length = mcDir[i].FileSizeByte;
-            entryHeader.mode = mcDir[i].AttrFile;
-            strncpy(entryHeader.name, mcDir[i].EntryName, 32);
-            
-            memcpy(&dataBuff[dataOffset], &entryHeader, sizeof(cbsEntry_t));
-            dataOffset += sizeof(cbsEntry_t);
-            
-            snprintf(filePath, 100, "%s/%s", save->path, entryHeader.name);
-            mcFile = fopen(filePath, "rb");
-            fread(&dataBuff[dataOffset], 1, entryHeader.length, mcFile);
-            fclose(mcFile);
-            
-            dataOffset += entryHeader.length;
-        }
-    }
-    
-    compressedSize = compressBound(header.decompressedSize);
-    dataCompressed = malloc(compressedSize);
-    if(!dataCompressed)
-    {
-        printf("malloc failed\n");
-        free(dataBuff);
-        fclose(cbsFile);
-        return 0;
-    }
-    
-    ret = compress2(dataCompressed, &compressedSize, dataBuff, header.decompressedSize, Z_BEST_COMPRESSION);
-    if(ret != Z_OK)
-    {
-        printf("compress2 failed\n");
-        free(dataBuff);
-        free(dataCompressed);
-        fclose(cbsFile);
-        return 0;
-    }
-    
-    header.compressedSize = compressedSize + 0x128;
-    fwrite(&header, 1, sizeof(cbsHeader_t), cbsFile);
-    cbsCrypt(dataCompressed, compressedSize);
-    fwrite(dataCompressed, 1, compressedSize, cbsFile);
-    fclose(cbsFile);
-    
-    free(dataBuff);
-    free(dataCompressed);
-    
-    return 1;
-}
-
 static int extractZIP(gameSave_t *save, device_t dst)
 {
     FILE *dstFile;
@@ -884,7 +626,7 @@ static int extractZIP(gameSave_t *save, device_t dst)
 
     printf("Directory name: %s\n", dirNameTemp);
 
-    dirName = getDevicePath(dirNameTemp, dst);
+    dirName = savesGetDevicePath(dirNameTemp, dst);
     int ret = fioMkdir(dirName);
     
     // Prompt user to overwrite save if it already exists

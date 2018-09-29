@@ -28,10 +28,12 @@ OBJS += src/database.o
 OBJS += src/textcheats.o
 OBJS += src/cheats.o
 OBJS += src/graphics.o
-OBJS += src/saveutil.o
 OBJS += src/saves.o
 OBJS += src/menus.o
 OBJS += src/settings.o
+
+# Save Formats
+OBJS += src/saveformats/cbs.o
 
 # IRX Modules
 IRX_OBJS += resources/usbd_irx.o
@@ -133,7 +135,7 @@ version:
 	@./version.sh > src/version.h
 
 main: $(EE_BIN)
-	rm -rf src/*.o
+	rm -rf src/*.o src/saveformats/*.o
 	rm -f resources/*.o
 	rm -f bootstrap/*.elf bootstrap/*.o
 	rm -f engine/*.erl engine/*.o
@@ -148,7 +150,7 @@ release: all
 	cd release && zip -q CheatDevicePS2-$$(git describe).zip *
 
 clean:
-	rm -rf src/*.o *.elf
+	rm -rf src/*.o src/saveformats/*.o *.elf
 	rm -f resources/*.o
 	cd engine && make clean
 	cd bootstrap && make clean
