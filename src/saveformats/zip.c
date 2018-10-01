@@ -168,7 +168,7 @@ int createZIP(gameSave_t *save, device_t src)
             fread(data, 1, mcDir[i].FileSizeByte, mcFile);
             fclose(mcFile);
 
-            if(zipOpenNewFileInZip(zf, strstr(filePath, ":") + 1, &zfi, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_DEFAULT_COMPRESSION) == ZIP_OK)
+            if(zipOpenNewFileInZip(zf, strstr(filePath, ":") + 1, &zfi, NULL, 0, NULL, 0, NULL, Z_DEFLATED, Z_BEST_COMPRESSION) == ZIP_OK)
             {
                 zipWriteInFileInZip(zf, data, mcDir[i].FileSizeByte);
                 zipCloseFileInZip(zf);
