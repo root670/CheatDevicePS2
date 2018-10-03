@@ -15,6 +15,7 @@
 #include <kernel.h>
 #include <sbv_patches.h>
 #include <libmc.h>
+#include <unistd.h>
 
 #ifdef _DTL_T10000
 extern u8  _sio2man_irx_start[];

@@ -550,7 +550,7 @@ void graphicsDrawPromptBoxBlack(int width, int height)
     drawPromptBox(width, height, graphicsColorTable[COLOR_BLACK]);
 }
 
-static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
+static void drawMenu(const menuIcon_t icons[], int numIcons, int activeItem)
 {
     int i;
     const u64 unselected = GS_SETREG_RGBAQ(0x50, 0x50, 0x50, 0x20, 0x80);
@@ -580,18 +580,20 @@ static void drawMenu(menuIcon_t icons[], int numIcons, int activeItem)
 
 void graphicsDrawMainMenu(int activeItem)
 {
-    menuIcon_t icons[] = {{"Start Game", &gamepad},
-                          {"Game List", &cube},
-                          {"Save Manager", &savemanager}};
+    static const menuIcon_t icons[] = {
+        {"Start Game", &gamepad},
+        {"Game List", &cube},
+        {"Save Manager", &savemanager}};
     
     drawMenu(icons, 3, activeItem);
 }
 
 void graphicsDrawDeviceMenu(int activeItem)
 {
-    menuIcon_t icons[] = {{"Memory Card (Slot 1)", &memorycard1},
-                          {"Memory Card (Slot 2)", &memorycard2},
-                          {"Flash Drive", &flashdrive}};
+    static const menuIcon_t icons[] = {
+        {"Memory Card (Slot 1)", &memorycard1},
+        {"Memory Card (Slot 2)", &memorycard2},
+        {"Flash Drive", &flashdrive}};
     
     drawMenu(icons, 3, activeItem);
 }
