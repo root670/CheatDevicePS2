@@ -1,5 +1,9 @@
 Cheat Device for PS2
 ====================
+
+[![Build Status](https://travis-ci.com/root670/CheatDevicePS2.svg?branch=master)](https://travis-ci.com/root670/CheatDevicePS2)
+[![License](https://img.shields.io/badge/license-GPL--3.0-blue.svg)](https://github.com/root670/CheatDevicePS2/blob/master/LICENSE)
+
 Cheat Device is a game enhancer for PlayStation 2 games similar to Action 
 Replay, GameShark, and CodeBreaker. It supports booting retail, disc based 
 games as well as ELF files such as OpenPS2Loader or ESR.
@@ -18,7 +22,7 @@ using Cheat Device.
 If you have Docker installed, it's easiest to compile Cheat Device using my
 docker image:
 ```bash
-./docker-make
+./docker-make [args...]
 ```
 See the [compile](https://github.com/root670/CheatDevicePS2/wiki/Compiling) 
 page in the wiki for instructions to build without Docker.
