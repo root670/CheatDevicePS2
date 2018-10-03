@@ -1,0 +1,11 @@
+language: c
+
+services:
+  - docker
+
+script:
+  - ./docker-make release
+
+branches:
+  only:
+    - master
