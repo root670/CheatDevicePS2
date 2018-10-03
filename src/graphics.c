@@ -11,8 +11,8 @@
 #include <kernel.h>
 
 typedef struct menuIcon {
-        char *label;
-        GSTEXTURE *tex;
+    char *label;
+    GSTEXTURE *tex;
 } menuIcon_t;
 
 static GSGLOBAL *gsGlobal;
@@ -603,6 +603,7 @@ void graphicsClearScreen(int r, int g, int b)
 
 void graphicsDrawBackground()
 {
+    graphicsClearScreen(0, 0, 0);
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
