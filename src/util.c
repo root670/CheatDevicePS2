@@ -413,7 +413,7 @@ char *keyBoardCharsUpper = "~!@#$%^&*()_+" \
 #define KEYBOARD_COLUMNS 13
 #define KEYBOARD_ROWS 4
 #define ACCEPT_ROW KEYBOARD_ROWS
-#define CANCEL_ROW ACCEPT_ROW + 1
+#define CANCEL_ROW (ACCEPT_ROW + 1)
 
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
@@ -441,23 +441,6 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
     do
     {
-        int textWidth = graphicsGetWidth(tmp);
-        int newWidth = textWidth + cursorWidth + 30;
-        if(newWidth > width)
-            width = newWidth;
-
-        if(width < 345)
-            width = 345;
-
-        int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
-
-        graphicsDrawPromptBoxBlack(width, 220);
-        graphicsDrawTextCentered(150, COLOR_YELLOW, tmp);
-        graphicsDrawQuad(cursorX, 150, cursorWidth, 25, COLOR_BLUE);
-
-        if(prompt)
-            graphicsDrawTextCentered(125, COLOR_GREEN, prompt);
-
         padPoll(DELAYTIME_SLOW);
         pad_pressed = padPressed();
         pad_rapid = padHeld();
@@ -578,33 +561,59 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 cursorIndex += graphicsGetSymbolLength(tmp, cursorIndex);
         }
 
+        int textWidth = graphicsGetWidth(tmp);
+        int newWidth = textWidth + cursorWidth + 20;
+        if(newWidth > width)
+            width = newWidth;
+
+        if(width < 345)
+            width = KEYBOARD_COLUMNS*22 + 20;
+
+        graphicsDrawPromptBoxBlack(width, 8*22 + 20);
+
+        if(prompt)
+            graphicsDrawTextCentered(graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 - 6, COLOR_GREEN, prompt);
+
+        // Draw text being edited
+        int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
+        graphicsDrawTextCentered(graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 20, COLOR_YELLOW, tmp);
+        graphicsDrawQuad(cursorX, graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 20, cursorWidth, 25, COLOR_BLUE);
+
+        // Draw keyboard keys
         int i, j, color;
+        const int keyStartX = graphicsGetDisplayWidth()/2.0 - (KEYBOARD_COLUMNS*22)/2.0;
+        const int keyStartY = graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 2*22;
+
+        if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
+            graphicsDrawQuad(keyStartX + column*22, keyStartY + row*22, 22, 22, COLOR_BLUE);
+        else if(row == ACCEPT_ROW)
+            graphicsDrawQuad(keyStartX, keyStartY + ACCEPT_ROW*22, width - 20, 22, COLOR_BLUE);
+        else if(row == CANCEL_ROW)
+            graphicsDrawQuad(keyStartX, keyStartY + CANCEL_ROW*22, width - 20, 22, COLOR_BLUE);
+
         for(i = 0; i < KEYBOARD_ROWS; i++)
         {
             for(j = 0; j < KEYBOARD_COLUMNS; j++)
             {
                 if(i == row && j == column)
-                {
                     color = COLOR_YELLOW;
-                    graphicsDrawQuad(162 + j*25, 175 + i*25, 25, 25, COLOR_BLUE);
-                }
                 else
                     color = COLOR_WHITE;
 
+                char c;
                 if(upper)
-                    graphicsDrawChar(162 + j*25, 175 + i*25, keyBoardCharsUpper[i*KEYBOARD_COLUMNS + j], color);
+                    c = keyBoardCharsUpper[i*KEYBOARD_COLUMNS + j];
                 else
-                    graphicsDrawChar(162 + j*25, 175 + i*25, keyBoardChars[i*KEYBOARD_COLUMNS + j], color);
+                    c = keyBoardChars[i*KEYBOARD_COLUMNS + j];
+
+                int keyX = keyStartX + j*22 - 2;
+                int keyY = keyStartY + i*22 - 2;
+                graphicsDrawChar(keyX, keyY, c, color);
             }
         }
 
-        if(row == ACCEPT_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + KEYBOARD_ROWS*25, width - 20, 22, COLOR_BLUE);
-        else if(row == CANCEL_ROW)
-            graphicsDrawQuad(graphicsGetDisplayWidth()/2 - (width-20)/2.0, 175 + (KEYBOARD_ROWS+1)*25, width - 20, 22, COLOR_BLUE);
-
-        graphicsDrawTextCentered(174 + KEYBOARD_ROWS*25, (row == ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
-        graphicsDrawTextCentered(174 + (KEYBOARD_ROWS+1)*25, (row == CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
+        graphicsDrawTextCentered(keyStartY + ACCEPT_ROW*22 - 2, (row == ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
+        graphicsDrawTextCentered(keyStartY + CANCEL_ROW*22 - 2, (row == CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
 
         // Draw help ticker
         graphicsDrawBackgroundBottom(80);
@@ -853,17 +862,19 @@ int displayPromptMenu(char **items, int numItems, const char *header)
     {
         padPoll(DELAYTIME_SLOW);
         pad_held = padHeld();
-        
-        graphicsDrawPromptBoxBlack(maxLength + 20, (numItems + numHeaderLines) * 22 + 20);
-        graphicsDrawTextCentered((graphicsGetDisplayHeight() / 2.0) - (numItems + numHeaderLines - 1)*11 - 16, COLOR_GREEN, header);
-        int y = (graphicsGetDisplayHeight() / 2.0) - numItems*11 + numHeaderLines*11;
+
+        const int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
+        graphicsDrawPromptBoxBlack(maxLength + 20, ((numItems + numHeaderLines) * 22) + 20);
+        graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
+
         for(i = 0; i < numItems; i++)
         {
+            int y = firstItemY + (i + 1)*22;
             if(i == selectedItem)
-                graphicsDrawQuad(320 - maxLength/2, y, maxLength, 22, COLOR_BLUE);
-            graphicsDrawTextCentered(y - 1, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
-            y += 22;
+                graphicsDrawQuad((graphicsGetDisplayWidth()/2.0) - maxLength/2.0, y, maxLength, 22, COLOR_BLUE);
+            graphicsDrawTextCentered(y - 2, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
         }
+
         graphicsRender();
         graphicsDrawBackground();
         menuRender();
