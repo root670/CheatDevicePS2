@@ -869,7 +869,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
 
         for(i = 0; i < numItems; i++)
         {
-            int y = firstItemY + (i + 1)*22;
+            int y = firstItemY + (i + numHeaderLines)*22;
             if(i == selectedItem)
                 graphicsDrawQuad((graphicsGetDisplayWidth()/2.0) - maxLength/2.0, y, maxLength, 22, COLOR_BLUE);
             graphicsDrawTextCentered(y - 2, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
