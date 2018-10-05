@@ -562,8 +562,8 @@ int menuRender()
         settingsDrawBootMenuTicker();
     }
 
-    drawScrollBar();
     drawMenuItems();
+    drawScrollBar();
 
     return 1;
 }
