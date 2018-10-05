@@ -282,8 +282,11 @@ static inline int getToken(const char *line, const int len)
     
     if (!line || len <= 0)
         return 0;
+
+    if(line[0] == '"' && line[len-1] == '"')
+        ret = TOKEN_TITLE;
     
-    if(len == 17 && line[8] == ' ')
+    else if(len == 17 && line[8] == ' ')
     {
         c = line;
         while(*c)
@@ -296,11 +299,8 @@ static inline int getToken(const char *line, const int len)
             ret = TOKEN_CODE;
         else
             ret = TOKEN_CHEAT;
-    }
+    }  
     
-    else if(line[0] == '"' && line[len-1] == '"')
-        ret = TOKEN_TITLE;
-        
     else if(line[0] == '/' && line[1] == '/')
         ret = 0;
     
@@ -450,7 +450,7 @@ static int readTextCheats(char *text, size_t len)
         }
         char *end = strchr(text, '\n');
         if(!end) // Reading the last line
-            end = endPtr;
+            end = endPtr - 1;
         
         int lineLen = end - text;
         if(lineLen)
