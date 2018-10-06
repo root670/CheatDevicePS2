@@ -606,8 +606,8 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 else
                     c = keyBoardChars[i*KEYBOARD_COLUMNS + j];
 
-                int keyX = keyStartX + j*22 - 2;
-                int keyY = keyStartY + i*22 - 2;
+                int keyX = keyStartX + j*22 + 4;
+                int keyY = keyStartY + i*22;
                 graphicsDrawChar(keyX, keyY, c, color);
             }
         }
@@ -705,7 +705,7 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
             return 1;
         }
 
-        else if(pad_pressed & PAD_L1)
+        if(pad_rapid & PAD_L1)
         {
             if(codeLoc > 0)
             {
@@ -720,7 +720,7 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
             }
         }
 
-        else if(pad_pressed & PAD_R1)
+        else if(pad_rapid & PAD_R1)
         {
             if(codeLoc < 16)
             {
