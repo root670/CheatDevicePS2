@@ -16,6 +16,7 @@ OBJS += src/libraries/ini.o
 OBJS += src/libraries/minizip/ioapi.o
 OBJS += src/libraries/minizip/zip.o
 OBJS += src/libraries/minizip/unzip.o
+OBJS += src/libraries/lzari.o
 
 # Main
 OBJS += src/main.o
@@ -145,7 +146,7 @@ version:
 	@./version.sh > src/version.h
 
 main: $(EE_BIN)
-	rm -rf src/*.o src/saveformats/*.o
+	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o
 	rm -f resources/*.o
 	rm -f bootstrap/*.elf bootstrap/*.o
 	rm -f engine/*.erl engine/*.o
@@ -160,7 +161,7 @@ release: all
 	cd release && zip -q CheatDevicePS2-$$(git describe).zip *
 
 clean:
-	rm -rf src/*.o src/saveformats/*.o *.elf
+	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o *.elf
 	rm -f resources/*.o
 	cd engine && make clean
 	cd bootstrap && make clean
