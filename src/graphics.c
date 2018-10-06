@@ -69,14 +69,22 @@ extern u8  _buttonTriangle_png_start[];
 extern int _buttonTriangle_png_size;
 extern u8  _buttonSquare_png_start[];
 extern int _buttonSquare_png_size;
+extern u8  _buttonStart_png_start[];
+extern int _buttonStart_png_size;
+extern u8  _buttonSelect_png_start[];
+extern int _buttonSelect_png_size;
 extern u8  _buttonL1_png_start[];
 extern int _buttonL1_png_size;
 extern u8  _buttonL2_png_start[];
 extern int _buttonL2_png_size;
+extern u8  _buttonL3_png_start[];
+extern int _buttonL3_png_size;
 extern u8  _buttonR1_png_start[];
 extern int _buttonR1_png_size;
 extern u8  _buttonR2_png_start[];
 extern int _buttonR2_png_size;
+extern u8  _buttonR3_png_start[];
+extern int _buttonR3_png_size;
 
 static void graphicsLoadPNG(GSTEXTURE *tex, u8 *data, int len, int linear_filtering);
 
