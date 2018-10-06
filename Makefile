@@ -154,11 +154,11 @@ main: $(EE_BIN)
 release: all
 	rm -rf release
 	mkdir release
-	ps2-packer cheatdevice.elf cheatdevice-packed.elf
-	cp cheatdevice-packed.elf CheatDevicePS2.cdb CheatDevicePS2.ini LICENSE README.md release
-	rm cheatdevice-packed.elf
-	mv release/cheatdevice-packed.elf release/cheatdevice.elf
-	cd release && zip -q CheatDevicePS2-$$(git describe).zip *
+	ps2-packer cheatdevice.elf release/cheatdevice.elf
+	zip -q -9 release/CheatDatabase.zip CheatDatabase.txt
+	cp CheatDevicePS2.ini LICENSE README.md release
+	sed -i 's/CheatDatabase.txt/CheatDatabase.zip/g' release/CheatDevicePS2.ini
+	cd release && zip -q -9 CheatDevicePS2-$$(git describe).zip *
 
 clean:
 	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o *.elf
