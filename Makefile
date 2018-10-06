@@ -62,10 +62,14 @@ OBJS += resources/buttonCross_png.o
 OBJS += resources/buttonCircle_png.o
 OBJS += resources/buttonTriangle_png.o
 OBJS += resources/buttonSquare_png.o
+OBJS += resources/buttonStart_png.o
+OBJS += resources/buttonSelect_png.o
 OBJS += resources/buttonL1_png.o
 OBJS += resources/buttonL2_png.o
+OBJS += resources/buttonL3_png.o
 OBJS += resources/buttonR1_png.o
 OBJS += resources/buttonR2_png.o
+OBJS += resources/buttonR3_png.o
 
 # Engine
 OBJS += engine/engine_erl.o
@@ -120,10 +124,14 @@ endif
 	@bin2o resources/buttonCircle.png resources/buttonCircle_png.o _buttonCircle_png
 	@bin2o resources/buttonTriangle.png resources/buttonTriangle_png.o _buttonTriangle_png
 	@bin2o resources/buttonSquare.png resources/buttonSquare_png.o _buttonSquare_png
+	@bin2o resources/buttonStart.png resources/buttonStart_png.o _buttonStart_png
+	@bin2o resources/buttonSelect.png resources/buttonSelect_png.o _buttonSelect_png
 	@bin2o resources/buttonL1.png resources/buttonL1_png.o _buttonL1_png
 	@bin2o resources/buttonL2.png resources/buttonL2_png.o _buttonL2_png
+	@bin2o resources/buttonL3.png resources/buttonL3_png.o _buttonL3_png
 	@bin2o resources/buttonR1.png resources/buttonR1_png.o _buttonR1_png
 	@bin2o resources/buttonR2.png resources/buttonR2_png.o _buttonR2_png
+	@bin2o resources/buttonR3.png resources/buttonR3_png.o _buttonR3_png
 
 	@# Engine
 	@cd engine && $(MAKE)

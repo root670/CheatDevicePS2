@@ -30,10 +30,15 @@ static GSTEXTURE buttonCross;
 static GSTEXTURE buttonCircle;
 static GSTEXTURE buttonTriangle;
 static GSTEXTURE buttonSquare;
+static GSTEXTURE buttonStart;
+static GSTEXTURE buttonSelect;
 static GSTEXTURE buttonL1;
 static GSTEXTURE buttonL2;
+static GSTEXTURE buttonL3;
 static GSTEXTURE buttonR1;
 static GSTEXTURE buttonR2;
+static GSTEXTURE buttonR3;
+
 static stb_fontchar fontdata[STB_SOMEFONT_NUM_CHARS];
 static int initialized = 0;
 static int callbackId;
@@ -157,10 +162,14 @@ int initGraphics()
         graphicsLoadPNG(&buttonCircle, _buttonCircle_png_start, _buttonCircle_png_size, 0);
         graphicsLoadPNG(&buttonTriangle, _buttonTriangle_png_start, _buttonTriangle_png_size, 0);
         graphicsLoadPNG(&buttonSquare, _buttonSquare_png_start, _buttonSquare_png_size, 0);
+        graphicsLoadPNG(&buttonStart, _buttonStart_png_start, _buttonStart_png_size, 0);
+        graphicsLoadPNG(&buttonSelect, _buttonSelect_png_start, _buttonSelect_png_size, 0);
         graphicsLoadPNG(&buttonL1, _buttonL1_png_start, _buttonL1_png_size, 0);
         graphicsLoadPNG(&buttonL2, _buttonL2_png_start, _buttonL2_png_size, 0);
+        graphicsLoadPNG(&buttonL3, _buttonL3_png_start, _buttonL3_png_size, 0);
         graphicsLoadPNG(&buttonR1, _buttonR1_png_start, _buttonR1_png_size, 0);
         graphicsLoadPNG(&buttonR2, _buttonR2_png_start, _buttonR2_png_size, 0);
+        graphicsLoadPNG(&buttonR3, _buttonR3_png_start, _buttonR3_png_size, 0);
 
         return 1;
     }
@@ -275,6 +284,14 @@ static const char* getSpecialTexture(const char *str, GSTEXTURE** texture)
     {
         specialTexture = &buttonSquare;
     }
+    else if(strncmp(special, "START", 16) == 0)
+    {
+        specialTexture = &buttonStart;
+    }
+    else if(strncmp(special, "SELECT", 16) == 0)
+    {
+        specialTexture = &buttonSelect;
+    }
     else if(strncmp(special, "L1", 16) == 0)
     {
         specialTexture = &buttonL1;
@@ -283,6 +300,10 @@ static const char* getSpecialTexture(const char *str, GSTEXTURE** texture)
     {
         specialTexture = &buttonL2;
     }
+    else if(strncmp(special, "L3", 16) == 0)
+    {
+        specialTexture = &buttonL3;
+    }
     else if(strncmp(special, "R1", 16) == 0)
     {
         specialTexture = &buttonR1;
@@ -290,6 +311,10 @@ static const char* getSpecialTexture(const char *str, GSTEXTURE** texture)
     else if(strncmp(special, "R2", 16) == 0)
     {
         specialTexture = &buttonR2;
+    }
+    else if(strncmp(special, "R3", 16) == 0)
+    {
+        specialTexture = &buttonR3;
     }
     else
     {
