@@ -301,7 +301,8 @@ static inline int getToken(const char *line, const int len)
             ret = TOKEN_CHEAT;
     }  
     
-    else if(line[0] == '/' && line[1] == '/')
+    else if((line[0] == '/' && line[1] == '/') ||
+             line[0] == '#')
         ret = 0;
     
     else
