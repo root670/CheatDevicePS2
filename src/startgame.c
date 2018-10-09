@@ -80,7 +80,7 @@ void startgameExecute(char *path)
             return;
 
         graphicsDrawTextCentered(310, COLOR_YELLOW, "Starting game...");
-        graphicsRenderNow();
+        graphicsRender();
 
         // wait for disc to be ready
         while(sceCdGetDiskType() == 1);

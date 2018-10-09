@@ -72,8 +72,6 @@ void graphicsDrawBackground();
 void graphicsDrawBackgroundBottom(unsigned int rows);
 
 // Wait for the next vsync, then render.
-void graphicsRenderNow();
-// Render graphics only every 1/60 second (60 FPS)
 void graphicsRender();
 
 

@@ -63,14 +63,14 @@ int extractZIP(gameSave_t *save, device_t dst)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     // Copy each file entry
     do
     {
         progress += (float)1/numFiles;
         graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRenderNow();
+        graphicsRender();
 
         unzGetCurrentFileInfo(zf, &fileInfo, fileName, 100, NULL, 0, NULL, 0);
         
@@ -126,7 +126,7 @@ int createZIP(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(zipPath, 100, "%s:%s.zip", flashDriveDevice, validName);
+    snprintf(zipPath, 100, "%s%s.zip", flashDriveDevice, validName);
     
     if(fioGetstat(zipPath, &stat) == 0)
     {
@@ -139,7 +139,7 @@ int createZIP(gameSave_t *save, device_t src)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
     if(!zf)
@@ -159,7 +159,7 @@ int createZIP(gameSave_t *save, device_t src)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRenderNow();
+            graphicsRender();
 
             snprintf(filePath, 100, "%s/%s", save->path, mcDir[i].EntryName);
             

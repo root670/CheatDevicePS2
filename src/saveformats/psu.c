@@ -28,7 +28,7 @@ int createPSU(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(psuPath, 100, "%s:%s.psu", flashDriveDevice, validName);
+    snprintf(psuPath, 100, "%s%s.psu", flashDriveDevice, validName);
     
     if(fioGetstat(psuPath, &stat) == 0)
     {
@@ -41,7 +41,7 @@ int createPSU(gameSave_t *save, device_t src)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     psuFile = fopen(psuPath, "wb");
     if(!psuFile)
@@ -69,7 +69,7 @@ int createPSU(gameSave_t *save, device_t src)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRenderNow();
+            graphicsRender();
             
             file.mode = mcDir[i].AttrFile;
             file.length = mcDir[i].FileSizeByte;
@@ -150,7 +150,7 @@ int extractPSU(gameSave_t *save, device_t dst)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     // Skip "." and ".."
     fseek(psuFile, 1024, SEEK_CUR);
@@ -160,7 +160,7 @@ int extractPSU(gameSave_t *save, device_t dst)
     {
         progress += (float)1/numFiles;
         graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRenderNow();
+        graphicsRender();
         
         fread(&entry, 1, 512, psuFile);
         

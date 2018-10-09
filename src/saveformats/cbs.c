@@ -151,7 +151,7 @@ int extractCBS(gameSave_t *save, device_t dst)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     // Get data for file entries
     compressed = cbsData + 0x128;
@@ -174,7 +174,7 @@ int extractCBS(gameSave_t *save, device_t dst)
     while(offset < (decompressedSize - 64))
     {
         graphicsDrawLoadingBar(50, 350, (float)offset/decompressedSize);
-        graphicsRenderNow();
+        graphicsRender();
         
         /* Entry header can't be read directly because it might not be 32-bit aligned.
         GCC will likely emit an lw instruction for reading the 32-bit variables in the
@@ -235,7 +235,7 @@ int createCBS(gameSave_t *save, device_t src)
     
     replaceIllegalChars(save->name, validName, '-');
     rtrim(validName);
-    snprintf(cbsPath, 100, "%s:%s.cbs", flashDriveDevice ,validName);
+    snprintf(cbsPath, 100, "%s%s.cbs", flashDriveDevice, validName);
     
     if(fioGetstat(cbsPath, &stat) == 0)
     {
@@ -248,7 +248,7 @@ int createCBS(gameSave_t *save, device_t src)
     
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRenderNow();
+    graphicsRender();
     
     cbsFile = fopen(cbsPath, "wb");
     if(!cbsFile)
@@ -285,7 +285,7 @@ int createCBS(gameSave_t *save, device_t src)
         {
             progress += (float)1/(ret-2);
             graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRenderNow();
+            graphicsRender();
             
             memcpy(&entryHeader.created, &mcDir[i]._Create, sizeof(sceMcStDateTime));
             memcpy(&entryHeader.modified, &mcDir[i]._Modify, sizeof(sceMcStDateTime));

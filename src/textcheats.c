@@ -115,7 +115,7 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
 
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Saving cheat database...");
-    graphicsRenderNow();
+    graphicsRender();
 
     clock_t start = clock();
     char buf[8192];
@@ -126,7 +126,7 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     {
         progress += (float)1/cheatsGetNumGames();
         graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRenderNow();
+        graphicsRender();
 
         if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
         {
@@ -314,6 +314,8 @@ static inline int getToken(const char *line, const int len)
 // Parse line and process token.
 static int parseLine(const char *line, const int len)
 {
+    if(len < 1)
+        return 0;
     cheatsGame_t *newGame;
     int token = getToken(line, len);
 
@@ -440,14 +442,17 @@ static int readTextCheats(char *text, size_t len)
 {
     char *endPtr = text + len;
     u32 lineNum = 0;
+
+    clock_t start = clock();
     
     while(text < endPtr)
     {
-        if((lineNum % 100) == 0)
+        if((lineNum % 5000) == 0)
         {
             float progress = 1.0 - ((endPtr - text)/(float)len);
+            graphicsDrawBackground();
             graphicsDrawLoadingBar(100, 375, progress);
-            graphicsRenderNow();
+            graphicsRender();
         }
         char *end = strchr(text, '\n');
         if(!end) // Reading the last line
@@ -457,16 +462,26 @@ static int readTextCheats(char *text, size_t len)
         if(lineLen)
         {
             // Remove trailing whitespace
-            char *c;
-            for(c = text + lineLen; (*c == ' ') || (*c == '\r') || (*c == '\n') || (*c == '\t'); --c)
-                *c = '\0';
+            char *end;
+            for(end = text + lineLen; (*end == ' ') || (*end == '\r') || (*end == '\n') || (*end == '\t'); --end)
+                *end = '\0';
 
-            parseLine(text, c - text + 1);
+            // Remove leading whitespace
+            while(isspace(*text) && lineLen > 0)
+            {
+                text++;
+                lineLen--;
+            }
+
+            parseLine(text, end - text + 1);
         }
         
         text += lineLen + 1;
         lineNum++;
     }
+
+    clock_t end = clock();
+    printf("Loading took %f seconds\n", ((float)end - start) / CLOCKS_PER_SEC);
 
     return 1;
 }

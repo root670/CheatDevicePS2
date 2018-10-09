@@ -17,9 +17,9 @@ static device_t currentDevice;
 static int mc1Free, mc2Free;
 
 #ifdef _NO_MASS
-const char *flashDriveDevice = "host";
+const char *flashDriveDevice = "host:";
 #else
-const char *flashDriveDevice = "mass";
+const char *flashDriveDevice = "mass:";
 #endif
 
 static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extractPSU};
@@ -39,9 +39,9 @@ char *savesGetDevicePath(char *str, device_t dev)
         return NULL; // invalid device
     
     if(dev == MC_SLOT_1)
-        mountPath = "mc0";
+        mountPath = "mc0:";
     else if(dev == MC_SLOT_2)
-        mountPath = "mc1";
+        mountPath = "mc1:";
     else if(dev == FLASH_DRIVE)
         mountPath = flashDriveDevice;
     else
@@ -51,7 +51,7 @@ char *savesGetDevicePath(char *str, device_t dev)
     ret = malloc(len);
     
     if(ret)
-        snprintf(ret, len, "%s:%s", mountPath, str);
+        snprintf(ret, len, "%s%s", mountPath, str);
     
     return ret;
 }
@@ -177,7 +177,7 @@ gameSave_t *savesGetSaves(device_t dev)
             save->handler = handler;
             strncpy(save->name, record.name, 100);
             rtrim(save->name);
-            snprintf(save->path, 64, "%s:%s", flashDriveDevice, record.name);
+            snprintf(save->path, 64, "%s%s", flashDriveDevice, record.name);
             
             first = 0;
         }
@@ -353,7 +353,7 @@ void savesLoadSaveMenu(device_t dev)
     currentDevice = dev;
     
     graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");
-    graphicsRenderNow();
+    graphicsRender();
     
     available = savesGetAvailableDevices();
     

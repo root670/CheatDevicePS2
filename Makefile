@@ -101,7 +101,7 @@ all: modules version main
 
 modules:
 	@# IRX Modules
-	@bin2o resources/iomanX.irx resources/iomanX_irx.o _iomanX_irx
+	@bin2o $(PS2SDK)/iop/irx/iomanX.irx resources/iomanX_irx.o _iomanX_irx
 	@bin2o $(PS2SDK)/iop/irx/usbd.irx resources/usbd_irx.o _usbd_irx
 	@bin2o $(PS2SDK)/iop/irx/usbhdfsd.irx resources/usbhdfsd_irx.o _usbhdfsd_irx
 ifeq ($(DTL_T10000),1)

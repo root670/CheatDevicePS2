@@ -863,6 +863,8 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         padPoll(DELAYTIME_SLOW);
         pad_held = padHeld();
 
+        graphicsDrawBackground();
+        menuRender();
         const int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
         graphicsDrawPromptBoxBlack(maxLength + 20, ((numItems + numHeaderLines) * 22) + 20);
         graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
@@ -876,8 +878,6 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         }
 
         graphicsRender();
-        graphicsDrawBackground();
-        menuRender();
         
         if(pad_held & PAD_UP)
         {

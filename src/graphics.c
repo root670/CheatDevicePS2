@@ -97,13 +97,87 @@ static u64 graphicsColorTable[] = {
     GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80)  // COLOR_YELLOW
 };
 
+int VBlankStartSema;
+
 static int vsync_callback()
 {
-    gsKit_display_buffer(gsGlobal);
-    gsKit_unlock_buffer(gsGlobal);
-    ExitHandler();
+    // Unblock graphicsRender()
+    ee_sema_t sema;
+	iReferSemaStatus(VBlankStartSema, &sema);
+	if(sema.count<sema.max_count)
+        iSignalSema(VBlankStartSema);
+
+	ExitHandler();
     return 0;
 }
+
+typedef struct colorHSV {
+    float h, s, v;
+} colorHSV_t;
+
+u64 hsvToRGBAQ(colorHSV_t hsv)
+{
+    if(hsv.h == 360.0)
+        hsv.h = 0.0;
+    else
+        hsv.h /= 60.0;
+
+    float fract = hsv.h - floorf(hsv.h);
+    float p = hsv.v * (1.0 - hsv.s);
+    float q = hsv.v * (1.0 - (hsv.s * fract));
+    float t = hsv.v * (1.0 - hsv.s * (1.0 - fract));
+
+    if(0.0 <= hsv.h && hsv.h < 1.0)
+        return GS_SETREG_RGBAQ(hsv.v * 255, t * 255, p * 255, 0x80, 0x80);
+    else if(1.0 <= hsv.h && hsv.h < 2.0)
+        return GS_SETREG_RGBAQ(q * 355, hsv.v * 255, p * 255, 0x80, 0x80);
+    else if(2.0 <= hsv.h && hsv.h < 3.0)
+        return GS_SETREG_RGBAQ(p * 255, hsv.v * 255, t * 255, 0x80, 0x80);
+    else if(3.0 <= hsv.h && hsv.h < 4.0)
+        return GS_SETREG_RGBAQ(p * 255, q * 255, hsv.v * 255, 0x80, 0x80);
+    else if(4.0 <= hsv.h && hsv.h < 5.0)
+        return GS_SETREG_RGBAQ(t * 255, p * 255, hsv.v * 255, 0x80, 0x80);
+    else if(5.0 <= hsv.h && hsv.h < 6.0)
+        return GS_SETREG_RGBAQ(hsv.v * 255, p * 255, q * 255, 0x80, 0x80);
+    else
+        return GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x80, 0x80);
+
+}
+
+u64 getColor(graphicsColor_t color)
+{
+    switch(color)
+    {
+        case COLOR_BLACK:   
+            return GS_SETREG_RGBAQ(0x00,0x00,0x00,0x80,0x80);
+        case COLOR_WHITE:   
+            return GS_SETREG_RGBAQ(0xF0,0xF0,0xF0,0x80,0x80);
+        case COLOR_RED:     
+            return GS_SETREG_RGBAQ(0xF0,0x00,0x00,0x80,0x80);
+        case COLOR_GREEN:  
+            return GS_SETREG_RGBAQ(0x00,0xF0,0x00,0x80,0x80);
+        case COLOR_BLUE:    
+            return GS_SETREG_RGBAQ(0x20,0x20,0xA0,0x80,0x80);
+        case COLOR_YELLOW: 
+            return GS_SETREG_RGBAQ(0xF0,0xB0,0x00,0x80,0x80);
+        case COLOR_RAINBOW:
+        {
+            static double theta = 0;
+            static colorHSV_t hsv = {.h = 44.0, .s = 1.0, .v = .95};
+
+            if(hsv.v < 1.0)
+                hsv.v += .01;
+            else
+                hsv.v = 0.0;
+
+            return hsvToRGBAQ(hsv);
+        }
+        default:
+            return 0;
+    }
+}
+
+#include "libraries/lzari.h"
 
 int initGraphics()
 {
@@ -120,8 +194,15 @@ int initGraphics()
         gsGlobal = gsKit_init_global();
         gsGlobal->PrimAAEnable = GS_SETTING_ON;
         gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
-        gsGlobal->DoubleBuffering = GS_SETTING_OFF;
+        gsGlobal->DoubleBuffering = GS_SETTING_ON; 
         gsGlobal->ZBuffering = GS_SETTING_OFF;
+        
+        ee_sema_t sema;
+        sema.init_count=0;
+    	sema.max_count=1;
+	    sema.attr=sema.option=0;
+	    VBlankStartSema=CreateSema(&sema);
+
         callbackId = gsKit_add_vsync_handler(&vsync_callback);
         gsKit_init_screen( gsGlobal );
         gsKit_mode_switch( gsGlobal, GS_ONESHOT );
@@ -156,7 +237,7 @@ int initGraphics()
         graphicsLoadPNG(&bg, _background_png_start, _background_png_size, 0);
         graphicsDrawBackground();
         graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");
-        graphicsRenderNow();
+        graphicsRender();
 
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
         graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 1);
@@ -638,7 +719,6 @@ void graphicsClearScreen(int r, int g, int b)
 
 void graphicsDrawBackground()
 {
-    graphicsClearScreen(0, 0, 0);
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
                                         0,                            // X1
@@ -768,18 +848,26 @@ void graphicsDrawAboutPage()
     displayError(msg);
 }
 
-void graphicsRenderNow()
-{
-    if(gsKit_lock_status(gsGlobal) == GS_SETTING_OFF)
-    {
-        gsKit_queue_exec( gsGlobal );
-        gsKit_lock_buffer( gsGlobal );
-    }
-}
-
 void graphicsRender()
 {
-    gsKit_queue_exec( gsGlobal );
-    gsKit_lock_buffer(gsGlobal);
-    gsKit_vsync_wait();
+    gsKit_set_finish(gsGlobal);
+    gsKit_queue_exec(gsGlobal);
+    gsKit_finish();
+
+    if(!gsGlobal->FirstFrame)
+    {
+        // Wait for vsync...
+        PollSema(VBlankStartSema);
+	    WaitSema(VBlankStartSema);
+
+        if (gsGlobal->DoubleBuffering == GS_SETTING_ON)
+        {
+            GS_SET_DISPFB2(gsGlobal->ScreenBuffer[gsGlobal->ActiveBuffer & 1] / 8192,
+                            gsGlobal->Width / 64, gsGlobal->PSM, 0, 0);
+
+            gsGlobal->ActiveBuffer ^= 1;
+        }
+    }
+
+    gsKit_setactive(gsGlobal);
 }
