@@ -713,9 +713,10 @@ int cheatsDeleteCodeLine()
     }
 
     // Shift all code lines up 1 line
-    u64 *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
-    u64 *dst = src - 1;
-    memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(u64));
+    u64 *dst = (u64 *)menuGetActiveItemExtra();
+    u64 *src = dst + 1;
+    size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(u64);
+    memmove(dst, src, length);
 
     cheat->numCodeLines--;
     game->codeLinesUsed--;
