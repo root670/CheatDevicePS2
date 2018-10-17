@@ -851,7 +851,7 @@ void cheatsDrawStats()
 
     else if(activeMenu == MENU_CHEATS)
     {
-        if (x < 1500)
+        if (x < 1750)
             x+= 2;
         else
             x = 0;
@@ -860,7 +860,8 @@ void cheatsDrawStats()
             "{CROSS} Enable/Disable Cheat     "
             "{SQUARE} Options     "
             "{CIRCLE} Game List    "
-            "{L1}/{R1} Page Up/Down");
+            "{L1}/{R1} Page Up/Down     "
+            "{L2}/{R2} Section Up/Down");
     }
 
     else if(activeMenu == MENU_CODES)

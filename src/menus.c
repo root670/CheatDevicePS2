@@ -377,7 +377,6 @@ int menuUpAlpha()
         return 1;
     }
 
-
     return 0;
 }
 
@@ -417,6 +416,50 @@ int menuGoToBottom()
     if(activeMenu->numItems > 0)
     {
         activeMenu->currentItem = activeMenu->numItems - 1;
+        return 1;
+    }
+
+    return 0;
+}
+
+int menuGoToNextHeader()
+{
+    if(activeMenu->numItems > 0)
+    {
+        if(activeMenu->currentItem < activeMenu->numItems - 1)
+        {
+            activeMenu->currentItem++;
+            unsigned int index = activeMenu->currentItem;
+            menuItem_t *item = activeMenu->items[index];
+            while((index < (activeMenu->numItems - 1)) && item->type != MENU_ITEM_HEADER)
+            {
+                index++;
+                item = activeMenu->items[index];
+            }
+
+            activeMenu->currentItem = index;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+int menuGoToPreviousHeader()
+{
+    if(activeMenu->currentItem > 0)
+    {
+        activeMenu->currentItem--;
+        unsigned int index = activeMenu->currentItem;
+        menuItem_t *item = activeMenu->items[index];
+
+        while(index > 0 && item->type != MENU_ITEM_HEADER)
+        {
+            index--; 
+            item = activeMenu->items[index];
+        }
+
+        activeMenu->currentItem = index;
         return 1;
     }
 

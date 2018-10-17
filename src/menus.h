@@ -68,6 +68,8 @@ int menuUpAlpha();
 int menuDownAlpha();
 int menuGoToTop();
 int menuGoToBottom();
+int menuGoToNextHeader();
+int menuGoToPreviousHeader();
 void menuToggleItem();
 
 int menuRender();

@@ -115,7 +115,6 @@ void handlePad()
     {
         if(pad_rapid & PAD_UP)
             menuUp();
-
         else if(pad_rapid & PAD_DOWN)
             menuDown();
     }
@@ -124,28 +123,23 @@ void handlePad()
     {
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
-
         else if(pad_rapid & PAD_L1)
             menuUpRepeat(10);
-
+        
         if(pad_rapid & PAD_R2)
             menuDownAlpha();
-
         else if(pad_rapid & PAD_L2)
             menuUpAlpha();
-
+        
         if(pad_pressed & PAD_CROSS)
             menuSetActive(MENU_CHEATS);
-
         else if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
         {
             menuSetActive(MENU_MAIN);
             selected = 0;
         }
-
         else if(pad_pressed & PAD_SELECT)
             graphicsDrawAboutPage();
-
         else if(pad_pressed & PAD_SQUARE)
             displayContextMenu(MENU_GAMES);
     }
@@ -154,25 +148,20 @@ void handlePad()
     {
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
-
         else if(pad_rapid & PAD_L1)
             menuUpRepeat(10);
 
-        if(pad_pressed & PAD_R2)
-            menuGoToBottom();
-
-        else if(pad_pressed & PAD_L2)
-            menuGoToTop();
+        if(pad_rapid & PAD_R2)
+            menuGoToNextHeader();
+        else if(pad_rapid & PAD_L2)
+            menuGoToPreviousHeader();
         
         if(pad_pressed & PAD_CROSS)
             menuToggleItem();
-
         else if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_GAMES);
-
         else if(pad_pressed & PAD_SQUARE)
             displayContextMenu(MENU_CHEATS);
-        
         else if(pad_pressed & PAD_START)
             menuSetActive(MENU_MAIN);
     }
@@ -181,22 +170,18 @@ void handlePad()
     {
         if(pad_rapid & PAD_R1)
             menuDownRepeat(10);
-
         else if(pad_rapid & PAD_L1)
             menuUpRepeat(10);
 
         if(pad_pressed & PAD_R2)
             menuGoToBottom();
-
         else if(pad_pressed & PAD_L2)
             menuGoToTop();
 
         if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_CHEATS);
-
         else if(pad_pressed & PAD_SQUARE)
             displayContextMenu(MENU_CODES);
-
         else if(pad_pressed & PAD_CROSS)
         {
             if(cheatsGetNumCodeLines() > 0)
@@ -218,13 +203,10 @@ void handlePad()
             if(selected == 2) // save manager (device menu)
                 menuSetActive(MENU_SAVE_DEVICES);
         }
-
         else if(pad_pressed & PAD_SELECT)
             graphicsDrawAboutPage();
-
         else if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_GAMES);
-
         else if(pad_pressed & PAD_RIGHT)
         {
             if(selected >= 2)
@@ -232,7 +214,6 @@ void handlePad()
             else
                 ++selected;
         }
-
         else if(pad_pressed & PAD_LEFT)
         {
             if (selected == 0)
@@ -241,22 +222,20 @@ void handlePad()
                 --selected;
         }
     }
-    
+
     else if(currentMenu == MENU_BOOT)
     {
         if(pad_pressed & PAD_CROSS)
             menuToggleItem();
-        
         else if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
             menuSetActive(MENU_MAIN);
         }
-
         else if(pad_pressed & PAD_SQUARE)
             displayContextMenu(MENU_BOOT);
     }
-    
+
     else if(currentMenu == MENU_SAVE_DEVICES)
     {
         graphicsDrawDeviceMenu(selectedDevice);
@@ -276,7 +255,6 @@ void handlePad()
         {
             menuSetActive(MENU_MAIN);
         }
-        
         else if(pad_pressed & PAD_RIGHT)
         {
             if(selectedDevice >= 2)
@@ -284,7 +262,6 @@ void handlePad()
             else
                 ++selectedDevice;
         }
-
         else if(pad_pressed & PAD_LEFT)
         {
             if (selectedDevice == 0)
@@ -293,7 +270,7 @@ void handlePad()
                 --selectedDevice;
         }
     }
-    
+
     else if(currentMenu == MENU_SAVES)
     {
         if(pad_pressed & PAD_CROSS)
