@@ -843,7 +843,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         graphicsDrawBackground();
         menuRender();
         const int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
-        graphicsDrawPromptBoxBlack(maxLength + 20, ((numItems + numHeaderLines) * 22) + 20);
+        graphicsDrawPromptBoxBlack(maxLength + 10, ((numItems + numHeaderLines) * 22) + 10);
         graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
 
         for(i = 0; i < numItems; i++)
