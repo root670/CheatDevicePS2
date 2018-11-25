@@ -592,17 +592,14 @@ int menuRender()
     {
         savesDrawTicker();
     }
-    else if(activeMenu->identifier != MENU_GAMES)
-    {
-        if(activeMenu->text != NULL)
-        {
-            graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
-        }
-    }
-
-    if(activeMenu->identifier == MENU_BOOT)
+    else if(activeMenu->identifier == MENU_BOOT)
     {
         settingsDrawBootMenuTicker();
+    }
+
+    if(activeMenu->text != NULL)
+    {
+        graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
     }
 
     drawMenuItems();
