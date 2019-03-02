@@ -64,15 +64,31 @@ static int discPrompt()
 
 #define ELF_PT_LOAD 1
 
+// Load boostrap into memory. Returns bootstrap entrypoint.
+static void* loadBootstrap()
+{
+    elf_header_t *eh = (elf_header_t *)_bootstrap_elf_start;
+    elf_pheader_t *eph = (elf_pheader_t *)(_bootstrap_elf_start + eh->phoff);
+
+    int i;
+    for (i = 0; i < eh->phnum; i++)
+    {
+        if (eph[i].type != ELF_PT_LOAD)
+            continue;
+
+        void *pdata = (void *)(_bootstrap_elf_start + eph[i].offset);
+        memcpy(eph[i].vaddr, pdata, eph[i].filesz);
+
+        if (eph[i].memsz > eph[i].filesz)
+            memset(eph[i].vaddr + eph[i].filesz, 0, eph[i].memsz - eph[i].filesz);
+    }
+
+    return (void *)eh->entry;
+}
+
 void startgameExecute(char *path)
 {
-    elf_header_t *eh;
-    elf_pheader_t *eph;
-    void *pdata;
-    int i, syscnf, syscnfLen, found = 0;
-    char syscnfText[256];
     static char boot2[100];
-    char *line, *substr;
     
     if(strcmp(path, "==Disc==") == 0)
     {
@@ -82,19 +98,20 @@ void startgameExecute(char *path)
         graphicsDrawTextCentered(310, COLOR_YELLOW, "Starting game...");
         graphicsRender();
 
-        // wait for disc to be ready
-        while(sceCdGetDiskType() == 1);
+        // Wait for disc to be ready
+        while(sceCdGetDiskType() == 1) {}
         sceCdDiskReady(0);
         
-        syscnf = open("cdrom0:\\SYSTEM.CNF;1", O_TEXT | O_RDONLY);
-        if(!syscnf)
+        int syscnfFile = open("cdrom0:\\SYSTEM.CNF;1", O_TEXT | O_RDONLY);
+        if(!syscnfFile)
         {
             GS_BGCOLOUR = 0x1010B4; // red
             SleepThread();
         }
         
-        syscnfLen = read(syscnf, syscnfText, 255);
-        close(syscnf);
+        char syscnfText[256];
+        int syscnfLen = read(syscnfFile, syscnfText, 255);
+        close(syscnfFile);
         if(!syscnfLen)
         {
             GS_BGCOLOUR = 0x1010B4;
@@ -102,13 +119,14 @@ void startgameExecute(char *path)
         }
         
         syscnfText[syscnfLen] = '\0';
-        line = strtok(syscnfText, "\n");
-        
+
+        int found = 0;
+        char *line = strtok(syscnfText, "\n");
         while(line)
         {
             if(!found)
             {
-                substr = strstr(line, "BOOT2");
+                char *substr = strstr(line, "BOOT2");
                 if(substr)
                 {
                     substr += strlen("BOOT2");
@@ -136,19 +154,7 @@ void startgameExecute(char *path)
     killSettings();
     objectPoolKill();
     
-    eh = (elf_header_t *)_bootstrap_elf_start;
-    eph = (elf_pheader_t *)(_bootstrap_elf_start + eh->phoff);
-
-    for (i = 0; i < eh->phnum; i++) {
-        if (eph[i].type != ELF_PT_LOAD)
-            continue;
-
-        pdata = (void *)(_bootstrap_elf_start + eph[i].offset);
-        memcpy(eph[i].vaddr, pdata, eph[i].filesz);
-
-        if (eph[i].memsz > eph[i].filesz)
-            memset(eph[i].vaddr + eph[i].filesz, 0, eph[i].memsz - eph[i].filesz);
-    }
+    void *bootstrapEntrypoint = loadBootstrap();
     
     padPortClose(0, 0);
     padReset();
@@ -162,5 +168,5 @@ void startgameExecute(char *path)
 
     char *argv[2] = {boot2, "\0"};
 
-    ExecPS2((void *)eh->entry, 0, 2, argv);
+    ExecPS2(bootstrapEntrypoint, 0, 2, argv);
 };
