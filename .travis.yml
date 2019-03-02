@@ -4,7 +4,7 @@ services:
   - docker
 
 script:
-  - ./docker-make release
+  - ./docker-make.sh release
 
 branches:
   only:
