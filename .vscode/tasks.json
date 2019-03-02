@@ -1,0 +1,24 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build with Docker",
+            "type": "shell",
+            "group":"build",
+            "windows": {
+                "command": ".\\docker-make.bat"
+            },
+            "linux": {
+                "command": "./docker-make.sh"
+            },
+            "osx": {
+                "command": "./docker-make.sh"
+            },
+            "problemMatcher": [
+                "$gcc"
+            ]
+        }
+    ]
+}
