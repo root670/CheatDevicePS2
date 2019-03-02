@@ -47,6 +47,9 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
     fread(text, 1, txtLen, txtFile);
     fclose(txtFile);
 
+    // NULL-terminate so cheats can be properly parsed if it doesn't end with a
+    // newline character.
+    text[txtLen] = '\0';
     readTextCheats(text, txtLen);
     
     free(buff);
@@ -235,7 +238,8 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
             return NULL;
         }
 
-        char *text = malloc(zipFileInfo.uncompressed_size);
+        // +1 to NULL-terminate later
+        char *text = malloc(zipFileInfo.uncompressed_size + 1);
         if(!text)
         {
             unzCloseCurrentFile(zipFile);
@@ -252,6 +256,9 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
             return NULL;
         }
 
+        // NULL-terminate so cheats can be properly parsed if it doesn't end
+        // with a newline character.
+        text[zipFileInfo.uncompressed_size] = '\0';
         readTextCheats(text, zipFileInfo.uncompressed_size);
         
         free(text);
@@ -293,12 +300,19 @@ static inline int getToken(const char *line, const int len)
     
     else if(len == 17 && line[8] == ' ')
     {
+        printf("Possible code line with digits: ");
         c = line;
         while(*c)
         {
             if(isxdigit(*c++))
+            {
+                printf("%c",(*(c-1)));
                 numDigits++;
+            }
         }
+        printf("\n");
+
+        printf("numDigits = %d\n", numDigits);
         
         if(numDigits == 16)
             ret = TOKEN_CODE;
@@ -312,6 +326,8 @@ static inline int getToken(const char *line, const int len)
     
     else
         ret = TOKEN_CHEAT;
+
+    printf("%d\t\"%s\" (addr=%p, len=%d)\n", ret, line, line, len);
 
     return ret;
 }
