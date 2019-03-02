@@ -202,17 +202,6 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
         return NULL;
     }
 
-    // TODO: Read multiple TXT cheat database files from ZIP.
-    if(zipGlobalInfo.number_entry != 1)
-    {
-        displayError("More than 1 file found in the cheat database ZIP file.\n"
-                     "It should only contain a single TXT file with cheats.\n"
-                     "Please read the documentation for a list of supported\n"
-                     "cheat database formats.");
-        unzClose(zipFile);
-        return NULL;
-    }
-
     unz_file_info64 zipFileInfo;
     char filename[100];
     if(unzGoToFirstFile2(zipFile, &zipFileInfo, 
@@ -224,45 +213,61 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
         return NULL;
     }
 
-    if(strcmp(getFileExtension(filename), "txt") != 0)
+    // Read all .txt files in the archive
+    int hasNextFile = UNZ_OK;
+    while(hasNextFile == UNZ_OK)
     {
-        displayError("TXT file not found in cheat database ZIP file.\n"
-                     "It should only contain a single TXT file with cheats.\n"
-                     "Please read the documentation for a list of supported\n"
-                     "cheat database formats");
-        unzClose(zipFile);
-        return NULL;
-    }
+        char *extension = getFileExtension(filename);
+        if(!extension || strcasecmp(extension, "txt") != 0)
+        {
+            // Not a .txt file
+            hasNextFile = unzGoToNextFile2(zipFile, &zipFileInfo,
+                                        filename, sizeof(filename),
+                                        NULL, 0,
+                                        NULL, 0);
+            continue;
+        }
 
-    if(unzOpenCurrentFile(zipFile) != UNZ_OK)
-    {
-        unzClose(zipFile);
-        return NULL;
-    }
+        // Current file is a .txt file, so we'll try to read it
+        if(unzOpenCurrentFile(zipFile) != UNZ_OK)
+        {
+            unzClose(zipFile);
+            return NULL;
+        }
 
-    char *text = malloc(zipFileInfo.uncompressed_size);
-    if(!text)
-    {
-        unzCloseCurrentFile(zipFile);
-        unzClose(zipFile);
-        return NULL;
-    }
+        char *text = malloc(zipFileInfo.uncompressed_size);
+        if(!text)
+        {
+            unzCloseCurrentFile(zipFile);
+            unzClose(zipFile);
+            return NULL;
+        }
 
-    if(unzReadCurrentFile(zipFile, text, zipFileInfo.uncompressed_size) < 0)
-    {
-        // Zip file is corrupt!
+        if(unzReadCurrentFile(zipFile, text, zipFileInfo.uncompressed_size) < 0)
+        {
+            // Zip file is corrupt!
+            free(text);
+            unzCloseCurrentFile(zipFile);
+            unzClose(zipFile);
+            return NULL;
+        }
+
+        readTextCheats(text, zipFileInfo.uncompressed_size);
+        
         free(text);
-        unzCloseCurrentFile(zipFile);
-        unzClose(zipFile);
-        return NULL;
-    }
 
-    unzCloseCurrentFile(zipFile);
+        unzCloseCurrentFile(zipFile);
+
+        // Get next file, or exit the loop if there are no more files in the
+        // archive.
+        hasNextFile = unzGoToNextFile2(zipFile, &zipFileInfo,
+                            filename, sizeof(filename),
+                            NULL, 0,
+                            NULL, 0);
+    };
+    
     unzClose(zipFile);
 
-    readTextCheats(text, zipFileInfo.uncompressed_size);
-
-    free(text);
     *numGamesRead = g_numGamesRead;
     
     return gamesHead;
