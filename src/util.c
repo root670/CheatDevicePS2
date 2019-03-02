@@ -604,7 +604,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
             "{TRIANGLE} Space     "
             "{SQUARE} Backspace     "
             "{R2} Toggle Upper/Lower Case     "
-            "START Accept");
+            "{START} Accept");
 
         graphicsRender();
 
@@ -797,7 +797,7 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
         graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE,
             "{L1}/{R1} Move Cursor     "
             "{CROSS} Set Value     "
-            "START Accept");
+            "{START} Accept");
 
         graphicsRender();
 
