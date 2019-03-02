@@ -35,7 +35,7 @@ docker-make.bat [args...]
 
 ## Windows PowerShell
 ```ps
-./docker-make.bat [args...]
+.\docker-make.bat [args...]
 ```
 
 See the [compile](https://github.com/root670/CheatDevicePS2/wiki/Compiling) 
