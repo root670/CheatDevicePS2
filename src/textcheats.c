@@ -300,19 +300,12 @@ static inline int getToken(const char *line, const int len)
     
     else if(len == 17 && line[8] == ' ')
     {
-        printf("Possible code line with digits: ");
         c = line;
         while(*c)
         {
             if(isxdigit(*c++))
-            {
-                printf("%c",(*(c-1)));
                 numDigits++;
-            }
         }
-        printf("\n");
-
-        printf("numDigits = %d\n", numDigits);
         
         if(numDigits == 16)
             ret = TOKEN_CODE;
@@ -326,8 +319,6 @@ static inline int getToken(const char *line, const int len)
     
     else
         ret = TOKEN_CHEAT;
-
-    printf("%d\t\"%s\" (addr=%p, len=%d)\n", ret, line, line, len);
 
     return ret;
 }
