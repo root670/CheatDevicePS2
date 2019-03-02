@@ -189,7 +189,7 @@ static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
     int i = 0;
     for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
     {
-        if(strcmp(extension, cheatDatabaseHandlers[i].extension) == 0)
+        if(strcasecmp(extension, cheatDatabaseHandlers[i].extension) == 0)
             return &cheatDatabaseHandlers[i];
     }
 

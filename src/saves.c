@@ -103,11 +103,11 @@ static saveHandler_t *getSaveHandler(const char *path)
     
     extension = getFileExtension(path);
     
-    if(strcmp(extension, PSUHandler.extention) == 0)
+    if(strcasecmp(extension, PSUHandler.extention) == 0)
         return &PSUHandler;
-    else if(strcmp(extension, CBSHandler.extention) == 0)
+    else if(strcasecmp(extension, CBSHandler.extention) == 0)
         return &CBSHandler;
-    else if(strcmp(extension, ZIPHandler.extention) == 0)
+    else if(strcasecmp(extension, ZIPHandler.extention) == 0)
         return &ZIPHandler;
     else
         return NULL;
