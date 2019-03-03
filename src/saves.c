@@ -96,12 +96,12 @@ void savesDrawTicker()
 // Determine save handler by filename.
 static saveHandler_t *getSaveHandler(const char *path)
 {
-    const char *extension;
-    
     if(!path)
         return NULL;
     
-    extension = getFileExtension(path);
+    const char *extension = getFileExtension(path);
+    if(!extension)
+        return NULL;
     
     if(strcasecmp(extension, PSUHandler.extention) == 0)
         return &PSUHandler;
