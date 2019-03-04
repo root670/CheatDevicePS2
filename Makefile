@@ -34,6 +34,7 @@ OBJS += src/menus.o
 OBJS += src/settings.o
 
 # Save Formats
+OBJS += src/saveformats/util.o
 OBJS += src/saveformats/cbs.o
 OBJS += src/saveformats/psu.o
 OBJS += src/saveformats/zip.o
