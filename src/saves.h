@@ -22,6 +22,7 @@ typedef struct saveHandler {
     char name[28]; // save format name
     char extention[4]; // file extention
     
+    int (*verify)(const char *);
     int (*create)(gameSave_t *, device_t);
     int (*extract)(gameSave_t *, device_t);
 } saveHandler_t;

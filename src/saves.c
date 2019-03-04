@@ -22,9 +22,9 @@ const char *flashDriveDevice = "host:";
 const char *flashDriveDevice = "mass:";
 #endif
 
-static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", createPSU, extractPSU};
-static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", createCBS, extractCBS};
-static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", createZIP, extractZIP};
+static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", NULL, createPSU, extractPSU};
+static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", isCBSFile, createCBS, extractCBS};
+static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", NULL, createZIP, extractZIP};
 
 char *savesGetDevicePath(char *str, device_t dev)
 {
@@ -103,14 +103,26 @@ static saveHandler_t *getSaveHandler(const char *path)
     if(!extension)
         return NULL;
     
+    saveHandler_t *handler = NULL;
     if(strcasecmp(extension, PSUHandler.extention) == 0)
-        return &PSUHandler;
+        handler = &PSUHandler;
     else if(strcasecmp(extension, CBSHandler.extention) == 0)
-        return &CBSHandler;
+        handler = &CBSHandler;
     else if(strcasecmp(extension, ZIPHandler.extention) == 0)
-        return &ZIPHandler;
+        handler = &ZIPHandler;
     else
-        return NULL;
+        return NULL; // Unsupported extension
+
+    if(handler->verify)
+    {
+        // Verify file contents
+        if(handler->verify(path))
+            return handler;
+        else
+            return NULL;
+    }
+    else
+        return handler;
 }
 
 // Display menu to choose save handler.
