@@ -13,6 +13,9 @@ static int initialized = 0;
 static char *menuTitleSaveMenu = "Save Manager";
 static char *menuTitleBootMenu = "Boot Paths";
 
+static const char *tempHelpTickerText = NULL;
+static int  tempHelpTickerLength = 0;
+
 #define CHUNK_SIZE 1000
 
 int initMenus()
@@ -24,10 +27,7 @@ int initMenus()
         for(i = 0; i < NUMMENUS; i++)
         {
             menues[i].identifier = (menuID_t)i;
-            menues[i].text = NULL;
             menues[i].items = calloc(CHUNK_SIZE, sizeof(menuItem_t *));
-            menues[i].currentItem = 0;
-            menues[i].numItems = 0;
             menues[i].numChunks = 1;
         }
 
@@ -315,6 +315,38 @@ int menuSetActive(menuID_t id)
     return 1;
 }
 
+void menuSetDecorationsCB(void (*cb)())
+{
+    if(!initialized)
+        return;
+
+    activeMenu->drawDecorationsCB = cb;
+}
+
+void menuSetHelpTickerText(const char *text)
+{
+    if(!initialized || !text)
+        return;
+
+    activeMenu->helpTickerText = text;
+    activeMenu->helpTickerLength = graphicsGetWidth(text) + graphicsGetDisplayWidth();
+}
+
+void menuSetTempHelpTickerText(const char *text)
+{
+    if(!initialized || !text)
+        return;
+
+    tempHelpTickerText = text;
+    tempHelpTickerLength = graphicsGetWidth(text) + graphicsGetDisplayWidth();
+}
+
+void menuClearTempHelpTickerText()
+{
+    tempHelpTickerText = NULL;
+    tempHelpTickerLength = 0;
+}
+
 int menuUp()
 {
     if(activeMenu->currentItem > 0)
@@ -527,6 +559,58 @@ static void drawScrollBar()
     graphicsDrawQuad(graphicsGetDisplayWidth() - 38, 78 + gripPositionOnTrack, 6, gripSize, COLOR_WHITE);
 }
 
+static void drawHelpTicker()
+{
+    static int helpTickerX = 0;
+    static const char *textPrev = NULL;
+    const char *text;
+    int length;
+    
+    if(tempHelpTickerText)
+    {
+        // Use temporary help ticker
+        text = tempHelpTickerText;
+        length = tempHelpTickerLength;
+    }
+    else if(activeMenu->helpTickerText)
+    {
+        // Use primary help ticker
+        text = activeMenu->helpTickerText;
+        length = activeMenu->helpTickerLength;
+    }
+    else
+    {
+        // No help ticker is available
+        return;
+    }
+
+    if(text != textPrev)
+    {
+        // Help ticker text changed
+        helpTickerX = 0;
+        textPrev = text;
+    }
+    else if (helpTickerX < length)
+        helpTickerX += 2;
+    else
+        helpTickerX = 0;
+
+    graphicsDrawText(graphicsGetDisplayWidth() - helpTickerX, 
+        405, COLOR_WHITE, text);
+}
+
+static void drawTitle()
+{
+    if(activeMenu->text)
+        graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
+}
+
+static void drawDecorations()
+{
+    if(activeMenu->drawDecorationsCB)
+        (*activeMenu->drawDecorationsCB)();
+}
+
 static void drawMenuItems()
 {
     int yItems = 14;
@@ -582,27 +666,18 @@ static void drawMenuItems()
 
 int menuRender()
 {
-    cheatsDrawStats();
+    if(!initialized)
+        return 0;
     
     if(activeMenu->identifier == MENU_MAIN)
     {
         return 1;
     }
-    else if(activeMenu->identifier == MENU_SAVES)
-    {
-        savesDrawTicker();
-    }
-    else if(activeMenu->identifier == MENU_BOOT)
-    {
-        settingsDrawBootMenuTicker();
-    }
 
-    if(activeMenu->text != NULL)
-    {
-        graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
-    }
-
+    drawTitle();
     drawMenuItems();
+    drawDecorations();
+    drawHelpTicker();
     drawScrollBar();
 
     return 1;

@@ -379,48 +379,56 @@ void displayContextMenu(int menuID)
     }
 }
 
-char *keyBoardChars = "`1234567890-=" \
-                      "qwertyuiop[]\\" \
-                      "asdfghjkl;'  " \
-                      "zxcvbnm,./   ";
-char *keyBoardCharsUpper = "~!@#$%^&*()_+" \
-                           "QWERTYUIOP{}|" \
-                           "ASDFGHJKL:\"  "\
-                           "ZXCVBNM<>?   ";
+static const char *HELP_TICKER_INPUT_MENU = \
+    "{L1}/{R1} Move Cursor     "
+    "{TRIANGLE} Space     "
+    "{SQUARE} Backspace     "
+    "{R2} Toggle Upper/Lower Case     "
+    "{START} Accept";
+
+static const char *KEYBOARD_CHARS = \
+    "`1234567890-="
+    "qwertyuiop[]\\"
+    "asdfghjkl;'  "
+    "zxcvbnm,./   ";
+
+static const char *KEYBOARD_CHARS_UPPER = \
+    "~!@#$%^&*()_+"
+    "QWERTYUIOP{}|"
+    "ASDFGHJKL:\"  "
+    "ZXCVBNM<>?   ";
+
 #define KEYBOARD_COLUMNS 13
 #define KEYBOARD_ROWS 4
 #define ACCEPT_ROW KEYBOARD_ROWS
 #define CANCEL_ROW (ACCEPT_ROW + 1)
+#define CURSOR_WIDTH 2
 
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
-    char tmp[1024];
-    int tmpLen;
-    u32 pad_pressed;
-    u32 pad_rapid;
-    int row = 0;
-    int column = 0;
-    int upper = 0;
-    float width = 0;
-    int tickerX = 0;
-    int cursorIndex;
-    static int cursorWidth = 2;
 
+    menuSetTempHelpTickerText(HELP_TICKER_INPUT_MENU);
+
+    char tmp[1024];
     tmp[0] = '\0';
 
     if(initialStr)
         strncpy(tmp, initialStr, 1024);
-    else
-        tmp[0] = '\0';
 
-    tmpLen = strlen(tmp);
-    cursorIndex = tmpLen;
-
-    do
+    int tmpLen = strlen(tmp);
+    int cursorIndex = tmpLen;
+    
+    int row = 0;
+    int column = 0;
+    int upper = 0;
+    float width = 0;
+    int ret = -1;
+    while(ret < 0)
     {
         padPoll(DELAYTIME_SLOW);
-        pad_pressed = padPressed();
-        pad_rapid = padHeld();
+        u32 pad_pressed = padPressed();
+        u32 pad_rapid = padHeld();
+        
         if(pad_pressed & PAD_CROSS)
         {
             if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
@@ -428,9 +436,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 if(cursorIndex < tmpLen) // Move characters after cursor to the right
                     memmove(&tmp[cursorIndex+1], &tmp[cursorIndex], tmpLen - cursorIndex);
                 if(upper)
-                    tmp[cursorIndex] = keyBoardCharsUpper[row*KEYBOARD_COLUMNS + column];
+                    tmp[cursorIndex] = KEYBOARD_CHARS_UPPER[row*KEYBOARD_COLUMNS + column];
                 else
-                    tmp[cursorIndex] = keyBoardChars[row*KEYBOARD_COLUMNS + column];
+                    tmp[cursorIndex] = KEYBOARD_CHARS[row*KEYBOARD_COLUMNS + column];
 
                 tmp[tmpLen + 1] = '\0';
                 tmpLen++;
@@ -442,14 +450,14 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                 if(strlen(tmp) > 0)
                 {
                     strncpy(dstStr, tmp, dstLen);
-                    return 1;
+                    ret = 1;
                 }
                 else
-                    return 0;
+                    ret = 0;
             }
 
             else if(row == CANCEL_ROW)
-                return 0;
+                ret = 0;
         }
 
         else if(pad_pressed & PAD_START)
@@ -457,16 +465,17 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
             if(strlen(tmp) > 0)
             {
                 strncpy(dstStr, tmp, dstLen);
-                return 1;
+                ret = 1;
             }
             else
-                return 0;
+                ret = 0;
         }
 
         else if(pad_pressed & PAD_TRIANGLE)
         {
             if(cursorIndex < tmpLen) // Move characters after cursor to the right
                 memmove(&tmp[cursorIndex+1], &tmp[cursorIndex], tmpLen - cursorIndex);
+            
             tmp[cursorIndex] = ' ';
             tmp[tmpLen + 1] = '\0';
             tmpLen++;
@@ -486,6 +495,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
         else if(pad_pressed & PAD_R2)
             upper ^= 1;
+
+        else if(pad_pressed & PAD_CIRCLE)
+            ret = 0;
         
         if(pad_rapid & PAD_UP)
         {
@@ -539,14 +551,14 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         }
 
         int textWidth = graphicsGetWidth(tmp);
-        int newWidth = textWidth + cursorWidth + 20;
+        int newWidth = textWidth + CURSOR_WIDTH + 10;
         if(newWidth > width)
             width = newWidth;
 
         if(width < 345)
-            width = KEYBOARD_COLUMNS*22 + 20;
+            width = KEYBOARD_COLUMNS*22 + 10;
 
-        graphicsDrawPromptBoxBlack(width, 8*22 + 20);
+        graphicsDrawPromptBoxBlack(width, 8*22 + 10);
 
         if(prompt)
             graphicsDrawTextCentered(graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 - 6, COLOR_GREEN, prompt);
@@ -554,7 +566,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         // Draw text being edited
         int cursorX = graphicsGetWidthSubString(tmp, cursorIndex) + (graphicsGetDisplayWidth()/2 - textWidth/2.0);
         graphicsDrawTextCentered(graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 20, COLOR_YELLOW, tmp);
-        graphicsDrawQuad(cursorX, graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 20, cursorWidth, 25, COLOR_BLUE);
+        graphicsDrawQuad(cursorX, graphicsGetDisplayHeight()/2.0 - (8*22)/2.0 + 20, CURSOR_WIDTH, 25, COLOR_BLUE);
 
         // Draw keyboard keys
         int i, j, color;
@@ -579,9 +591,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
 
                 char c;
                 if(upper)
-                    c = keyBoardCharsUpper[i*KEYBOARD_COLUMNS + j];
+                    c = KEYBOARD_CHARS_UPPER[i*KEYBOARD_COLUMNS + j];
                 else
-                    c = keyBoardChars[i*KEYBOARD_COLUMNS + j];
+                    c = KEYBOARD_CHARS[i*KEYBOARD_COLUMNS + j];
 
                 int keyX = keyStartX + j*22 + 4;
                 int keyY = keyStartY + i*22;
@@ -592,31 +604,25 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         graphicsDrawTextCentered(keyStartY + ACCEPT_ROW*22 - 2, (row == ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
         graphicsDrawTextCentered(keyStartY + CANCEL_ROW*22 - 2, (row == CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
 
-        // Draw help ticker
-        graphicsDrawBackgroundBottom(80);
-        if(tickerX < 1700)
-            tickerX += 2;
-        else
-            tickerX = 0;
-
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE,
-            "{L1}/{R1} Move Cursor     "
-            "{TRIANGLE} Space     "
-            "{SQUARE} Backspace     "
-            "{R2} Toggle Upper/Lower Case     "
-            "{START} Accept");
-
         graphicsRender();
+    };
 
-    } while(!(pad_pressed & PAD_CIRCLE));
+    menuClearTempHelpTickerText();
 
-    return 0;
+    return ret;
 }
 
-char *codeKeyboardChars = "0123" \
-                          "4567" \
-                          "89AB" \
-                          "CDEF";
+static const char *HELP_TICKER_CODE_EDIT_MENU = \
+    "{L1}/{R1} Move Cursor     "
+    "{CROSS} Set Value     "
+    "{START} Accept";
+
+static const char *CODE_KEYBOARD_CHARS = \
+    "0123"
+    "4567"
+    "89AB"
+    "CDEF";
+
 #define CODE_KEYBOARD_COLUMNS 4
 #define CODE_KEYBOARD_ROWS 4
 #define CODE_KEYBOARD_ACCEPT_ROW CODE_KEYBOARD_ROWS
@@ -624,39 +630,32 @@ char *codeKeyboardChars = "0123" \
 
 static int displayCodeEditMenu(u64 *code, const int isNewCode)
 {
-    u32 pad_pressed;
-    u32 pad_rapid;
-    int row = 0;
-    int column = 0;
-    char codeString[18];
-    int codeLoc = 0;
-    int tickerX = 0;
-
     if(!code)
         return 0;
 
-    u32 addr = (u32)*((u32 *) code);
-    u32 val = (u32)*((u32 *)code + 1);
-
+    u32 addr = (u32)*((u32 *)code);
+    u32 val  = (u32)*((u32 *)code + 1);
+    
+    char codeString[18];
     snprintf(codeString, 18, "%08X %08X", addr, val);
 
-    do
-    {
-        graphicsDrawPromptBoxBlack(285, 220);
-        if(isNewCode)
-            graphicsDrawTextCentered(125, COLOR_GREEN, "Add Code Line");
-        else
-            graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
+    menuSetTempHelpTickerText(HELP_TICKER_CODE_EDIT_MENU);
 
+    int row = 0;
+    int column = 0;
+    int codeLoc = 0;
+    int ret = -1;
+    while(ret < 0)
+    {
         padPoll(DELAYTIME_SLOW);
-        pad_pressed = padPressed();
-        pad_rapid = padHeld();
+        u32 pad_pressed = padPressed();
+        u32 pad_rapid = padHeld();
 
         if(pad_pressed & PAD_CROSS)
         {
             if(row < CODE_KEYBOARD_ROWS && column < CODE_KEYBOARD_COLUMNS)
             {
-                codeString[codeLoc] = codeKeyboardChars[row*CODE_KEYBOARD_COLUMNS + column];
+                codeString[codeLoc] = CODE_KEYBOARD_CHARS[row*CODE_KEYBOARD_COLUMNS + column];
 
                 if(codeLoc == 7)   
                     codeLoc += 2; // Skip past space in the center
@@ -667,11 +666,11 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
             {
                 // Update code value
                 sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
-                return 1;
+                ret = 1;
             }
             else if(row == CODE_KEYBOARD_CANCEL_ROW)
             {
-                return 0;
+                ret = 0;
             }
         }
 
@@ -679,8 +678,11 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
         {
             // Update code value
             sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
-            return 1;
+            ret = 1;
         }
+
+        else if(pad_pressed & PAD_CIRCLE)
+            ret = 0;
 
         if(pad_rapid & PAD_L1)
         {
@@ -750,7 +752,24 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
             }
         }
 
-        int i, j, color;
+        graphicsDrawPromptBoxBlack(285, 220);
+        if(isNewCode)
+            graphicsDrawTextCentered(125, COLOR_GREEN, "Add Code Line");
+        else
+            graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
+
+        // Draw code being edited
+        int i;
+        for(i = 0; i < 17; i++)
+        {
+            if(i == codeLoc)
+                graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, COLOR_BLUE);
+
+            graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], COLOR_WHITE);
+        }
+
+        // Draw keyboard keys
+        int j, color;
         for(i = 0; i < CODE_KEYBOARD_ROWS; i++)
         {
             for(j = 0; j < CODE_KEYBOARD_COLUMNS; j++)
@@ -767,16 +786,8 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
                     color = COLOR_WHITE;
                 }
 
-                graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - 45 + j*25, 175 + i*25, codeKeyboardChars[i*CODE_KEYBOARD_COLUMNS + j], color);
+                graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - 45 + j*25, 175 + i*25, CODE_KEYBOARD_CHARS[i*CODE_KEYBOARD_COLUMNS + j], color);
             }
-        }
-
-        for(i = 0; i < 17; i++)
-        {
-            if(i == codeLoc)
-                graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, COLOR_BLUE);
-
-            graphicsDrawChar(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, codeString[i], COLOR_WHITE);
         }
 
         if(row == CODE_KEYBOARD_ACCEPT_ROW)
@@ -787,23 +798,13 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
         graphicsDrawTextCentered(174 + CODE_KEYBOARD_ROWS*25, (row == CODE_KEYBOARD_ACCEPT_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Accept");
         graphicsDrawTextCentered(174 + (CODE_KEYBOARD_ROWS+1)*25, (row == CODE_KEYBOARD_CANCEL_ROW) ? COLOR_YELLOW : COLOR_WHITE, "Cancel");
 
-        // Draw help ticker
-        graphicsDrawBackgroundBottom(80);
-        if(tickerX < 1200)
-            tickerX += 2;
-        else
-            tickerX = 0;
-
-        graphicsDrawText(graphicsGetDisplayWidth() - tickerX, 405, COLOR_WHITE,
-            "{L1}/{R1} Move Cursor     "
-            "{CROSS} Set Value     "
-            "{START} Accept");
-
         graphicsRender();
 
-    } while (!(pad_pressed & PAD_CIRCLE));
+    };
 
-    return 0;
+    menuClearTempHelpTickerText();
+
+    return ret;
 }
 
 int displayNewCodeEditMenu(u64 *code)
@@ -840,8 +841,8 @@ int displayPromptMenu(char **items, int numItems, const char *header)
         padPoll(DELAYTIME_SLOW);
         pad_held = padHeld();
 
-        graphicsDrawBackground();
-        menuRender();
+        //graphicsDrawBackground();
+        //menuRender();
         const int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
         graphicsDrawPromptBoxBlack(maxLength + 10, ((numItems + numHeaderLines) * 22) + 10);
         graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);

@@ -1,10 +1,12 @@
-#include "settings.h"
+#include <stdio.h>
+#include <string.h>
+
 #include "libraries/ini.h"
+#include "settings.h"
 #include "util.h"
 #include "menus.h"
 #include "graphics.h"
-#include <string.h>
-#include <stdio.h>
+#include "cheats.h"
 
 typedef struct
 {
@@ -24,6 +26,11 @@ static char *defaultBootPaths[] = {
     "mc1:BOOT/BOOT.ELF",
     "rom:OSDSYS"
 };
+
+static const char *HELP_TICKER = \
+    "{CROSS} Boot     "
+    "{SQUARE} Options     "
+    "{CIRCLE} Main Menu";
 
 int initSettings()
 {
@@ -198,6 +205,9 @@ void settingsLoadBootMenu()
         items[i].extra = (void *)&paths[i-1];
         menuInsertItem(&items[i]);
     }
+
+    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetHelpTickerText(HELP_TICKER);
 }
 
 void settingsRenameBootPath()
@@ -224,22 +234,3 @@ void settingsRenameBootPath()
         settingsChanged = 1;
     }
 }
-
-void settingsDrawBootMenuTicker()
-{
-    static int x = 0;
-
-    if(menuGetActive() != MENU_BOOT)
-        return;
-
-    if (x < 1200)
-        x+= 2;
-    else
-        x = 0;
-
-    graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-        "{CROSS} Boot     "
-        "{SQUARE} Options     "
-        "{CIRCLE} Main Menu");
-}
-

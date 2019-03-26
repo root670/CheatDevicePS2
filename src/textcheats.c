@@ -462,7 +462,6 @@ static int readTextCheats(char *text, size_t len)
         if((lineNum % 5000) == 0)
         {
             float progress = 1.0 - ((endPtr - text)/(float)len);
-            graphicsDrawBackground();
             graphicsDrawLoadingBar(100, 375, progress);
             graphicsRender();
         }

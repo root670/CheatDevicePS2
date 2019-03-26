@@ -27,14 +27,10 @@ int main(int argc, char *argv[])
     
     cheatsLoadGameMenu();
     cheatsLoadHistory();
-    graphicsClearScreen(128, 128, 128);
 
     /* Main Loop */
     while(1)
     {
-        graphicsDrawBackground();
-        
-        menuRender();
         handlePad();
         graphicsRender();
     }

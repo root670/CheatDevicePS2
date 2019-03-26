@@ -354,13 +354,16 @@ int graphicsGetSymbolLength(const char *start, int index)
     if(!start)
         return 1;
 
-    // Figure out if we're in a {} symbol pair
-    // find closing brace
+    // Check if the character at index is enclosed by curley braces,
+    // in which case the character might be part of a special symbol.
+    
+    // Start by looking ahead for a closing brace
     int endIndex = strlen(start);
     int closingIndex = index;
     while(start[closingIndex] && start[closingIndex] != '}')
         closingIndex++;
-    // now work backwards
+    
+    // Now step backwards to find an opening brace
     int openingIndex = closingIndex;
     while(openingIndex > 0 && start[openingIndex] != '{')
         openingIndex--;
@@ -368,7 +371,7 @@ int graphicsGetSymbolLength(const char *start, int index)
     if(openingIndex > index ||
        openingIndex == closingIndex ||
        closingIndex == endIndex)
-       return 1;
+       return 1; // Character is not surrounded by curley braces
 
     // Might be in a special symbol. Check if it's valid.
     const char *end = getSpecialTexture(&start[index], NULL);
@@ -802,4 +805,8 @@ void graphicsRender()
     }
 
     gsKit_setactive(gsGlobal);
+
+    // Draw common elements
+    graphicsDrawBackground();
+    menuRender();
 }

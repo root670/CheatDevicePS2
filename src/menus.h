@@ -37,6 +37,10 @@ typedef struct menuState {
     int freeTextWhenRemoved;
     char *text;
     void *extra; // Optional: Associate additional data with the menu.
+
+    void (*drawDecorationsCB)();
+    const char *helpTickerText;
+    int helpTickerLength;
     
     menuItem_t **items;
     unsigned int currentItem;
@@ -47,11 +51,23 @@ typedef struct menuState {
 int initMenus();
 int killMenus();
 
+// Setup
 int menuSetActive(menuID_t id);
 menuID_t menuGetActive();
 void *menuGetActiveExtra();
 void *menuGetExtra(menuID_t id);
 
+// Set a function to call to draw additional items when drawing the active
+// menu.
+void menuSetDecorationsCB(void (*cb)());
+// Set the primary help ticker text for the active menu.
+void menuSetHelpTickerText(const char *text);
+// Temporarily override the primary help ticker text.
+void menuSetTempHelpTickerText(const char *text);
+// Revert back to using the primary help ticker text.
+void menuClearTempHelpTickerText();
+
+// Item manipulation
 int menuInsertItem(menuItem_t *item);
 int menuRemoveActiveItem();
 int menuRemoveAllItems();
@@ -59,7 +75,9 @@ int menuSetActiveItem(menuItem_t *item);
 int menuRenameActiveItem(const char *str);
 const char *menuGetActiveItemText();
 void *menuGetActiveItemExtra();
+void menuToggleItem();
 
+// Movement
 int menuUp();
 int menuDown();
 int menuUpRepeat(int n);
@@ -70,7 +88,6 @@ int menuGoToTop();
 int menuGoToBottom();
 int menuGoToNextHeader();
 int menuGoToPreviousHeader();
-void menuToggleItem();
 
 int menuRender();
 

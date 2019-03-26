@@ -42,6 +42,30 @@ static cheatDatabaseHandler_t cheatDatabaseHandlers[] = {
     {"Text File in ZIP (.zip)", "zip", textCheatsOpenZip, NULL}
 };
 
+static const char *HELP_TICKER_GAMES = \
+    "{CROSS} Cheat List     "
+    "{SQUARE} Options     "
+    "{CIRCLE} Main Menu     "
+    "{L1}/{R1} Page Up/Down     "
+    "{L2}/{R2} Alphabetical Up/Down";
+
+static const char *HELP_TICKER_CHEATS = \
+    "{CROSS} Enable/Disable Cheat     "
+    "{SQUARE} Options     "
+    "{CIRCLE} Game List    "
+    "{L1}/{R1} Page Up/Down     "
+    "{L2}/{R2} Section Up/Down";
+
+static const char *HELP_TICKER_CODES_NORMAL = \
+    "{CROSS} Edit Code Line     "
+    "{SQUARE} Options     "
+    "{CIRCLE} Cheat Menu";
+
+static const char *HELP_TICKER_CODES_NONE = \
+    "{CROSS} Add Code Line     "
+    "{SQUARE} Options     "
+    "{CIRCLE} Cheat Menu";
+
 int killCheats()
 {
     printf("\n ** Killing Cheats **\n");
@@ -283,7 +307,7 @@ int cheatsSaveDatabase()
 
 int cheatsLoadGameMenu()
 {
-    if(gamesHead!=NULL)
+    if(gamesHead)
     {
         cheatsGame_t *node = gamesHead;
         menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
@@ -306,6 +330,9 @@ int cheatsLoadGameMenu()
             item++;
         }
 
+        menuSetDecorationsCB(cheatsDrawStats);
+        menuSetHelpTickerText(HELP_TICKER_GAMES);
+
         return 1;
     }
 
@@ -314,7 +341,7 @@ int cheatsLoadGameMenu()
 
 cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 {
-    if(gamesHead!=NULL && game)
+    if(gamesHead && game)
     {
         /* Build the menu */
         cheatsCheat_t *cheat = game->cheats;
@@ -337,6 +364,9 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
             item++;
         }
 
+        menuSetDecorationsCB(cheatsDrawStats);
+        menuSetHelpTickerText(HELP_TICKER_CHEATS);
+
         return game;
     }
 
@@ -355,8 +385,8 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
         for(i = 0; i < cheat->numCodeLines; i++)
         {
             u64 *code = game->codeLines + cheat->codeLinesOffset + i;
-            u32 addr = (u32)*((u32 *)code);
-            u32 val  = (u32)*((u32 *)code + 1);
+            u32 addr  = (u32)*((u32 *)code);
+            u32 val   = (u32)*((u32 *)code + 1);
 
             item->text = malloc(18);
             snprintf(item->text, 18, "%08X %08X", addr, val);
@@ -368,6 +398,13 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
 
             item++;
         }
+
+        menuSetDecorationsCB(cheatsDrawStats);
+
+        if(cheat->numCodeLines > 0)
+            menuSetHelpTickerText(HELP_TICKER_CODES_NORMAL);
+        else
+            menuSetHelpTickerText(HELP_TICKER_CODES_NONE);
 
         return cheat;
     }
@@ -823,67 +860,6 @@ void cheatsDrawStats()
                 graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheat", numEnabledCheats);
             else
                 graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheats", numEnabledCheats);
-        }
-    }
-    
-    static menuID_t activeMenu = -1;
-    static int x = 0;
-    menuID_t oldMenu = activeMenu;
-    activeMenu = menuGetActive();
-    
-    if(activeMenu != oldMenu)
-        x = 0;
-
-    if(activeMenu == MENU_GAMES)
-    {
-        if (x < 1700)
-            x+= 2;
-        else
-            x = 0;
-
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-            "{CROSS} Cheat List     "
-            "{SQUARE} Options     "
-            "{CIRCLE} Main Menu     "
-            "{L1}/{R1} Page Up/Down     "
-            "{L2}/{R2} Alphabetical Up/Down");
-    }
-
-    else if(activeMenu == MENU_CHEATS)
-    {
-        if (x < 1750)
-            x+= 2;
-        else
-            x = 0;
-
-        graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-            "{CROSS} Enable/Disable Cheat     "
-            "{SQUARE} Options     "
-            "{CIRCLE} Game List    "
-            "{L1}/{R1} Page Up/Down     "
-            "{L2}/{R2} Section Up/Down");
-    }
-
-    else if(activeMenu == MENU_CODES)
-    {
-        if(x < 1200)
-            x += 2;
-        else
-            x = 0;
-
-        if(cheatsGetNumCodeLines() > 0)
-        {
-            graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-                "{CROSS} Edit Code Line     "
-                "{SQUARE} Options     "
-                "{CIRCLE} Cheat Menu");
-        }
-        else
-        {
-                graphicsDrawText(graphicsGetDisplayWidth() - x, 405, COLOR_WHITE,
-                "{CROSS} Add Code Line     "
-                "{SQUARE} Options     "
-                "{CIRCLE} Cheat Menu");
         }
     }
 }

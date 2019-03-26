@@ -56,7 +56,7 @@ char *savesGetDevicePath(char *str, device_t dev)
     return ret;
 }
 
-void savesDrawTicker()
+static void savesDrawDecorations()
 {
     char *deviceName;
     int freeSpace; // in cluster size. 1 cluster = 1024 bytes.
@@ -80,17 +80,11 @@ void savesDrawTicker()
             freeSpace = 0;
     }
     
-    graphicsDrawTextCentered(47, COLOR_WHITE, deviceName);
     if(currentDevice != FLASH_DRIVE)
         graphicsDrawText(30, 47, COLOR_WHITE, "%d KB free", freeSpace);
-    
-    static int ticker_x = 0;
-    if (ticker_x < 1000)
-        ticker_x+= 2;
-    else
-        ticker_x = 0;
-    
-    graphicsDrawText(graphicsGetDisplayWidth() - ticker_x, 405, COLOR_WHITE, "{CROSS} Copy     {CIRCLE} Device Menu");
+
+    // TODO: Add menuSetTitle() to menu.c to set menu title for active menu.
+    graphicsDrawTextCentered(47, COLOR_WHITE, deviceName);
 }
 
 // Determine save handler by filename.
@@ -356,6 +350,10 @@ int savesGetAvailableDevices()
     return available;
 }
 
+static const char *HELP_TICKER_SAVES = \
+    "{CROSS} Copy     "
+    "{CIRCLE} Device Menu";
+
 void savesLoadSaveMenu(device_t dev)
 {
     int available;
@@ -363,6 +361,9 @@ void savesLoadSaveMenu(device_t dev)
     gameSave_t *save;
     
     currentDevice = dev;
+
+    menuSetDecorationsCB(savesDrawDecorations);
+    menuSetHelpTickerText(HELP_TICKER_SAVES);
     
     graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");
     graphicsRender();
@@ -462,8 +463,6 @@ int savesCopySavePrompt(gameSave_t *save)
         graphicsDrawDeviceMenu(selectedDevice);
         graphicsDrawTextCentered(150, COLOR_WHITE, "Select device to copy save to");
         graphicsRender();
-        graphicsDrawBackground();
-        menuRender();
         
         if(pad_pressed & PAD_CROSS)
         {
