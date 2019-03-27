@@ -406,8 +406,6 @@ void savesLoadSaveMenu(device_t dev)
 
 static int doCopy(device_t src, device_t dst, gameSave_t *save)
 {
-    int available;
-    
     if(src == dst)
     {
         displayError("Can't copy to the same device.");
@@ -419,9 +417,9 @@ static int doCopy(device_t src, device_t dst, gameSave_t *save)
         displayError("Can't copy between memory cards.");
         return 0;
     }
-    
-    available = savesGetAvailableDevices();
-    
+
+    int available = savesGetAvailableDevices();
+
     if(!(available & src))
     {
         displayError("Source device is not connected.");
@@ -451,43 +449,38 @@ static int doCopy(device_t src, device_t dst, gameSave_t *save)
 
 int savesCopySavePrompt(gameSave_t *save)
 {
-    u32 pad_pressed;
-    int selectedDevice = 0;
-    
-    do
-    {
-        padPoll(DELAYTIME_SLOW);
-        pad_pressed = padPressed();
-        
-        graphicsDrawTextCentered(47, COLOR_WHITE, save->name);
-        graphicsDrawDeviceMenu(selectedDevice);
-        graphicsDrawTextCentered(150, COLOR_WHITE, "Select device to copy save to");
-        graphicsRender();
-        
-        if(pad_pressed & PAD_CROSS)
-        {
-            if(!doCopy(currentDevice, 1 << selectedDevice, save))
-                continue;
-            else
-                return 1;
-        }
-        
-        else if(pad_pressed & PAD_RIGHT)
-        {
-            if(selectedDevice >= 2)
-                selectedDevice = 0;
-            else
-                ++selectedDevice;
-        }
+    const char *mc1        = "Memory Card (Slot 1)";
+    const char *mc2        = "Memory Card (Slot 2)";
+    const char *flashdrive = "Flash Drive";
 
-        else if(pad_pressed & PAD_LEFT)
-        {
-            if (selectedDevice == 0)
-                selectedDevice = 2;
-            else
-                --selectedDevice;
-        }
-    } while(!(pad_pressed & PAD_CIRCLE));
-    
-    return 1;
+    int devices[2];
+    char *items[2];
+    if(currentDevice & MC_SLOT_1)
+    {
+        devices[0] = MC_SLOT_2;
+        devices[1] = FLASH_DRIVE;
+        items[0] = mc2;
+        items[1] = flashdrive;
+    }
+    else if(currentDevice & MC_SLOT_2)
+    {
+        devices[0] = MC_SLOT_1;
+        devices[1] = FLASH_DRIVE;
+        items[0] = mc1;
+        items[1] = flashdrive;
+    }
+    else if(currentDevice & FLASH_DRIVE)
+    {
+        devices[0] = MC_SLOT_1;
+        devices[1] = MC_SLOT_2;
+        items[0] = mc1;
+        items[1] = mc2;
+    }
+
+    char promptText[128];
+    snprintf(promptText, sizeof(promptText), "Select device to copy save to\n\"%s\"", save->name);
+
+    int ret = displayPromptMenu(items, 2, promptText);
+
+    return doCopy(currentDevice, devices[ret], save);
 }
