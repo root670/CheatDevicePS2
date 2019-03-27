@@ -406,7 +406,6 @@ static const char *KEYBOARD_CHARS_UPPER = \
 
 int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
-
     menuSetTempHelpTickerText(HELP_TICKER_INPUT_MENU);
 
     char tmp[1024];
@@ -576,9 +575,9 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         if(row < KEYBOARD_ROWS && column < KEYBOARD_COLUMNS)
             graphicsDrawQuad(keyStartX + column*22, keyStartY + row*22, 22, 22, COLOR_BLUE);
         else if(row == ACCEPT_ROW)
-            graphicsDrawQuad(keyStartX, keyStartY + ACCEPT_ROW*22, width - 20, 22, COLOR_BLUE);
+            graphicsDrawQuad(keyStartX, keyStartY + ACCEPT_ROW*22, width - 10, 22, COLOR_BLUE);
         else if(row == CANCEL_ROW)
-            graphicsDrawQuad(keyStartX, keyStartY + CANCEL_ROW*22, width - 20, 22, COLOR_BLUE);
+            graphicsDrawQuad(keyStartX, keyStartY + CANCEL_ROW*22, width - 10, 22, COLOR_BLUE);
 
         for(i = 0; i < KEYBOARD_ROWS; i++)
         {
@@ -596,7 +595,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
                     c = KEYBOARD_CHARS[i*KEYBOARD_COLUMNS + j];
 
                 int keyX = keyStartX + j*22 + 4;
-                int keyY = keyStartY + i*22;
+                int keyY = keyStartY + i*22 - 2;
                 graphicsDrawChar(keyX, keyY, c, color);
             }
         }
