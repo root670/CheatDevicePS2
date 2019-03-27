@@ -1,9 +1,11 @@
+#include <libmc.h>
+
 #include "zip.h"
+#include "util.h"
 #include "../libraries/minizip/zip.h"
 #include "../libraries/minizip/unzip.h"
 #include "../graphics.h"
 #include "../util.h"
-#include <libmc.h>
 
 int extractZIP(gameSave_t *save, device_t dst)
 {
@@ -61,16 +63,11 @@ int extractZIP(gameSave_t *save, device_t dst)
         }
     }
     
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRender();
-    
     // Copy each file entry
     do
     {
         progress += (float)1/numFiles;
-        graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRender();
+        drawCopyProgress(progress);
 
         unzGetCurrentFileInfo(zf, &fileInfo, fileName, 100, NULL, 0, NULL, 0);
         
@@ -137,10 +134,6 @@ int createZIP(gameSave_t *save, device_t src)
             return 0;
     }
     
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRender();
-    
     zf = zipOpen(zipPath, APPEND_STATUS_CREATE);
     if(!zf)
         return 0;
@@ -158,8 +151,7 @@ int createZIP(gameSave_t *save, device_t src)
         else if(mcDir[i].AttrFile & MC_ATTR_FILE)
         {
             progress += (float)1/(ret-2);
-            graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRender();
+            drawCopyProgress(progress);
 
             snprintf(filePath, 100, "%s/%s", save->path, mcDir[i].EntryName);
             

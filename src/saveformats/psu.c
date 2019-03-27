@@ -1,8 +1,9 @@
+#include <stdio.h>
+#include <libmc.h>
+
 #include "psu.h"
 #include "../graphics.h"
 #include "../util.h"
-#include <stdio.h>
-#include <libmc.h>
 
 int createPSU(gameSave_t *save, device_t src)
 {
@@ -39,10 +40,6 @@ int createPSU(gameSave_t *save, device_t src)
             return 0;
     }
     
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRender();
-    
     psuFile = fopen(psuPath, "wb");
     if(!psuFile)
         return 0;
@@ -68,8 +65,7 @@ int createPSU(gameSave_t *save, device_t src)
         else if(mcDir[i].AttrFile & MC_ATTR_FILE)
         {
             progress += (float)1/(ret-2);
-            graphicsDrawLoadingBar(50, 350, progress);
-            graphicsRender();
+            drawCopyProgress(progress);
             
             file.mode = mcDir[i].AttrFile;
             file.length = mcDir[i].FileSizeByte;
@@ -148,10 +144,6 @@ int extractPSU(gameSave_t *save, device_t dst)
         }
     }
     
-    graphicsDrawLoadingBar(50, 350, 0.0);
-    graphicsDrawTextCentered(310, COLOR_YELLOW, "Copying save...");
-    graphicsRender();
-    
     // Skip "." and ".."
     fseek(psuFile, 1024, SEEK_CUR);
     
@@ -159,8 +151,7 @@ int extractPSU(gameSave_t *save, device_t dst)
     for(i = 0; i < numFiles; i++)
     {
         progress += (float)1/numFiles;
-        graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRender();
+        drawCopyProgress(progress);
         
         fread(&entry, 1, 512, psuFile);
         
