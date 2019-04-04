@@ -455,19 +455,12 @@ int savesCopySavePrompt(gameSave_t *save)
 
     const int devices[2];
     const char *items[2];
-    if(currentDevice & MC_SLOT_1)
+    int numDevices;
+    if(currentDevice & (MC_SLOT_1|MC_SLOT_2))
     {
-        devices[0] = MC_SLOT_2;
-        devices[1] = FLASH_DRIVE;
-        items[0] = mc2;
-        items[1] = flashdrive;
-    }
-    else if(currentDevice & MC_SLOT_2)
-    {
-        devices[0] = MC_SLOT_1;
-        devices[1] = FLASH_DRIVE;
-        items[0] = mc1;
-        items[1] = flashdrive;
+        devices[0] = FLASH_DRIVE;
+        items[0] = flashdrive;
+        numDevices = 1;
     }
     else if(currentDevice & FLASH_DRIVE)
     {
@@ -475,12 +468,16 @@ int savesCopySavePrompt(gameSave_t *save)
         devices[1] = MC_SLOT_2;
         items[0] = mc1;
         items[1] = mc2;
+        numDevices = 2;
     }
 
     char promptText[128];
-    snprintf(promptText, sizeof(promptText), "Select device to copy save to\n\"%s\"", save->name);
+    snprintf(promptText, sizeof(promptText), "\"%s\"\nSelect device to copy save to", save->name);
 
-    int ret = displayPromptMenu(items, 2, promptText);
+    int ret = displayPromptMenu(items, numDevices, promptText);
 
+    if(ret >= 0)
     return doCopy(currentDevice, devices[ret], save);
+    else
+        return 0;
 }
