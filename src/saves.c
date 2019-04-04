@@ -453,8 +453,8 @@ int savesCopySavePrompt(gameSave_t *save)
     const char *mc2        = "Memory Card (Slot 2)";
     const char *flashdrive = "Flash Drive";
 
-    int devices[2];
-    char *items[2];
+    const int devices[2];
+    const char *items[2];
     if(currentDevice & MC_SLOT_1)
     {
         devices[0] = MC_SLOT_2;

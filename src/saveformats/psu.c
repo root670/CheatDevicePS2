@@ -2,6 +2,7 @@
 #include <libmc.h>
 
 #include "psu.h"
+#include "util.h"
 #include "../graphics.h"
 #include "../util.h"
 
