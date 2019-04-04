@@ -835,14 +835,13 @@ int displayPromptMenu(char **items, int numItems, const char *header)
     u32 pad_held;
     int selectedItem = 0;
     int numHeaderLines = getNumLines(header);
+    int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
+    
     do
     {
         padPoll(DELAYTIME_SLOW);
         pad_held = padHeld();
 
-        //graphicsDrawBackground();
-        //menuRender();
-        const int firstItemY = (graphicsGetDisplayHeight() / 2.0) - ((numItems + numHeaderLines) * 22) / 2.0;
         graphicsDrawPromptBoxBlack(maxLength + 10, ((numItems + numHeaderLines) * 22) + 10);
         graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
 

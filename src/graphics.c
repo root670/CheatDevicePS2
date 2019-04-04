@@ -1,3 +1,8 @@
+#include <time.h>
+#include <graph.h>
+#include <stdio.h>
+#include <kernel.h>
+
 #include "graphics.h"
 #include "stb_font.h"
 #include "libraries/upng.h"
@@ -5,10 +10,7 @@
 #include "cheats.h"
 #include "util.h"
 #include "settings.h"
-#include <time.h>
-#include <graph.h>
-#include <stdio.h>
-#include <kernel.h>
+#include "menus.h"
 
 typedef struct menuIcon {
     char *label;
@@ -398,7 +400,7 @@ int graphicsGetSymbolLengthBackwards(const char *start, int index)
         return 1;
 }
 
-static void graphicsPrintText(int x, int y, const char *txt, u64 color)
+static void graphicsPrintText(float x, float y, const char *txt, u64 color)
 {
     char const *cptr = txt;
     char special[17];
@@ -478,7 +480,7 @@ regularPrint: ;
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawChar(int x, int y, char c, graphicsColor_t color)
+void graphicsDrawChar(float x, float y, char c, graphicsColor_t color)
 {
     stb_fontchar *cdata = &fontdata[c - STB_SOMEFONT_FIRST_CHAR];
     u64 colorValue = graphicsColorTable[color];
@@ -490,7 +492,7 @@ void graphicsDrawChar(int x, int y, char c, graphicsColor_t color)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawText(int x, int y, graphicsColor_t color, const char *format, ...)
+void graphicsDrawText(float x, float y, graphicsColor_t color, const char *format, ...)
 {
     va_list args;
     char buffer[4096];
@@ -501,7 +503,7 @@ void graphicsDrawText(int x, int y, graphicsColor_t color, const char *format, .
     va_end(args);
 }
 
-void graphicsDrawTextCentered(int y, graphicsColor_t color, const char *format, ...)
+void graphicsDrawTextCentered(float y, graphicsColor_t color, const char *format, ...)
 {
     va_list args;
     char buffer[4096];
@@ -550,21 +552,21 @@ void graphicsDrawTextCentered(int y, graphicsColor_t color, const char *format, 
     graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]); // last line
 }
 
-void graphicsDrawLoadingBar(int x, int y, float progress)
+void graphicsDrawLoadingBar(float x, float y, float progress)
 {
-    int height = 10;
-    int width = gsGlobal->Width - 2*x;
+    float height = 10.0f;
+    float width = gsGlobal->Width - 2.0f*x;
     u64 color = graphicsColorTable[COLOR_BLUE];
     u64 outline = graphicsColorTable[COLOR_BLACK];
 
-    if(progress < 0.0)
-        progress = 0.0;
-    if(progress > 1.0)
-        progress = 1.0;
+    if(progress < 0.0f)
+        progress = 0.0f;
+    if(progress > 1.0f)
+        progress = 1.0f;
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     // outline
-    gsKit_prim_sprite(gsGlobal, x-5, y-5, x+5+width, y+5+height, 1, outline);
+    gsKit_prim_sprite(gsGlobal, x - 5.0f, y - 5.0f, x + 5.0f + width, y + 5.0f + height, 1, outline);
     // progress bar
     gsKit_prim_sprite(gsGlobal, x, y, x + (progress * width), y + height, 1, color);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
@@ -577,24 +579,24 @@ void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-static void drawPromptBox(int width, int height, u64 color)
+static void drawPromptBox(float width, float height, u64 color)
 {
-    const int x0 = (gsGlobal->Width/2.0) - (width/2.0);
-    const int x1 = (gsGlobal->Width/2.0) + (width/2.0);
-    const int y0 = (gsGlobal->Height/2.0) - (height/2.0);
-    const int y1 = (gsGlobal->Height/2.0) + (height/2.0);
+    const float x0 = (gsGlobal->Width/2.0) - (width/2.0);
+    const float x1 = (gsGlobal->Width/2.0) + (width/2.0);
+    const float y0 = (gsGlobal->Height/2.0) - (height/2.0);
+    const float y1 = (gsGlobal->Height/2.0) + (height/2.0);
 
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     gsKit_prim_sprite(gsGlobal, x0, y0, x1, y1, 1, color);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawPromptBox(int width, int height)
+void graphicsDrawPromptBox(float width, float height)
 {
     drawPromptBox(width, height, GS_SETREG_RGBAQ(0x22, 0x22, 0xEE, 0x60, 0x80));
 }
 
-void graphicsDrawPromptBoxBlack(int width, int height)
+void graphicsDrawPromptBoxBlack(float width, float height)
 {
     drawPromptBox(width, height, graphicsColorTable[COLOR_BLACK]);
 }
@@ -609,7 +611,7 @@ static void drawMenu(const menuIcon_t icons[], int numIcons, int activeItem)
     
     for(i = 0; i < numIcons; i++)
     {
-        int x = (gsGlobal->Width / 2) - ((75 * numIcons) / 2.0) + (75 * i);
+        float x = (gsGlobal->Width / 2.0f) - ((75.0f * numIcons) / 2.0f) + (75.0f * i);
         gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
         gsKit_prim_sprite_texture(gsGlobal, icons[i].tex,
                                             x,
@@ -632,7 +634,8 @@ void graphicsDrawMainMenu(int activeItem)
     static const menuIcon_t icons[] = {
         {"Start Game", &gamepad},
         {"Game List", &cube},
-        {"Save Manager", &savemanager}};
+        {"Save Manager", &savemanager}
+    };
     
     drawMenu(icons, 3, activeItem);
 }
@@ -642,7 +645,8 @@ void graphicsDrawDeviceMenu(int activeItem)
     static const menuIcon_t icons[] = {
         {"Memory Card (Slot 1)", &memorycard1},
         {"Memory Card (Slot 2)", &memorycard2},
-        {"Flash Drive", &flashdrive}};
+        {"Flash Drive", &flashdrive}
+    };
     
     drawMenu(icons, 3, activeItem);
 }
@@ -656,16 +660,16 @@ void graphicsDrawBackground()
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
-                                        0,                            // X1
-                                        0,                            // Y1
-                                        0,                            // U1
-                                        0,                            // V1
-                                        bg.Width,                     // X2
-                                        bg.Height,                    // Y2
-                                        bg.Width,                     // U2
-                                        bg.Height,                    // V2
-                                        1,                            // Z
-                                        0x80808080                    // RGBAQ
+                                        0,         // X1
+                                        0,         // Y1
+                                        0,         // U1
+                                        0,         // V1
+                                        bg.Width,  // X2
+                                        bg.Height, // Y2
+                                        bg.Width,  // U2
+                                        bg.Height, // V2
+                                        1,         // Z
+                                        0x80808080 // RGBAQ
                                         );
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
@@ -674,21 +678,21 @@ void graphicsDrawBackgroundBottom(unsigned int rows)
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &bg,
-                                        0,                            // X1
-                                        bg.Height - rows,             // Y1
-                                        0,                            // U1
-                                        bg.Height - rows,             // V1
-                                        bg.Width,      // X2
-                                        bg.Height,   // Y2
-                                        bg.Width,                     // U2
-                                        bg.Height,                    // V2
-                                        1,                            // Z
-                                        0x80808080                    // RGBAQ
+                                        0,                // X1
+                                        bg.Height - rows, // Y1
+                                        0,                // U1
+                                        bg.Height - rows, // V1
+                                        bg.Width,         // X2
+                                        bg.Height,        // Y2
+                                        bg.Width,         // U2
+                                        bg.Height,        // V2
+                                        1,                // Z
+                                        0x80808080        // RGBAQ
                                         );
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-void graphicsDrawPointer(int x, int y)
+void graphicsDrawPointer(float x, float y)
 {
     gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
     gsKit_prim_sprite_texture(gsGlobal, &check,
@@ -705,14 +709,14 @@ void graphicsDrawPointer(int x, int y)
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
 }
 
-int graphicsGetWidthSubString(const char *str, int n)
+float graphicsGetWidthSubString(const char *str, int n)
 {
     if(!str)
         return 0;
 
     char const *cptr = str;
-    double maxWidth = 0;
-    double lineWidth = 0;
+    float maxWidth = 0;
+    float lineWidth = 0;
     
     while(*cptr && n-- > 0)
     {
@@ -751,7 +755,7 @@ int graphicsGetWidthSubString(const char *str, int n)
     return maxWidth;
 }
 
-int graphicsGetWidth(const char *str)
+float graphicsGetWidth(const char *str)
 {
     if(!str)
         return 0;

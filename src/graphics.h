@@ -23,15 +23,13 @@ typedef enum {
 int initGraphics();
 
 // Draw text at (x,y) with a color
-void graphicsDrawText(int x, int y, graphicsColor_t color, const char *format, ...);
+void graphicsDrawText(float x, float y, graphicsColor_t color, const char *format, ...);
 // Draw centered text at y with a color
-void graphicsDrawTextCentered(int y, graphicsColor_t color, const char *format, ...);
+void graphicsDrawTextCentered(float y, graphicsColor_t color, const char *format, ...);
 // Draw a single character at (x, y) with a color
-void graphicsDrawChar(int x, int y, char c, graphicsColor_t color);
-// Draw transparent box to go behind text for use in a popup menu (not used)
-void graphicsDrawMiniMenuBox(int xsize, int ysize);
+void graphicsDrawChar(float x, float y, char c, graphicsColor_t color);
 // Draw loading bar at (x,y). Progress must be within range [0.0, 1.0].
-void graphicsDrawLoadingBar(int x, int y, float progress);
+void graphicsDrawLoadingBar(float x, float y, float progress);
 // Draw main menu graphics with activeItem being highlighted
 void graphicsDrawMainMenu(int activeItem);
 // Draw device menu with activeItem being highlighted
@@ -39,18 +37,18 @@ void graphicsDrawDeviceMenu(int activeItem);
 // Draw about/credits screen
 void graphicsDrawAboutPage();
 // Draw selection pointer at (x,y)
-void graphicsDrawPointer(int x, int y);
+void graphicsDrawPointer(float x, float y);
 // Draw blue translucent rectangular box
-void graphicsDrawPromptBox(int width, int height);
+void graphicsDrawPromptBox(float width, float height);
 // Draw solid black rectangular box
-void graphicsDrawPromptBoxBlack(int width, int height);
+void graphicsDrawPromptBoxBlack(float width, float height);
 // Draw a quad
 void graphicsDrawQuad(float x, float y, float xsize, float ysize, graphicsColor_t color);
 
 // Get total width of characters in string
-int graphicsGetWidth(const char *str);
+float graphicsGetWidth(const char *str);
 // Get total width of first n characters in string
-int graphicsGetWidthSubString(const char *str, int n);
+float graphicsGetWidthSubString(const char *str, int n);
 // Get number of bytes representing the symbol starting at &str[index]
 // An ASCII character is 1 byte, a special sequence is >1 bytes, etc.
 // Ex: ("ABC{SQUARE}", 0) == 1 byte, ("ABC{SQUARE}", 3) == 8
