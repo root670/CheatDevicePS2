@@ -477,7 +477,7 @@ int savesCopySavePrompt(gameSave_t *save)
     int ret = displayPromptMenu(items, numDevices, promptText);
 
     if(ret >= 0)
-    return doCopy(currentDevice, devices[ret], save);
+        return doCopy(currentDevice, devices[ret], save);
     else
         return 0;
 }
