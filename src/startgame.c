@@ -50,7 +50,7 @@ extern int _bootstrap_elf_size;
 
 static int discPrompt()
 {
-    char *items[] = {"Start Game", "Cancel"};
+    const char *items[] = {"Start Game", "Cancel"};
     char *activeGameTitle = cheatsGetActiveGameTitle();
     char promptText[128];
 

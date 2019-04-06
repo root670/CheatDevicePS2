@@ -290,7 +290,7 @@ void displayContextMenu(int menuID)
 
     if(menuID == MENU_GAMES)
     {
-        char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
+        const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
         ret = displayPromptMenu(items, 4, "Game Options");
 
         if(ret == 0)
@@ -299,7 +299,7 @@ void displayContextMenu(int menuID)
             cheatsRenameGame();
         else if(ret == 2)
         {
-            char *items2[] = {"Yes", "No"};
+            const char *items2[] = {"Yes", "No"};
             int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
 
             if(choice == 0)
@@ -311,7 +311,7 @@ void displayContextMenu(int menuID)
     {
         if(cheatsGetNumCheats() > 0)
         {
-            char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
+            const char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
             ret = displayPromptMenu(items, 5, "Cheat Options");
 
             if(ret == 0)
@@ -322,7 +322,7 @@ void displayContextMenu(int menuID)
                 cheatsRenameCheat();
             else if(ret == 3)
             {
-                char *items2[] = {"Yes", "No"};
+                const char *items2[] = {"Yes", "No"};
                 int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this cheat?");
 
                 if(choice == 0)
@@ -331,7 +331,7 @@ void displayContextMenu(int menuID)
         }
         else
         {
-            char *items[] = {"Add Cheat", "Cancel"};
+            const char *items[] = {"Add Cheat", "Cancel"};
             ret = displayPromptMenu(items, 2, "Cheat Options");
 
             if(ret == 0)
@@ -343,7 +343,7 @@ void displayContextMenu(int menuID)
     {
         if(cheatsGetNumCodeLines() > 0)
         {
-            char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
+            const char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
             ret = displayPromptMenu(items, 4, "Code Options");
 
             if(ret == 0)
@@ -352,7 +352,7 @@ void displayContextMenu(int menuID)
                 cheatsEditCodeLine();
             else if(ret == 2)
             {
-                char *items2[] = {"Yes", "No"};
+                const char *items2[] = {"Yes", "No"};
                 int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
 
                 if(choice == 0)
@@ -361,7 +361,7 @@ void displayContextMenu(int menuID)
         }
         else
         {
-            char *items[] = {"Add Line", "Cancel"};
+            const char *items[] = {"Add Line", "Cancel"};
             ret = displayPromptMenu(items, 2, "Code Options");
 
             if(ret == 0)
@@ -371,7 +371,7 @@ void displayContextMenu(int menuID)
 
     else if(menuID == MENU_BOOT)
     {
-        char *items[] = {"Edit Path", "Cancel"};
+        const char *items[] = {"Edit Path", "Cancel"};
         ret = displayPromptMenu(items, 2, "Boot Options");
 
         if(ret == 0)
@@ -817,7 +817,7 @@ int displayExistingCodeEditMenu(u64 *code)
     return displayCodeEditMenu(code, 0);
 }
 
-int displayPromptMenu(char **items, int numItems, const char *header)
+int displayPromptMenu(const char **items, int numItems, const char *header)
 {   
     if(!items || numItems <= 0 || !header)
         return -1;
@@ -883,7 +883,7 @@ int displayPromptMenu(char **items, int numItems, const char *header)
 
 int displayError(const char *error)
 {
-    char *items[] = {"OK"};
+    const char *items[] = {"OK"};
     return displayPromptMenu(items, 1, error);
 }
 

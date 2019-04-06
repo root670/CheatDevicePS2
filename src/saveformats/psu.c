@@ -34,7 +34,7 @@ int createPSU(gameSave_t *save, device_t src)
     
     if(fioGetstat(psuPath, &stat) == 0)
     {
-        char *items[] = {"Yes", "No"};
+        const char *items[] = {"Yes", "No"};
         int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
         
         if(choice == 1)
@@ -135,7 +135,7 @@ int extractPSU(gameSave_t *save, device_t dst)
     // Prompt user to overwrite save if it already exists
     if(ret == -4)
     {
-        char *items[] = {"Yes", "No"};
+        const char *items[] = {"Yes", "No"};
         int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
         if(choice == 1)
         {

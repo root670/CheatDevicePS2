@@ -122,7 +122,7 @@ static saveHandler_t *getSaveHandler(const char *path)
 // Display menu to choose save handler.
 static saveHandler_t *promptSaveHandler()
 {
-    char *items[] = {PSUHandler.name, CBSHandler.name, ZIPHandler.name};
+    const char *items[] = {PSUHandler.name, CBSHandler.name, ZIPHandler.name};
     int choice = displayPromptMenu(items, 3, "Choose save format");
     
     if(choice == 0)
@@ -453,9 +453,9 @@ int savesCopySavePrompt(gameSave_t *save)
     const char *mc2        = "Memory Card (Slot 2)";
     const char *flashdrive = "Flash Drive";
 
-    const int devices[2];
+    int devices[2];
     const char *items[2];
-    int numDevices;
+    int numDevices = -1;
     if(currentDevice & (MC_SLOT_1|MC_SLOT_2))
     {
         devices[0] = FLASH_DRIVE;

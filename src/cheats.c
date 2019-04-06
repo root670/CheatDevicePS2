@@ -234,7 +234,7 @@ static int promptSaveToFormat()
     }
 
     // Build menu
-    char **items = calloc(numHandlers + 1, sizeof(char *));
+    const char **items = calloc(numHandlers + 1, sizeof(char *));
     items[numHandlers] = "Cancel";
     for(i = 0; i < numHandlers; i++)
         items[i] = handlersWithSaveSupport[i].name;

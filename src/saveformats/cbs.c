@@ -174,7 +174,7 @@ int extractCBS(gameSave_t *save, device_t dst)
     if(ret == -4)
     {
         // Prompt user to overwrite save if it already exists
-        char *items[] = {"Yes", "No"};
+        const char *items[] = {"Yes", "No"};
         int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
         if(choice == 1)
         {
@@ -269,7 +269,7 @@ int createCBS(gameSave_t *save, device_t src)
     
     if(fioGetstat(cbsPath, &stat) == 0)
     {
-        char *items[] = {"Yes", "No"};
+        const char *items[] = {"Yes", "No"};
         int choice = displayPromptMenu(items, 2, "Save already exists. Do you want to overwrite it?");
         
         if(choice == 1)
