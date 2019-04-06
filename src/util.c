@@ -420,7 +420,7 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
     int row = 0;
     int column = 0;
     int upper = 0;
-    float width = 0;
+    float width = KEYBOARD_COLUMNS*22 + 10;
     int ret = -1;
     while(ret < 0)
     {
@@ -553,9 +553,6 @@ int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const cha
         int newWidth = textWidth + CURSOR_WIDTH + 10;
         if(newWidth > width)
             width = newWidth;
-
-        if(width < 345)
-            width = KEYBOARD_COLUMNS*22 + 10;
 
         graphicsDrawPromptBoxBlack(width, 8*22 + 10);
 
