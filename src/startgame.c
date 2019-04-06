@@ -157,7 +157,6 @@ void startgameExecute(char *path)
     void *bootstrapEntrypoint = loadBootstrap();
     
     padPortClose(0, 0);
-    padReset();
     
     fioExit();
     SifInitRpc(0);

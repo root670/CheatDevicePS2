@@ -1,3 +1,3 @@
 #!/bin/bash
-DOCKER_IMAGE=root670/ps2dev-gskit
-exec docker run -t --rm -v "$PWD:/src" "$DOCKER_IMAGE" make "$@"
+DOCKER_IMAGE=root670/ps2dev-docker
+exec docker run -t --rm -v "$PWD:/build" "$DOCKER_IMAGE" make "$@"
