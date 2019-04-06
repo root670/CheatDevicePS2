@@ -422,7 +422,7 @@ int cheatsAddGame()
         return 0;
     }
 
-    if(displayInputMenu(newGame->title, 80, NULL, "Enter Game Title") == 0)
+    if(displayTextEditMenu(newGame->title, 80, NULL, "Enter Game Title") == 0)
     {
         objectPoolRelease(OBJECTPOOLTYPE_GAME, newGame);
         return 0;
@@ -474,7 +474,7 @@ int cheatsRenameGame()
     if(!selectedGame)
         return 0;
     
-    if(displayInputMenu(title, 80, selectedGame->title, "Enter Game Title") == 0)
+    if(displayTextEditMenu(title, 80, selectedGame->title, "Enter Game Title") == 0)
         return 0;
 
     unsigned int hash = hashFunction(title, strlen(title));
@@ -549,7 +549,7 @@ int cheatsAddCheat()
         return 0;
     }
 
-    if(displayInputMenu(newCheat->title, 80, NULL, "Enter Cheat Title") == 0)
+    if(displayTextEditMenu(newCheat->title, 80, NULL, "Enter Cheat Title") == 0)
     {
         objectPoolRelease(OBJECTPOOLTYPE_CHEAT, newCheat);
         return 0;
@@ -595,7 +595,7 @@ int cheatsRenameCheat()
     if(!selectedCheat)
         return 0;
     
-    if(displayInputMenu(title, 80, selectedCheat->title, "Enter Cheat Title") == 0)
+    if(displayTextEditMenu(title, 80, selectedCheat->title, "Enter Cheat Title") == 0)
         return 0;
 
     strncpy(selectedCheat->title, title, 80);

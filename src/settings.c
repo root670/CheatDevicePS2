@@ -223,7 +223,7 @@ void settingsRenameBootPath()
         if(!bootPath)
             return;
         
-        if(displayInputMenu(newPath, sizeof(newPath), menuGetActiveItemText(), "Edit Boot Path") == 0)
+        if(displayTextEditMenu(newPath, sizeof(newPath), menuGetActiveItemText(), "Edit Boot Path") == 0)
             return;
 
         free(*bootPath);

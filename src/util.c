@@ -404,7 +404,7 @@ static const char *KEYBOARD_CHARS_UPPER = \
 #define CANCEL_ROW (ACCEPT_ROW + 1)
 #define CURSOR_WIDTH 2
 
-int displayInputMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
+int displayTextEditMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt)
 {
     menuSetTempHelpTickerText(HELP_TICKER_INPUT_MENU);
 
