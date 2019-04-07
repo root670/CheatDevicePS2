@@ -156,48 +156,43 @@ static void findEnableCodes()
 
 int cheatsLoadHistory()
 {
-    int i;
-    FILE *historyFile;
-    size_t historyLength;
-    unsigned int lastGameHash, cheatHash;
-    menuItem_t *lastGameMenu;
-    cheatsCheat_t *cheat;
-
     if(!gameHashes)
         return 0;
 
-    historyFile = fopen("CheatHistory.bin", "rb");
+    FILE *historyFile = fopen("CheatHistory.bin", "rb");
+    if(!historyFile)
+        return 0;
 
-    if(historyFile)
+    fseek(historyFile, 0, SEEK_END);
+    size_t historyLength = ftell(historyFile);
+    fseek(historyFile, 0, SEEK_SET);
+
+    unsigned int lastGameHash;
+    fread(&lastGameHash, 4, 1, historyFile);
+    menuItem_t *lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
+
+    if(lastGameMenu != NULL)
     {
-        fseek(historyFile, 0, SEEK_END);
-        historyLength = ftell(historyFile);
-        fseek(historyFile, 0, SEEK_SET);
+        cheatsGame_t *game = (cheatsGame_t *)lastGameMenu->extra;
+        cheatsSetActiveGame(game);
+        populateCheatHashTable(game->numCheats);
 
-        fread(&lastGameHash, 4, 1, historyFile);
-        lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
-
-        if(lastGameMenu != NULL)
+        int i;
+        for(i = 0; i < historyLength - 4; i+= 4)
         {
-            cheatsGame_t *game =(cheatsGame_t *) lastGameMenu->extra;
-            cheatsSetActiveGame(game);
-            populateCheatHashTable(game->numCheats);
+            unsigned int cheatHash;
+            fread(&cheatHash, 4, 1, historyFile);
+            cheatsCheat_t *cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
 
-            for(i = 0; i < historyLength - 4; i+= 4)
-            {
-                fread(&cheatHash, 4, 1, historyFile);
-                cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
-
-                if(cheat != NULL && cheat->type != CHEAT_ENABLECODE)
-                    cheatsToggleCheat(cheat);
-            }
-
-            menuSetActiveItem(lastGameMenu);
-            hashDestroyTable(cheatHashes);
+            if(cheat != NULL && cheat->type != CHEAT_ENABLECODE)
+                cheatsToggleCheat(cheat);
         }
 
-        fclose(historyFile);
+        menuSetActiveItem(lastGameMenu);
+        hashDestroyTable(cheatHashes);
     }
+
+    fclose(historyFile);
 
     return 1;
 }
@@ -226,6 +221,7 @@ static int promptSaveToFormat()
     int ret = 1;
     cheatDatabaseHandler_t handlersWithSaveSupport[5];
     int numHandlers = 0;
+    
     int i = 0;
     for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
     {
@@ -265,21 +261,19 @@ int cheatsOpenDatabase(const char* path)
     cheatDatabaseHandler_t *handler;
 
     handler = getCheatDatabaseHandler(path);
-
-    if(handler)
-    {
-        gamesHead = handler->open(path, &numGames);
-    }
-    else
+    if(!handler)
     {
         char error[255];
         sprintf(error, "Unsupported cheat database filetype: \"%s\"!", getFileExtension(path));
         displayError(error);
 
         numGames = 0;
+        return 0;
     }
 
+    gamesHead = handler->open(path, &numGames);
     findEnableCodes();
+
     return numGames;
 }
 
@@ -291,130 +285,118 @@ int cheatsSaveDatabase()
     const char *path = settingsGetDatabasePath();
     cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
 
-    if(handler && handler->save)
-    {
-        return handler->save(path, gamesHead);
-    }
-    else if((handler && !handler->save) || !handler)
+    if(!handler || !handler->save)
     {
         displayError("Current cheat format doesn't support saving and needs to be saved\n"
                      "to a new format. Please choose a format on the next screen.");
         return promptSaveToFormat();
     }
 
-    return 1;
+    return handler->save(path, gamesHead);
 }
 
 int cheatsLoadGameMenu()
 {
-    if(gamesHead)
+    if(!gamesHead)
+        return 0;
+
+    cheatsGame_t *game = gamesHead;
+    menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
+    menuItem_t *item = items;
+
+    gameHashes = hashNewTable(numGames);
+    
+    while(game)
     {
-        cheatsGame_t *node = gamesHead;
-        menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
-        menuItem_t *item = items;
-        unsigned int hash;
+        item->type = MENU_ITEM_NORMAL;
+        item->text = game->title;
+        item->extra = game;
 
-        gameHashes = hashNewTable(numGames);
-        
-        while(node)
-        {
-            item->type = MENU_ITEM_NORMAL;
-            item->text = node->title;
-            item->extra = node;
+        unsigned int hash = hashFunction(item->text, strlen(item->text));
+        hashAdd(gameHashes, item, hash);
 
-            hash = hashFunction(item->text, strlen(item->text));
-            hashAdd(gameHashes, item, hash);
-
-            menuInsertItem(item);
-            node = node->next;
-            item++;
-        }
-
-        menuSetDecorationsCB(cheatsDrawStats);
-        menuSetHelpTickerText(HELP_TICKER_GAMES);
-
-        return 1;
+        menuInsertItem(item);
+        game = game->next;
+        item++;
     }
 
-    return 0;
+    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetHelpTickerText(HELP_TICKER_GAMES);
+
+    return 1;
 }
 
 cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
 {
-    if(gamesHead && game)
+    if(!gamesHead || !game)
+        return NULL;
+
+    /* Build the menu */
+    cheatsCheat_t *cheat = game->cheats;
+    menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
+    menuItem_t *item = items;
+
+    while(cheat != NULL)
     {
-        /* Build the menu */
-        cheatsCheat_t *cheat = game->cheats;
-        menuItem_t *items = calloc(game->numCheats, sizeof(menuItem_t));
-        menuItem_t *item = items;
+        if(cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE)
+            item->type = MENU_ITEM_NORMAL;
+        else
+            item->type = MENU_ITEM_HEADER;
 
-        while(cheat != NULL)
-        {
-            if(cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE)
-                item->type = MENU_ITEM_NORMAL;
-            else
-                item->type = MENU_ITEM_HEADER;
+        item->text = cheat->title;
+        item->extra = (void *)cheat;
 
-            item->text = cheat->title;
-            item->extra = (void *)cheat;
+        menuInsertItem(item);
 
-            menuInsertItem(item);
-
-            cheat = cheat->next;
-            item++;
-        }
-
-        menuSetDecorationsCB(cheatsDrawStats);
-        menuSetHelpTickerText(HELP_TICKER_CHEATS);
-
-        return game;
+        cheat = cheat->next;
+        item++;
     }
 
-    return NULL;
+    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetHelpTickerText(HELP_TICKER_CHEATS);
+
+    return game;
 }
 
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
 {
-    if(cheat && game)
+    if(!cheat || !game)
+        return NULL;
+
+    /* Build the menu */
+    menuItem_t *items = calloc(cheat->numCodeLines, sizeof(menuItem_t));
+    menuItem_t *item = items;
+
+    int i;
+    for(i = 0; i < cheat->numCodeLines; i++)
     {
-        /* Build the menu */
-        menuItem_t *items = calloc(cheat->numCodeLines, sizeof(menuItem_t));
-        menuItem_t *item = items;
+        u64 *code = game->codeLines + cheat->codeLinesOffset + i;
+        u32 addr  = (u32)*((u32 *)code);
+        u32 val   = (u32)*((u32 *)code + 1);
 
-        int i;
-        for(i = 0; i < cheat->numCodeLines; i++)
-        {
-            u64 *code = game->codeLines + cheat->codeLinesOffset + i;
-            u32 addr  = (u32)*((u32 *)code);
-            u32 val   = (u32)*((u32 *)code + 1);
+        item->text = malloc(18);
+        snprintf(item->text, 18, "%08X %08X", addr, val);
 
-            item->text = malloc(18);
-            snprintf(item->text, 18, "%08X %08X", addr, val);
+        item->type = MENU_ITEM_NORMAL;
+        item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
 
-            item->type = MENU_ITEM_NORMAL;
-            item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
+        menuInsertItem(item);
 
-            menuInsertItem(item);
-
-            item++;
-        }
-
-        menuSetDecorationsCB(cheatsDrawStats);
-
-        if(cheat->numCodeLines > 0)
-            menuSetHelpTickerText(HELP_TICKER_CODES_NORMAL);
-        else
-            menuSetHelpTickerText(HELP_TICKER_CODES_NONE);
-
-        return cheat;
+        item++;
     }
 
-    return NULL;
+    menuSetDecorationsCB(cheatsDrawStats);
+
+    if(cheat->numCodeLines > 0)
+        menuSetHelpTickerText(HELP_TICKER_CODES_NORMAL);
+    else
+        menuSetHelpTickerText(HELP_TICKER_CODES_NONE);
+
+    return cheat;
 }
 
 int cheatsAddGame()
 {
-    cheatsGame_t *node = gamesHead;
     cheatsGame_t *newGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
     if(!newGame)
     {
@@ -422,13 +404,14 @@ int cheatsAddGame()
         return 0;
     }
 
-    if(displayTextEditMenu(newGame->title, 80, NULL, "Enter Game Title") == 0)
+    if(!displayTextEditMenu(newGame->title, 80, NULL, "Enter Game Title"))
     {
         objectPoolRelease(OBJECTPOOLTYPE_GAME, newGame);
         return 0;
     }
 
-    if(node == NULL)
+    cheatsGame_t *node = gamesHead;
+    if(!node)
     {
         gamesHead = newGame;
     }
@@ -442,6 +425,7 @@ int cheatsAddGame()
             return 0;
         }
 
+        // Insert at end of game list
         while(node->next)
             node = node->next;
 
@@ -450,12 +434,14 @@ int cheatsAddGame()
 
     numGames++;
 
+    // Add game to menu
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
     item->type = MENU_ITEM_NORMAL;
     item->text = strdup(newGame->title);
     item->extra = newGame;
     menuInsertItem(item);
     menuSetActiveItem(item);
+
     populateGameHashTable();
     cheatDatabaseDirty = 1;
     
@@ -464,21 +450,18 @@ int cheatsAddGame()
 
 int cheatsRenameGame()
 {
-    char title[80];
-
     if(menuGetActive() != MENU_GAMES)
         return 0;
 
     cheatsGame_t *selectedGame = menuGetActiveItemExtra();
-
     if(!selectedGame)
         return 0;
     
-    if(displayTextEditMenu(title, 80, selectedGame->title, "Enter Game Title") == 0)
+    char title[80];
+    if(!displayTextEditMenu(title, 80, selectedGame->title, "Enter Game Title"))
         return 0;
 
     unsigned int hash = hashFunction(title, strlen(title));
-    
     if(hashFind(gameHashes, hash))
     {
         displayError("Game title already exists!");
@@ -487,6 +470,7 @@ int cheatsRenameGame()
 
     strncpy(selectedGame->title, title, 80);
     menuRenameActiveItem(selectedGame->title);
+
     populateGameHashTable();
     cheatDatabaseDirty = 1;
 
@@ -503,6 +487,7 @@ int cheatsDeleteGame()
 
     if(selectedGame == gamesHead)
     {
+        // Deleting first game
         gamesHead = selectedGame->next;
     }
     else
@@ -514,6 +499,7 @@ int cheatsDeleteGame()
         game->next = selectedGame->next;
     }
 
+    // Delete game's cheats
     cheatsCheat_t *cheat = selectedGame->cheats;
     while(cheat != NULL)
     {
@@ -522,6 +508,7 @@ int cheatsDeleteGame()
         cheat = next;
     }
 
+    // Delete game's code lines
     if(selectedGame->codeLines != NULL)
         free(selectedGame->codeLines);
 
@@ -541,7 +528,6 @@ int cheatsGetNumGames()
 
 int cheatsAddCheat()
 {
-    cheatsGame_t *game = menuGetActiveExtra();
     cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
     if(!newCheat)
     {
@@ -555,14 +541,16 @@ int cheatsAddCheat()
         return 0;
     }
 
-    if(game->cheats == NULL)
+    cheatsGame_t *game = menuGetActiveExtra();
+    if(!game->cheats)
     {
+        // Add first cheat
         game->cheats = newCheat;
     }
     else
     {
+        // Insert at end of list
         cheatsCheat_t *node = game->cheats;
-
         while(node->next)
             node = node->next;
 
@@ -572,12 +560,14 @@ int cheatsAddCheat()
     game->numCheats++;
     newCheat->codeLinesOffset = game->codeLinesUsed;
 
+    // Add cheat to menu
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
     item->type = MENU_ITEM_NORMAL;
     item->text = strdup(newCheat->title);
     item->extra = newCheat;
     menuInsertItem(item);
     menuSetActiveItem(item);
+    
     cheatDatabaseDirty = 1;
 
     return 1;
@@ -591,7 +581,6 @@ int cheatsRenameCheat()
         return 0;
 
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
-
     if(!selectedCheat)
         return 0;
     
@@ -633,6 +622,7 @@ int cheatsDeleteCheat()
         cheat->next = selectedCheat->next;
     }
 
+    // Move all subsequent cheat's code lines into the space occupied by this cheat's code lines.
     cheatsCheat_t *cheat = selectedCheat->next;
     while(cheat != NULL)
     {
@@ -664,13 +654,13 @@ int cheatsAddCodeLine()
     if(displayNewCodeEditMenu(&newCode) == 0)
         return 0;
 
-    cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
     if(!game)
         return 0;
 
     if(!game->codeLines)
     {
+        // First code line
         game->codeLinesCapacity = 1;
         game->codeLines = calloc(1, sizeof(u64));
     }
@@ -680,6 +670,8 @@ int cheatsAddCodeLine()
         game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
     }
 
+    // Move all subsequent cheat's code lines to make room for the new code
+    cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsCheat_t *cheatNext = cheat->next;
     while(cheatNext != NULL)
     {
@@ -687,7 +679,6 @@ int cheatsAddCodeLine()
         cheatNext = cheatNext->next;
     }
 
-    // Shift all code lines down 1 line
     u64 *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
     u64 *dst = src + 1;
     memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(u64));
@@ -697,6 +688,7 @@ int cheatsAddCodeLine()
     cheat->numCodeLines++;
     game->codeLinesUsed++;
 
+    // Reload code menu
     menuRemoveAllItems();
     cheatsLoadCodeMenu(cheat, game);
     menuGoToBottom();
@@ -707,23 +699,23 @@ int cheatsAddCodeLine()
 
 int cheatsEditCodeLine()
 {
-    char newCodeLine[18];
 
     if(menuGetActive() != MENU_CODES)
         return 0;
 
     u64 *selectedCode = menuGetActiveItemExtra();
-
     if(!selectedCode)
         return 0;
 
     lastSelectedCode = *selectedCode;
 
-    if(displayExistingCodeEditMenu(selectedCode) == 0)
+    if(!displayExistingCodeEditMenu(selectedCode))
         return 0;
     
     u32 addr = (u32)*((u32 *)selectedCode);
     u32 val  = (u32)*((u32 *)selectedCode + 1);
+    
+    char newCodeLine[18];
     snprintf(newCodeLine, 18, "%08X %08X", addr, val);
     menuRenameActiveItem(newCodeLine);
     cheatDatabaseDirty = 1;
@@ -737,11 +729,12 @@ int cheatsDeleteCodeLine()
     if(menuGetActive() != MENU_CODES)
         return 0;
 
-    cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
     if(!game)
         return 0;
 
+    // Move all subsequent cheat's code lines to fill in the space occupied by this code
+    cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsCheat_t *cheatNext = cheat->next;
     while(cheatNext != NULL)
     {
@@ -749,7 +742,6 @@ int cheatsDeleteCodeLine()
         cheatNext = cheatNext->next;
     }
 
-    // Shift all code lines up 1 line
     u64 *dst = (u64 *)menuGetActiveItemExtra();
     u64 *src = dst + 1;
     size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(u64);
@@ -792,76 +784,95 @@ int cheatsGetNumEnabledCheats()
     return numEnabledCheats;
 }
 
-int cheatsToggleCheat(cheatsCheat_t *cheat)
+void enableAllEnableCodes(cheatsGame_t *game)
 {
-    if(cheat && cheat->type != CHEAT_HEADER)
+    if(!game)
+        return;
+
+    cheatsCheat_t *cheat = game->cheats;
+    while(cheat)
     {
-        if(!cheat->enabled)
+        if(cheat->type == CHEAT_ENABLECODE)
         {
-            if((numEnabledCodes + cheat->numCodeLines) >= 250)
-            {
-                displayError("Too many codes enabled. Try disabling some.");
-                return 0;
-            }
-            else if(cheat->numCodeLines == 0)
-            {
-                displayError("This cheat doesn't contain any code lines.\nPlease add some on the next screen.");
-                menuSetActive(MENU_CODES);
-                return 0;
-            }
-            
             cheat->enabled = 1;
             numEnabledCheats++;
             numEnabledCodes += cheat->numCodeLines;
         }
-        else
+
+        cheat = cheat->next;
+    }
+}
+
+void disableAllEnableCodes(cheatsGame_t *game)
+{
+    if(!game)
+        return;
+
+    cheatsCheat_t *cheat = activeGame->cheats;
+    while(cheat)
+    {
+        if(cheat->type == CHEAT_ENABLECODE)
         {
             cheat->enabled = 0;
             numEnabledCheats--;
             numEnabledCodes -= cheat->numCodeLines;
-
-            if(numEnabledCheats == 1)
-            {
-                // If Enable Code is enabled, disable it
-                cheatsCheat_t *cheat = activeGame->cheats;
-                while(cheat)
-                {
-                    if(cheat->type == CHEAT_ENABLECODE)
-                    {
-                        printf("Enable Code found: %s\n", cheat->title);
-                        cheat->enabled = 0;
-                        numEnabledCheats--;
-                        numEnabledCodes -= cheat->numCodeLines;
-                        break;
-                    }
-
-                    cheat = cheat->next;
-                }
-            }
-
-            if(numEnabledCheats == 0)
-            {
-                activeGame = NULL;
-            }
         }
+
+        cheat = cheat->next;
+    }
+}
+
+int cheatsToggleCheat(cheatsCheat_t *cheat)
+{
+    if(!cheat || cheat->type == CHEAT_HEADER)
+        return 0;
+
+    if(!cheat->enabled)
+    {
+        if((numEnabledCodes + cheat->numCodeLines) >= 250)
+        {
+            displayError("Too many codes enabled. Try disabling some.");
+            return 0;
+        }
+        else if(cheat->numCodeLines == 0)
+        {
+            displayError("This cheat doesn't contain any code lines.\nPlease add some on the next screen.");
+            menuSetActive(MENU_CODES);
+            return 0;
+        }
+        
+        cheat->enabled = 1;
+        numEnabledCheats++;
+        numEnabledCodes += cheat->numCodeLines;
     }
     else
-        return 0;
+    {
+        cheat->enabled = 0;
+        numEnabledCheats--;
+        numEnabledCodes -= cheat->numCodeLines;
+
+        if(numEnabledCheats == 1)
+        {
+            // If Enable Code is enabled, disable it
+            disableAllEnableCodes(activeGame);
+        }
+
+        if(numEnabledCheats == 0)
+            activeGame = NULL;
+    }
+
     return 1;
 }
 
 void cheatsDrawStats()
 {
-    if(activeGame && activeGame->title)
-    {
-        if(numEnabledCheats > 0)
-        {
-            if(numEnabledCheats == 1)
-                graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheat", numEnabledCheats);
-            else
-                graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheats", numEnabledCheats);
-        }
-    }
+    if(!activeGame || !activeGame->title || numEnabledCheats == 0)
+        return;
+
+    if(numEnabledCheats > 1)
+        graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheats", numEnabledCheats);
+    else
+        graphicsDrawText(482, 25, COLOR_WHITE, "%i active cheat", numEnabledCheats);
 }
 
 int cheatsIsActiveGame(const cheatsGame_t *game)
@@ -871,48 +882,36 @@ int cheatsIsActiveGame(const cheatsGame_t *game)
 
 void cheatsDeactivateGame(cheatsGame_t *game)
 {
-    if(game)
-    {
-        cheatsCheat_t *cheat = game->cheats;
-        while(cheat)
-        {
-            cheat->enabled = 0;
-            cheat = cheat->next;
-        }
+    if(!game)
+        return;
 
-        if(game == activeGame)
-        {
-            numEnabledCheats = 0;
-            numEnabledCodes = 0;
-            activeGame = NULL;
-        }
+    cheatsCheat_t *cheat = game->cheats;
+    while(cheat)
+    {
+        cheat->enabled = 0;
+        cheat = cheat->next;
+    }
+
+    if(game == activeGame)
+    {
+        numEnabledCheats = 0;
+        numEnabledCodes = 0;
+        activeGame = NULL;
     }
 }
 
 int cheatsSetActiveGame(cheatsGame_t *game)
 {
-    /* Disable all active cheats if a new game was selected */
-    if(game != activeGame)
-    {
-        cheatsDeactivateGame(activeGame);
+    if(game == activeGame)
+        return 0;
 
-        /* Enable enable code if one exists. */
-        cheatsCheat_t *cheat = game->cheats;
-        while(cheat)
-        {
-            if(cheat->type == CHEAT_ENABLECODE)
-            {
-                printf("Enable Code found: %s\n", cheat->title);
-                cheat->enabled = 1;
-                numEnabledCheats++;
-                numEnabledCodes += cheat->numCodeLines;
-            }
+    // Disable all active cheats for previous active game
+    cheatsDeactivateGame(activeGame);
 
-            cheat = cheat->next;
-        }
+    // Enable enable code for the new game if one exists
+    enableAllEnableCodes(game);
 
-        activeGame = game;
-    }
+    activeGame = game;
 
     return 1;
 }
@@ -991,7 +990,7 @@ static void readCodes(cheatsCheat_t *cheats)
                 addr = (u32)*((u32 *)code);
                 val  = (u32)*((u32 *)code + 1);
 
-                if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook == 1)
+                if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
                 {
                     printf("hook: %08X %08X\n", addr, val);
                     add_hook(addr, val);
@@ -1002,6 +1001,7 @@ static void readCodes(cheatsCheat_t *cheats)
                     add_code(addr, val);
                 }
 
+                // Prevent second line of a 2-line code from being treated as a hook if it starts with a 9
                 if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
                     nextCodeCanBeHook = 0;
                 else
@@ -1015,22 +1015,22 @@ static void readCodes(cheatsCheat_t *cheats)
 
 void cheatsInstallCodesForEngine()
 {
-    if(activeGame != NULL)
+    if(!activeGame)
+        return;
+
+    SetupERL();
+
+    historyFile = fopen("CheatHistory.bin", "wb");
+    if(historyFile)
     {
-        SetupERL();
-
-        historyFile = fopen("CheatHistory.bin", "wb");
-        if(historyFile)
-        {
-            unsigned int gameHash = hashFunction(activeGame->title, strlen(activeGame->title));
-            fwrite(&gameHash, 4, 1, historyFile);
-        }
-
-        printf("Setting up codes for code engine\n");
-        readCodes(activeGame->cheats);
-        printf("Done setting up codes\n");
-
-        if(historyFile)
-            fclose(historyFile);
+        unsigned int gameHash = hashFunction(activeGame->title, strlen(activeGame->title));
+        fwrite(&gameHash, 4, 1, historyFile);
     }
+
+    printf("Setting up codes for code engine\n");
+    readCodes(activeGame->cheats);
+    printf("Done setting up codes\n");
+
+    if(historyFile)
+        fclose(historyFile);
 }
