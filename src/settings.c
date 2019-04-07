@@ -95,7 +95,7 @@ int killSettings()
 
 int settingsSave()
 {
-    if(!initialized || !settingsChanges)
+    if(!initialized || !settingsChanged)
         return 0;
 
     FILE *iniFile = fopen(settingsPath, "w");
