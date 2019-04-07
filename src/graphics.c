@@ -776,13 +776,22 @@ int graphicsGetDisplayHeight()
 
 void graphicsDrawAboutPage()
 {
-    char msg[200];
+    char msg[256];
 
-    snprintf(msg, 200, "Cheat Device\n" GIT_VERSION 
-                       "\nCompiled " __DATE__ " " __TIME__
-                       "\n\nTotal Games: %d\n"
-                       "Database: %s",
-                       cheatsGetNumGames(), settingsGetDatabasePath());
+    const char *readOnlyPath = settingsGetReadOnlyDatabasePath();
+    const char *readWritePath = settingsGetReadWriteDatabasePath();
+
+    snprintf(msg, sizeof(msg),
+        "Cheat Device " GIT_VERSION "\n"
+        "Compiled " __DATE__ " " __TIME__ "\n"
+        "\n"
+        "Total Games: %d\n"
+        "Read-Only Database: %s\n"
+        "Read/Write Database: %s",
+        cheatsGetNumGames(),
+        readOnlyPath ? readOnlyPath : "(none)",
+        readWritePath ? readWritePath : "(none)"
+    );
 
     displayError(msg);
 }

@@ -236,17 +236,20 @@ static int promptSaveToFormat()
         items[i] = handlersWithSaveSupport[i].name;
     
     // Display menu
-    int option = displayPromptMenu(items, numHandlers + 1, "Save Cheat Database\nChoose cheat database format");
+    int option = displayPromptMenu(items, numHandlers + 1,
+        "Save Cheat Database\n"
+        "Choose cheat database format");
+    
     if(option < numHandlers)
     {
         cheatDatabaseHandler_t *handler = &handlersWithSaveSupport[option];
         
         // Change file extension
-        char *basename = getFileBasename(settingsGetDatabasePath());
+        char *basename = getFileBasename(settingsGetReadWriteDatabasePath());
         char newPath[100];
         snprintf(newPath, 100, "%s.%s", basename, handler->extension);
         free(basename);
-        settingsSetDatabasePath(newPath);
+        settingsSetReadWriteDatabasePath(newPath);
 
         ret = handler->save(newPath, gamesHead);
     }
@@ -258,20 +261,44 @@ static int promptSaveToFormat()
 // CheatDB --> Game --> Cheat --> Code
 int cheatsOpenDatabase(const char* path)
 {
-    cheatDatabaseHandler_t *handler;
-
-    handler = getCheatDatabaseHandler(path);
+    cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
     if(!handler)
     {
         char error[255];
         sprintf(error, "Unsupported cheat database filetype: \"%s\"!", getFileExtension(path));
         displayError(error);
 
-        numGames = 0;
         return 0;
     }
 
-    gamesHead = handler->open(path, &numGames);
+    unsigned int numGamesLoaded;
+    cheatsGame_t *loaded = handler->open(path, &numGamesLoaded);
+
+    if(!loaded || numGamesLoaded <= 0)
+        return 0;
+
+    if(!gamesHead)
+    {
+        printf(__FUNCTION__ "gamesHead == NULL\n");
+        // No games had previously been loaded, so pass back the list of
+        // games we just loaded.
+        gamesHead = loaded;
+    }
+    else
+    {
+        printf(__FUNCTION__": Appending newly loaded games to end of list passed in\n");
+        // Append list of games we just loaded to the tail of the list that
+        // was passed in.
+        cheatsGame_t *game = gamesHead;
+        while(game->next)
+            game = game->next;
+
+        printf(__FUNCTION__ ": Previous list ended with %s\n", game->title);
+        game->next = loaded;
+    }
+
+    numGames += numGamesLoaded;
+
     findEnableCodes();
 
     return numGames;
@@ -282,7 +309,13 @@ int cheatsSaveDatabase()
     if(!cheatDatabaseDirty)
         return 1;
     
-    const char *path = settingsGetDatabasePath();
+    const char *path = settingsGetReadWriteDatabasePath();
+    if(!path)
+    {
+        // TODO: Prompt for new location
+        displayError("No read-write save handler is available!!!\nDefaulting to one...");
+        path = "CheatDatabase_RW.txt";
+    }
     cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
 
     if(!handler || !handler->save)
@@ -297,6 +330,9 @@ int cheatsSaveDatabase()
 
 int cheatsLoadGameMenu()
 {
+    menuSetHelpTickerText(HELP_TICKER_GAMES);
+    menuSetDecorationsCB(cheatsDrawStats);
+
     if(!gamesHead)
         return 0;
 
@@ -319,9 +355,6 @@ int cheatsLoadGameMenu()
         game = game->next;
         item++;
     }
-
-    menuSetDecorationsCB(cheatsDrawStats);
-    menuSetHelpTickerText(HELP_TICKER_GAMES);
 
     return 1;
 }
@@ -699,7 +732,6 @@ int cheatsAddCodeLine()
 
 int cheatsEditCodeLine()
 {
-
     if(menuGetActive() != MENU_CODES)
         return 0;
 
@@ -836,7 +868,9 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
         }
         else if(cheat->numCodeLines == 0)
         {
-            displayError("This cheat doesn't contain any code lines.\nPlease add some on the next screen.");
+            displayError(
+                "This cheat doesn't contain any code lines.\n"
+                "Please add some on the next screen.");
             menuSetActive(MENU_CODES);
             return 0;
         }

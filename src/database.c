@@ -1,15 +1,16 @@
-#include "database.h"
-#include "cheats.h"
-#include "graphics.h"
-#include "zlib.h"
-#include "util.h"
-#include "objectpool.h"
 #include <string.h>
 #include <malloc.h>
 #include <stdio.h>
 #include <time.h>
 #include <kernel.h>
 #include <tamtypes.h>
+
+#include "database.h"
+#include "cheats.h"
+#include "graphics.h"
+#include "zlib.h"
+#include "util.h"
+#include "objectpool.h"
 
 #define DBVERSION 0x02
 
@@ -145,9 +146,7 @@ cheatsGame_t* cdbOpen(const char *path, unsigned int *numGames)
     unsigned long decompressedSize;
     FILE *dbFile;
 
-    if(!path)
-        return NULL;
-    if(!numGames)
+    if(!path || !numGames)
         return NULL;
     
     dbFile = fopen(path, "rb");
