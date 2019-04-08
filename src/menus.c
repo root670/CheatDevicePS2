@@ -637,7 +637,8 @@ static void drawMenuItems()
         {
             menuItem_t *item = activeMenu->items[idx];
 
-            if(item->type == MENU_ITEM_NORMAL)
+            if(item->type == MENU_ITEM_NORMAL ||
+               item->type == MENU_ITEM_NORMAL_RW_ICON)
             {
                 if(activeMenu->identifier == MENU_CHEATS && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
                     graphicsDrawText(50, y, COLOR_YELLOW, item->text);
@@ -649,6 +650,12 @@ static void drawMenuItems()
                 }
                 else
                     graphicsDrawText(50, y, COLOR_WHITE, item->text);
+
+                if(item->type == MENU_ITEM_NORMAL_RW_ICON)
+                {
+                    int x = graphicsGetDisplayWidth() - 100;
+                    graphicsDrawText(x, y, COLOR_GREEN, "(RW)");
+                }
             }
             else
             {

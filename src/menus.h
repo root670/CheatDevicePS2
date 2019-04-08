@@ -22,6 +22,7 @@ typedef enum {
 
 typedef enum {
     MENU_ITEM_NORMAL,
+    MENU_ITEM_NORMAL_RW_ICON, // Normal item with RW icon displayed next to it.
     MENU_ITEM_HEADER
 } menuItemType_t;
 

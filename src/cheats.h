@@ -44,6 +44,7 @@ typedef struct cheatsCheat {
 typedef struct cheatsGame {
     char title[81];
     u16 numCheats;
+    u8 readOnly;
     cheatsCheat_t *cheats;
 
     u64 *codeLines;
@@ -56,7 +57,8 @@ typedef struct cheatsGame {
 int killCheats();
 
 // Open a cheat database and load cheats.
-int cheatsOpenDatabase(const char* path);
+// If readOnly is neq 0, games loaded from the database will not be modifiable.
+int cheatsOpenDatabase(const char* path, int readOnly);
 // Save cheat database to a file.
 int cheatsSaveDatabase();
 // Re-enable previously used cheats
