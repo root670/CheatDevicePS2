@@ -224,7 +224,7 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
     }
 
     // Read all .txt files in the archive
-    cheatsGame_t *gamesHead;
+    cheatsGame_t *gamesHead = NULL;
     unsigned int numGamesReadTotal = 0;
     int hasNextFile = UNZ_OK;
     while(hasNextFile == UNZ_OK)
