@@ -279,27 +279,35 @@ int cheatsOpenDatabase(const char* path, int readOnly)
 
     if(readOnly)
     {
-        // Set read-only flag.
+        // Set read-only flag for all games and cheats that were loaded from
+        // this database.
         cheatsGame_t *game = loaded;
         while(game)
         {
             game->readOnly = 1;
+
+            cheatsCheat_t *cheat = game->cheats;
+            while(cheat)
+            {
+                cheat->readOnly = 1;
+                cheat = cheat->next;
+            }
+
             game = game->next;
         }
     }
 
     if(!gamesHead)
     {
-        printf(__FUNCTION__ "gamesHead == NULL\n");
         // No games had previously been loaded, so pass back the list of
         // games we just loaded.
+        printf(__FUNCTION__ "gamesHead == NULL\n");
         gamesHead = loaded;
     }
     else
     {
+        // Append list of games we just loaded to the tail of the existing list.
         printf(__FUNCTION__": Appending newly loaded games to end of list passed in\n");
-        // Append list of games we just loaded to the tail of the list that
-        // was passed in.
         cheatsGame_t *game = gamesHead;
         while(game->next)
             game = game->next;
@@ -372,20 +380,32 @@ static void onCodeSelected(const menuItem_t *selected)
 
 static void onDisplayGameContextMenu(const menuItem_t *selected)
 {
-    const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
-    int ret = displayPromptMenu(items, 4, "Game Options");
-
-    if(ret == 0)
-        cheatsAddGame();
-    else if(ret == 1)
-        cheatsRenameGame();
-    else if(ret == 2)
+    cheatsGame_t *game = (cheatsGame_t *)selected->extra;
+    if(numGames == 0 || (game && game->readOnly))
     {
-        const char *items2[] = {"Yes", "No"};
-        int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+        const char *items[] = {"Add Game", "Cancel"};
+        int ret = displayPromptMenu(items, 2, "Game Options");
 
-        if(choice == 0)
-            cheatsDeleteGame();
+        if(ret == 0)
+            cheatsAddGame();
+    }
+    else
+    {
+        const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
+        int ret = displayPromptMenu(items, 4, "Game Options");
+
+        if(ret == 0)
+            cheatsAddGame();
+        else if(ret == 1)
+            cheatsRenameGame();
+        else if(ret == 2)
+        {
+            const char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+
+            if(choice == 0)
+                cheatsDeleteGame();
+        }
     }
 }
 
@@ -393,7 +413,9 @@ static void onDisplayCheatContextMenu(const menuItem_t *selected)
 {
     int ret;
 
-    if(cheatsGetNumCheats() > 0)
+    cheatsCheat_t *cheat = (cheatsCheat_t *)selected->extra;
+
+    if(cheatsGetNumCheats() > 0 && cheat && !cheat->readOnly)
     {
         const char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
         ret = displayPromptMenu(items, 5, "Cheat Options");
@@ -699,7 +721,7 @@ int cheatsGetNumGames()
 int cheatsAddCheat()
 {
     cheatsGame_t *game = menuGetActiveExtra();
-    if(!game || game->readOnly)
+    if(!game)
         return 0;
 
     cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
@@ -751,10 +773,6 @@ int cheatsRenameCheat()
     if(menuGetActive() != MENU_CHEATS)
         return 0;
 
-    cheatsGame_t *game = menuGetActiveExtra();
-    if(!game || game->readOnly)
-        return 0;
-
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
     if(!selectedCheat)
         return 0;
@@ -778,7 +796,7 @@ int cheatsDeleteCheat()
     cheatsCheat_t *selectedCheat = menuGetActiveItemExtra();
     cheatsGame_t *selectedGame = menuGetActiveExtra();
 
-    if(!selectedGame || selectedGame->readOnly)
+    if(!selectedGame)
         return 0;
 
     if(selectedCheat->enabled)
@@ -831,7 +849,7 @@ int cheatsAddCodeLine()
         return 0;
     
     cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
-    if(!game || game->readOnly)
+    if(!game)
         return 0;
 
     if(displayNewCodeEditMenu(&newCode) == 0)
@@ -881,10 +899,6 @@ int cheatsEditCodeLine()
     if(menuGetActive() != MENU_CODES)
         return 0;
 
-    cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
-    if(!game || game->readOnly)
-        return 0;
-
     u64 *selectedCode = menuGetActiveItemExtra();
     if(!selectedCode)
         return 0;
@@ -912,7 +926,7 @@ int cheatsDeleteCodeLine()
         return 0;
 
     cheatsGame_t *game = menuGetExtra(MENU_CHEATS);
-    if(!game || game->readOnly)
+    if(!game)
         return 0;
 
     // Move all subsequent cheat's code lines to fill in the space occupied by this code

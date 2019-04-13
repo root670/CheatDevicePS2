@@ -34,7 +34,9 @@ Cheat Database --> Game --> Cheat --> Code
 
 typedef struct cheatsCheat {
     char title[81];
-    u8 type:7;
+    u8 type:6;
+    // If readOnly == 1, cannot modify cheat title or codes lines.
+    u8 readOnly:1;
     u8 enabled:1;
 
     u8 numCodeLines;
@@ -45,8 +47,10 @@ typedef struct cheatsCheat {
 
 typedef struct cheatsGame {
     char title[81];
+    // If readOnly == 1, cannot modify game title or read-only cheats. You can,
+    // however, add additional cheats.
+    u8 readOnly:1;
     u16 numCheats;
-    u8 readOnly;
     cheatsCheat_t *cheats;
 
     u64 *codeLines;
