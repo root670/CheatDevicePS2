@@ -300,18 +300,22 @@ static void onGameSelected(const menuItem_t *selected)
     menuSetActive(MENU_CHEATS);
     if(selected->extra != menuGetActiveExtra())
     {
-    menuRemoveAllItems();
-    menuSetActiveText(selected->text);
-    menuSetActiveExtra(selected->extra);
+        menuRemoveAllItems();
+        menuSetActiveText(selected->text);
+        menuSetActiveExtra(selected->extra);
 
-    cheatsLoadCheatMenu(selected->extra);
+        cheatsLoadCheatMenu(selected->extra);
     }
 }
 
 static void onCheatSelected(const menuItem_t *selected)
 {
     cheatsCheat_t *selectedCheat = (cheatsCheat_t *)selected->extra;
-    cheatsToggleCheat(selectedCheat);
+    if(selectedCheat->type == CHEAT_NORMAL)
+    {
+        cheatsSetActiveGame(menuGetActiveExtra());
+        cheatsToggleCheat(selectedCheat);
+    }
 }
 
 static void onCodeSelected(const menuItem_t *selected)
