@@ -56,7 +56,7 @@ char *savesGetDevicePath(char *str, device_t dev)
     return ret;
 }
 
-static void savesDrawDecorations()
+static void drawDecorations(const menuItem_t *selected)
 {
     char *deviceName;
     int freeSpace; // in cluster size. 1 cluster = 1024 bytes.
@@ -362,7 +362,7 @@ void savesLoadSaveMenu(device_t dev)
     
     currentDevice = dev;
 
-    menuSetDecorationsCB(savesDrawDecorations);
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, drawDecorations);
     menuSetHelpTickerText(HELP_TICKER_SAVES);
     
     graphicsDrawText(450, 400, COLOR_WHITE, "Please wait...");

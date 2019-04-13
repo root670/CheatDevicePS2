@@ -8,6 +8,8 @@
 
 #include <tamtypes.h>
 
+#include "menus.h"
+
 typedef enum {
     CHEAT_NORMAL,       // Cheat with code lines
     CHEAT_HEADER,       // Cheat without code lines
@@ -68,7 +70,7 @@ int cheatsLoadGameMenu();
    it's associated cheatsCheat_t object for toggling cheats from the menu.
    Game object is returned so the menu manager can associate the created menu
    with a game. */
-cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game);
+void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
 
@@ -102,7 +104,7 @@ int cheatsDeleteCodeLine();
 int cheatsGetNumCodeLines();
 
 // Draw helper text.
-void cheatsDrawStats();
+void cheatsDrawStats(const menuItem_t *selected);
 // Sets a cheat as enabled/disabled
 int cheatsToggleCheat(cheatsCheat_t *cheat);
 // Check if a game is the active game.

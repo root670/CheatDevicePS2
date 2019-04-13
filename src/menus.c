@@ -1,11 +1,13 @@
+#include <stdio.h>
+#include <malloc.h>
+
 #include "menus.h"
 #include "graphics.h"
 #include "cheats.h"
 #include "settings.h"
 #include "saves.h"
 #include "startgame.h"
-#include <stdio.h>
-#include <malloc.h>
+#include "pad.h"
 
 static menuState_t menues[NUMMENUS];
 static menuState_t *activeMenu = NULL;
@@ -262,6 +264,26 @@ void *menuGetActiveExtra()
     return activeMenu->extra;
 }
 
+void menuSetActiveExtra(void *extra)
+{
+    if(!extra)
+        return;
+
+    activeMenu->extra = extra;
+}
+
+const char *menuGetActiveText()
+{
+    return activeMenu->text;
+}
+void menuSetActiveText(const char *text)
+{
+    if(!text)
+        return;
+
+    activeMenu->text = text;
+}
+
 void *menuGetExtra(menuID_t id)
 {
     if(id > NUMMENUS-1)
@@ -280,13 +302,7 @@ int menuSetActive(menuID_t id)
 
     activeMenu = &menues[id];
 
-    if(id == MENU_CHEATS && (activeMenu->text != menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->text)) // Refresh cheat menu if a new game was chosen
-    {
-        menuRemoveAllItems();
-        activeMenu->text = menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->text;
-        activeMenu->extra = cheatsLoadCheatMenu((cheatsGame_t *)menues[MENU_GAMES].items[menues[MENU_GAMES].currentItem]->extra);
-    }
-    else if(id == MENU_CODES && (activeMenu->text != menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text)) // Refresh code menu if a new cheat was chosen
+    if(id == MENU_CODES && (activeMenu->text != menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text)) // Refresh code menu if a new cheat was chosen
     {
         if(menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->type == MENU_ITEM_NORMAL)
         {
@@ -315,12 +331,12 @@ int menuSetActive(menuID_t id)
     return 1;
 }
 
-void menuSetDecorationsCB(void (*cb)())
+void menuSetCallback(menuCallbackType_t id, void (*cb)(const menuItem_t*))
 {
     if(!initialized)
         return;
 
-    activeMenu->drawDecorationsCB = cb;
+    activeMenu->callbacks[id] = cb;
 }
 
 void menuSetHelpTickerText(const char *text)
@@ -510,20 +526,34 @@ void menuToggleItem()
         text = activeMenu->items[activeMenu->currentItem]->text;
         type = activeMenu->items[activeMenu->currentItem]->type;
 
-        if(activeMenu->identifier == MENU_CHEATS && ((cheatsCheat_t *) extra)->type == CHEAT_NORMAL)
-        {
-            cheatsSetActiveGame(activeMenu->extra);
-            cheatsToggleCheat((cheatsCheat_t *) extra);
-        }
-        else if(activeMenu->identifier == MENU_BOOT)
-        {
-            startgameExecute(text);
-        }
-        else if(activeMenu->identifier == MENU_SAVES && type != MENU_ITEM_HEADER)
+        if(activeMenu->identifier == MENU_SAVES && type != MENU_ITEM_HEADER)
         {
             savesCopySavePrompt((gameSave_t *) extra);
         }
     }
+}
+
+int menuProcessInputCallbacks(u32 padPressed)
+{
+    if(!activeMenu)
+        return 0;
+
+    const menuItem_t *current = activeMenu->items[activeMenu->currentItem];
+
+    if((padPressed & PAD_SQUARE) &&
+        activeMenu->callbacks[MENU_CALLBACK_PRESSED_SQUARE])
+    {
+        activeMenu->callbacks[MENU_CALLBACK_PRESSED_SQUARE](current);
+        return 1;
+    }
+    else if((padPressed & PAD_CROSS) &&
+        activeMenu->callbacks[MENU_CALLBACK_PRESSED_CROSS])
+    {
+        activeMenu->callbacks[MENU_CALLBACK_PRESSED_CROSS](current);
+        return 1;
+    }
+
+    return 0;
 }
 
 static float windowPosition;
@@ -605,12 +635,6 @@ static void drawTitle()
         graphicsDrawTextCentered(47, COLOR_WHITE, activeMenu->text);
 }
 
-static void drawDecorations()
-{
-    if(activeMenu->drawDecorationsCB)
-        (*activeMenu->drawDecorationsCB)();
-}
-
 static void drawMenuItems()
 {
     int yItems = 14;
@@ -676,9 +700,14 @@ int menuRender()
 
     drawTitle();
     drawMenuItems();
-    drawDecorations();
     drawHelpTicker();
     drawScrollBar();
+
+    if(activeMenu->callbacks[MENU_CALLBACK_AFTER_DRAW])
+    {
+        const menuItem_t *current = activeMenu->items[activeMenu->currentItem];
+        activeMenu->callbacks[MENU_CALLBACK_AFTER_DRAW](current);
+    }
 
     return 1;
 }

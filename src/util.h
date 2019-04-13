@@ -45,8 +45,6 @@ void handlePad();
 int displayPromptMenu(const char **items, int numItems, const char *header);
 // Draw an error message in a prompt box.
 int displayError(const char *error);
-// Draw menu of options related to current menu
-void displayContextMenu(int menuID);
 // Get user input for a string
 int displayTextEditMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt);
 // Get user input for an existing code line.
