@@ -7,7 +7,6 @@
 #define MENUS_H
 
 #include <tamtypes.h>
-#include "cheats.h"
 
 typedef enum {
     MENU_GAMES,
@@ -26,6 +25,15 @@ typedef enum {
     MENU_ITEM_HEADER
 } menuItemType_t;
 
+typedef enum {
+    // Executed after drawing standard menu items
+    MENU_CALLBACK_AFTER_DRAW,
+    // Executed after user presses square on the pad
+    MENU_CALLBACK_PRESSED_SQUARE,
+    // Executed after user presses cross on the pad
+    MENU_CALLBACK_PRESSED_CROSS
+} menuCallbackType_t;
+
 typedef struct menuItem {
     menuItemType_t type;
     char *text;
@@ -36,13 +44,14 @@ typedef struct menuState {
     menuID_t identifier;
     int isSorted;
     int freeTextWhenRemoved;
-    char *text;
+    const char *text;
     void *extra; // Optional: Associate additional data with the menu.
 
-    void (*drawDecorationsCB)();
+    void (*callbacks[sizeof(menuCallbackType_t)])(const menuItem_t *selected);
+
     const char *helpTickerText;
     int helpTickerLength;
-    
+
     menuItem_t **items;
     unsigned int currentItem;
     unsigned int numItems;
@@ -55,12 +64,14 @@ int killMenus();
 // Setup
 int menuSetActive(menuID_t id);
 menuID_t menuGetActive();
+const char *menuGetActiveText();
+void menuSetActiveText(const char *text);
 void *menuGetActiveExtra();
+void menuSetActiveExtra(void *extra);
 void *menuGetExtra(menuID_t id);
 
-// Set a function to call to draw additional items when drawing the active
-// menu.
-void menuSetDecorationsCB(void (*cb)());
+// Set a callback function for the active menu.
+void menuSetCallback(menuCallbackType_t id, void (*cb)(const menuItem_t*));
 // Set the primary help ticker text for the active menu.
 void menuSetHelpTickerText(const char *text);
 // Temporarily override the primary help ticker text.
@@ -91,5 +102,9 @@ int menuGoToNextHeader();
 int menuGoToPreviousHeader();
 
 int menuRender();
+
+// Process callbacks that are triggered by pad input. Returns 1 if a callback
+// for the current input exists and was called, otherwise zero.
+int menuProcessInputCallbacks(u32 padPressed);
 
 #endif

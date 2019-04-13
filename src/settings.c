@@ -7,6 +7,7 @@
 #include "menus.h"
 #include "graphics.h"
 #include "cheats.h"
+#include "startgame.h"
 
 typedef struct settings
 {
@@ -251,6 +252,21 @@ char** settingsGetBootPaths(int *numPaths)
     return settings.bootPaths;
 }
 
+static void onDisplayContextMenu(const menuItem_t *selected)
+{
+    const char *items[] = {"Edit Path", "Cancel"};
+    int ret = displayPromptMenu(items, 2, "Boot Options");
+
+    if(ret == 0)
+        settingsRenameBootPath();
+}
+
+static void onBootPathSelected(const menuItem_t *selected)
+{
+    const char *path = selected->text;
+    startgameExecute(path);
+}
+
 void settingsLoadBootMenu()
 {
     if(!initialized)
@@ -275,7 +291,9 @@ void settingsLoadBootMenu()
         menuInsertItem(&items[i]);
     }
 
-    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayContextMenu);
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onBootPathSelected);
     menuSetHelpTickerText(HELP_TICKER);
 }
 

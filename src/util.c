@@ -105,7 +105,12 @@ void handlePad()
     padPoll(DELAYTIME_FAST);
     u32 pad_pressed = padPressed();
     u32 pad_rapid = padHeld();
+
+    // Route input to active menu's callbacks first.
+    if(menuProcessInputCallbacks(pad_pressed))
+        return; // A callback processed the input. Nothing more to do here.
     
+    // The active menu's callbacks didn't handle the input, so handle it here.
     menuID_t currentMenu = menuGetActive();
     if(currentMenu == MENU_GAMES ||
        currentMenu == MENU_CHEATS ||
@@ -131,17 +136,13 @@ void handlePad()
         else if(pad_rapid & PAD_L2)
             menuUpAlpha();
         
-        if(pad_pressed & PAD_CROSS)
-            menuSetActive(MENU_CHEATS);
-        else if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
+        if(pad_pressed & PAD_CIRCLE || pad_pressed & PAD_START)
         {
             menuSetActive(MENU_MAIN);
             selected = 0;
         }
         else if(pad_pressed & PAD_SELECT)
             graphicsDrawAboutPage();
-        else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(MENU_GAMES);
     }
 
     else if(currentMenu == MENU_CHEATS)
@@ -155,13 +156,9 @@ void handlePad()
             menuGoToNextHeader();
         else if(pad_rapid & PAD_L2)
             menuGoToPreviousHeader();
-        
-        if(pad_pressed & PAD_CROSS)
-            menuToggleItem();
-        else if(pad_pressed & PAD_CIRCLE)
+
+        if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_GAMES);
-        else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(MENU_CHEATS);
         else if(pad_pressed & PAD_START)
             menuSetActive(MENU_MAIN);
     }
@@ -180,15 +177,6 @@ void handlePad()
 
         if(pad_pressed & PAD_CIRCLE)
             menuSetActive(MENU_CHEATS);
-        else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(MENU_CODES);
-        else if(pad_pressed & PAD_CROSS)
-        {
-            if(cheatsGetNumCodeLines() > 0)
-                cheatsEditCodeLine();
-            else
-                cheatsAddCodeLine();
-        }
     }
 
     else if(currentMenu == MENU_MAIN)
@@ -225,15 +213,11 @@ void handlePad()
 
     else if(currentMenu == MENU_BOOT)
     {
-        if(pad_pressed & PAD_CROSS)
-            menuToggleItem();
-        else if(pad_pressed & PAD_CIRCLE)
+        if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
             menuSetActive(MENU_MAIN);
         }
-        else if(pad_pressed & PAD_SQUARE)
-            displayContextMenu(MENU_BOOT);
     }
 
     else if(currentMenu == MENU_SAVE_DEVICES)
@@ -281,101 +265,6 @@ void handlePad()
             menuRemoveAllItems();
             menuSetActive(MENU_SAVE_DEVICES);
         }
-    }
-}
-
-void displayContextMenu(int menuID)
-{
-    int ret;
-
-    if(menuID == MENU_GAMES)
-    {
-        const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
-        ret = displayPromptMenu(items, 4, "Game Options");
-
-        if(ret == 0)
-            cheatsAddGame();
-        else if(ret == 1)
-            cheatsRenameGame();
-        else if(ret == 2)
-        {
-            const char *items2[] = {"Yes", "No"};
-            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
-
-            if(choice == 0)
-                cheatsDeleteGame();
-        }
-    }
-
-    else if(menuID == MENU_CHEATS)
-    {
-        if(cheatsGetNumCheats() > 0)
-        {
-            const char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
-            ret = displayPromptMenu(items, 5, "Cheat Options");
-
-            if(ret == 0)
-                cheatsAddCheat();
-            else if(ret == 1)
-                menuSetActive(MENU_CODES);
-            else if(ret == 2)
-                cheatsRenameCheat();
-            else if(ret == 3)
-            {
-                const char *items2[] = {"Yes", "No"};
-                int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this cheat?");
-
-                if(choice == 0)
-                    cheatsDeleteCheat();
-            }
-        }
-        else
-        {
-            const char *items[] = {"Add Cheat", "Cancel"};
-            ret = displayPromptMenu(items, 2, "Cheat Options");
-
-            if(ret == 0)
-                cheatsAddCheat();
-        }
-    }
-
-    else if(menuID == MENU_CODES)
-    {
-        if(cheatsGetNumCodeLines() > 0)
-        {
-            const char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
-            ret = displayPromptMenu(items, 4, "Code Options");
-
-            if(ret == 0)
-                cheatsAddCodeLine();
-            else if(ret == 1)
-                cheatsEditCodeLine();
-            else if(ret == 2)
-            {
-                const char *items2[] = {"Yes", "No"};
-                int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
-
-                if(choice == 0)
-                    cheatsDeleteCodeLine();
-            }
-        }
-        else
-        {
-            const char *items[] = {"Add Line", "Cancel"};
-            ret = displayPromptMenu(items, 2, "Code Options");
-
-            if(ret == 0)
-                cheatsAddCodeLine();
-        }
-    }
-
-    else if(menuID == MENU_BOOT)
-    {
-        const char *items[] = {"Edit Path", "Cancel"};
-        ret = displayPromptMenu(items, 2, "Boot Options");
-
-        if(ret == 0)
-            settingsRenameBootPath();
     }
 }
 

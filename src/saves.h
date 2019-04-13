@@ -41,8 +41,6 @@ void savesLoadSaveMenu(device_t dev);
 gameSave_t *savesGetSaves(device_t dev);
 // Check which devices are present.
 int savesGetAvailableDevices();
-// Display help text.
-void savesDrawTicker();
 
 // Convert absolute path to use specific device
 char *savesGetDevicePath(char *str, device_t dev);

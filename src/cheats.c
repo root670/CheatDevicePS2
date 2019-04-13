@@ -339,10 +339,125 @@ int cheatsSaveDatabase()
     return handler->save(path, gamesHead);
 }
 
+static void onGameSelected(const menuItem_t *selected)
+{
+    menuSetActive(MENU_CHEATS);
+    if(selected->extra != menuGetActiveExtra())
+    {
+        menuRemoveAllItems();
+        menuSetActiveText(selected->text);
+        menuSetActiveExtra(selected->extra);
+
+        cheatsLoadCheatMenu(selected->extra);
+    }
+}
+
+static void onCheatSelected(const menuItem_t *selected)
+{
+    cheatsCheat_t *selectedCheat = (cheatsCheat_t *)selected->extra;
+    if(selectedCheat->type == CHEAT_NORMAL)
+    {
+        cheatsSetActiveGame(menuGetActiveExtra());
+        cheatsToggleCheat(selectedCheat);
+    }
+}
+
+static void onCodeSelected(const menuItem_t *selected)
+{
+    if(cheatsGetNumCodeLines() > 0)
+        cheatsEditCodeLine();
+    else
+        cheatsAddCodeLine();
+}
+
+static void onDisplayGameContextMenu(const menuItem_t *selected)
+{
+    const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
+    int ret = displayPromptMenu(items, 4, "Game Options");
+
+    if(ret == 0)
+        cheatsAddGame();
+    else if(ret == 1)
+        cheatsRenameGame();
+    else if(ret == 2)
+    {
+        const char *items2[] = {"Yes", "No"};
+        int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+
+        if(choice == 0)
+            cheatsDeleteGame();
+    }
+}
+
+static void onDisplayCheatContextMenu(const menuItem_t *selected)
+{
+    int ret;
+
+    if(cheatsGetNumCheats() > 0)
+    {
+        const char *items[] = {"Add Cheat", "Edit Code Lines", "Rename Cheat", "Delete Cheat", "Cancel"};
+        ret = displayPromptMenu(items, 5, "Cheat Options");
+
+        if(ret == 0)
+            cheatsAddCheat();
+        else if(ret == 1)
+            menuSetActive(MENU_CODES);
+        else if(ret == 2)
+            cheatsRenameCheat();
+        else if(ret == 3)
+        {
+            const char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this cheat?");
+
+            if(choice == 0)
+                cheatsDeleteCheat();
+        }
+    }
+    else
+    {
+        const char *items[] = {"Add Cheat", "Cancel"};
+        ret = displayPromptMenu(items, 2, "Cheat Options");
+
+        if(ret == 0)
+            cheatsAddCheat();
+    }
+}
+
+static void onDisplayCodeContextMenu(const menuItem_t *selected)
+{
+    int ret;
+
+    if(cheatsGetNumCodeLines() > 0)
+    {
+        const char *items[] = {"Add Line", "Edit Line", "Delete Line", "Cancel"};
+        ret = displayPromptMenu(items, 4, "Code Options");
+
+        if(ret == 0)
+            cheatsAddCodeLine();
+        else if(ret == 1)
+            cheatsEditCodeLine();
+        else if(ret == 2)
+        {
+            const char *items2[] = {"Yes", "No"};
+            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this code line?");
+
+            if(choice == 0)
+                cheatsDeleteCodeLine();
+        }
+    }
+    else
+    {
+        const char *items[] = {"Add Line", "Cancel"};
+        ret = displayPromptMenu(items, 2, "Code Options");
+
+        if(ret == 0)
+            cheatsAddCodeLine();
+    }
+}
+
 int cheatsLoadGameMenu()
 {
     menuSetHelpTickerText(HELP_TICKER_GAMES);
-    menuSetDecorationsCB(cheatsDrawStats);
 
     if(!gamesHead)
         return 0;
@@ -368,13 +483,18 @@ int cheatsLoadGameMenu()
         item++;
     }
 
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayGameContextMenu);
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onGameSelected);
+    menuSetHelpTickerText(HELP_TICKER_GAMES);
+
     return 1;
 }
 
-cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
+void cheatsLoadCheatMenu(cheatsGame_t* game)
 {
     if(!gamesHead || !game)
-        return NULL;
+        return;
 
     /* Build the menu */
     cheatsCheat_t *cheat = game->cheats;
@@ -397,10 +517,10 @@ cheatsGame_t* cheatsLoadCheatMenu(cheatsGame_t* game)
         item++;
     }
 
-    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayCheatContextMenu);
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onCheatSelected);
     menuSetHelpTickerText(HELP_TICKER_CHEATS);
-
-    return game;
 }
 
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
@@ -430,7 +550,9 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
         item++;
     }
 
-    menuSetDecorationsCB(cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayCodeContextMenu);
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onCodeSelected);
 
     if(cheat->numCodeLines > 0)
         menuSetHelpTickerText(HELP_TICKER_CODES_NORMAL);
@@ -926,9 +1048,9 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
     return 1;
 }
 
-void cheatsDrawStats()
+void cheatsDrawStats(const menuItem_t *selected)
 {
-    if(!activeGame || !activeGame->title || numEnabledCheats == 0)
+    if(!activeGame || numEnabledCheats == 0)
         return;
 
     if(numEnabledCheats > 1)

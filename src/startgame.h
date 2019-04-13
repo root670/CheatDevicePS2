@@ -6,6 +6,6 @@
 #ifndef STARTGAME_H
 #define STARTGAME_H
 
-void startgameExecute(char *path);
+void startgameExecute(const char *path);
 
 #endif

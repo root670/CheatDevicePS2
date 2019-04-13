@@ -86,7 +86,7 @@ static void* loadBootstrap()
     return (void *)eh->entry;
 }
 
-void startgameExecute(char *path)
+void startgameExecute(const char *path)
 {
     static char boot2[100];
     
