@@ -202,8 +202,10 @@ static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
 {   
     if(!path)
         return NULL;
-    
+
     const char *extension = getFileExtension(path);
+    if(!extension)
+        return NULL;
 
     int i = 0;
     for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
@@ -362,11 +364,11 @@ static void onGameSelected(const menuItem_t *selected)
 
 static void onCheatSelected(const menuItem_t *selected)
 {
-    cheatsCheat_t *selectedCheat = (cheatsCheat_t *)selected->extra;
-    if(selectedCheat->type == CHEAT_NORMAL)
+    cheatsCheat_t *cheat = selected ? (cheatsCheat_t *)selected->extra : NULL;
+    if(cheat && cheat->type == CHEAT_NORMAL)
     {
         cheatsSetActiveGame(menuGetActiveExtra());
-        cheatsToggleCheat(selectedCheat);
+        cheatsToggleCheat(cheat);
     }
 }
 
@@ -413,7 +415,7 @@ static void onDisplayCheatContextMenu(const menuItem_t *selected)
 {
     int ret;
 
-    cheatsCheat_t *cheat = (cheatsCheat_t *)selected->extra;
+    cheatsCheat_t *cheat = selected ? (cheatsCheat_t *)selected->extra : NULL;
 
     if(cheatsGetNumCheats() > 0 && cheat && !cheat->readOnly)
     {
