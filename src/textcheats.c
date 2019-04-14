@@ -130,28 +130,45 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     clock_t start = clock();
     char buf[8192];
     int index = 0;
-    float progress = 0;
     const cheatsGame_t *game = games;
+
+    int numGamesProcessed = 0;
     while(game)
     {
-        progress += (float)1/cheatsGetNumGames();
-        graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRender();
-
-        if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
+        int wroteGameTitle = 0;
+        if(numGamesProcessed % 500 == 0)
         {
-            index += copyGameTitleToBuffer(&buf[index], game->title);
-        }
-        else
-        {
-            // Flush buffer to file
-            fwrite(buf, 1, index, f);
-            index = copyGameTitleToBuffer(&buf[0], game->title);
+            float progress = (float)numGamesProcessed / cheatsGetNumGames();
+            graphicsDrawLoadingBar(50, 350, progress);
+            graphicsRender();
         }
 
-        cheatsCheat_t *cheat = game->cheats;
+        const cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
+            if(cheat->readOnly)
+            {
+                // Cheat is from a read-only database, so we don't want to
+                // duplicate it in the file being written.
+                cheat = cheat->next;
+                continue;
+            }
+
+            if(!wroteGameTitle)
+            {
+                if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
+                {
+                    index += copyGameTitleToBuffer(&buf[index], game->title);
+                }
+                else
+                {
+                    // Flush buffer to file
+                    fwrite(buf, 1, index, f);
+                    index = copyGameTitleToBuffer(&buf[0], game->title);
+                }
+                wroteGameTitle = 1;
+            }
+
             if(index + strlen(cheat->title) + 1 < sizeof(buf))
             {
                 index += copyCheatTitleToBuffer(&buf[index], cheat->title);
@@ -181,8 +198,8 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
             }
             cheat = cheat->next;
         }
-        buf[index++] = '\n';
         game = game->next;
+        numGamesProcessed++;
     }
 
     // Flush remaining buffer to file
@@ -492,7 +509,7 @@ static int readTextCheats(char *text, size_t len)
     
     while(text < endPtr)
     {
-        if((lineNum % 5000) == 0)
+        if((lineNum % 10000) == 0)
         {
             float progress = 1.0 - ((endPtr - text)/(float)len);
             graphicsDrawLoadingBar(100, 375, progress);
