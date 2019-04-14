@@ -494,8 +494,7 @@ int cheatsLoadGameMenu()
     
     while(game)
     {
-        item->type = game->readOnly ? MENU_ITEM_NORMAL
-                                    : MENU_ITEM_NORMAL_RW_ICON;
+        item->type = MENU_ITEM_NORMAL;
         item->text = game->title;
         item->extra = game;
 
@@ -627,7 +626,7 @@ int cheatsAddGame()
 
     // Add game to menu
     menuItem_t *item = calloc(1, sizeof(menuItem_t));
-    item->type = MENU_ITEM_NORMAL_RW_ICON;
+    item->type = MENU_ITEM_NORMAL;
     item->text = strdup(newGame->title);
     item->extra = newGame;
     menuInsertItem(item);
