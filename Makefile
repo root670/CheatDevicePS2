@@ -25,7 +25,6 @@ OBJS += src/hash.o
 OBJS += src/pad.o
 OBJS += src/util.o
 OBJS += src/startgame.o
-OBJS += src/database.o
 OBJS += src/textcheats.o
 OBJS += src/cheats.o
 OBJS += src/graphics.o
