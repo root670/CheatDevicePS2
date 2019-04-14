@@ -337,6 +337,17 @@ int cheatsSaveDatabase()
         displayError("No read-write save handler is available!!!\nDefaulting to one...");
         path = "CheatDatabase_RW.txt";
     }
+
+    // Confirm user wants to write save changes
+    const char *items2[] = {"Yes", "No"};
+    char msg[128];
+    snprintf(msg, sizeof(msg), 
+        "Cheat database has been modified.\n"
+        "Save changes to \"%s\"?", path);
+    int choice = displayPromptMenu(items2, 2, msg);
+    if(choice != 0)
+        return 1;
+
     cheatDatabaseHandler_t *handler = getCheatDatabaseHandler(path);
 
     if(!handler || !handler->save)
