@@ -31,7 +31,7 @@ void hashDestroyTable(hashTable_t *table)
 // http://www.eternallyconfuzzled.com/tuts/algorithms/jsw_tut_hashing.aspx
 unsigned int hashFunction(const void *key, int len)
 {
-    unsigned char *p = key;
+    const unsigned char *p = key;
     unsigned int h = 0;
     int i;
 
