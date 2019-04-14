@@ -80,32 +80,12 @@ void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
 
-// Create a new game and add it to the game list
-int cheatsAddGame();
-// Rename currently selected game from game list
-int cheatsRenameGame();
-// Delete currently selected game from game list
-int cheatsDeleteGame();
 // Get number of games in the game list
 int cheatsGetNumGames();
-
-// Add a cheat to a game's cheat list
-int cheatsAddCheat();
-// Rename currently selected cheat from cheat list
-int cheatsRenameCheat();
-// Delect currently selected cheat from cheat list
-int cheatsDeleteCheat();
 // Get number of cheats in the cheat list 
 int cheatsGetNumCheats();
 // Get number of enabled cheats in the cheat list
 int cheatsGetNumEnabledCheats();
-
-// Add a code line to a cheat
-int cheatsAddCodeLine();
-// Edit currently selected code line
-int cheatsEditCodeLine();
-// Delete currently selected code line
-int cheatsDeleteCodeLine();
 // Get number of code lines in the cheat
 int cheatsGetNumCodeLines();
 
