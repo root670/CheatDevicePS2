@@ -387,7 +387,6 @@ static int parseLine(const char *line, const int len)
             {
                 // First game
                 g_ctx.gamesHead = newGame;
-                g_ctx.game = g_ctx.gamesHead;
             }
             else
             {
@@ -399,11 +398,12 @@ static int parseLine(const char *line, const int len)
                 }
                 
                 g_ctx.game->next = newGame;
-                g_ctx.game = newGame;
             }
+
+            g_ctx.game = newGame;
             
             strncpy(g_ctx.game->title, line+1, 81);
-            g_ctx.game->title[strlen(line) - 2] = '\0'; // Remove trailing '"'
+            g_ctx.game->title[len - 2] = '\0'; // Remove trailing '"'
             g_ctx.game->next = NULL;
             g_ctx.numGamesRead += 1;
             break;
@@ -414,16 +414,15 @@ static int parseLine(const char *line, const int len)
 
             cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
 
-            if(g_ctx.game->cheats == NULL)
+            if(!g_ctx.game->cheats)
             {
+                // Game's first cheat
                 g_ctx.game->cheats = newCheat;
-                g_ctx.cheat = g_ctx.game->cheats;
             }
             else
-            {
                 g_ctx.cheat->next = newCheat;
-                g_ctx.cheat = g_ctx.cheat->next;
-            }
+
+            g_ctx.cheat = newCheat;
             
             strncpy(g_ctx.cheat->title, line, 81);
             g_ctx.cheat->type = CHEAT_HEADER;
@@ -454,36 +453,42 @@ static int parseLine(const char *line, const int len)
             u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
 
             // Decode pair of 32-bit hexidecimal text values
-            int i = 0;
-            static char offsets[] = {3, 0, 2, 0, 1, 0, 0, 0, 0, 7, 0, 6, 0, 5, 0, 4};
-            do
-            {
-                char c1 = line[i];
-                char c2 = line[i + 1];
-                u8 hex = 0;
+            static const unsigned char lut[] = {
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,
+                // 0x30: [0-9]
+                0,1,2,3,4,5,6,7,8,9,
+                0,0,0,0,0,0,0,
+                // 0x41: [A-F]
+                0xa,0xb,0xc,0xd,0xe,0xf,
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,0,0,0,0,
+                0,0,0,0,0,0,
+                // 0x61: [a-f]
+                0xa,0xb,0xc,0xd,0xe,0xf
+            };
 
-                if(c1 >= 'a')
-                    hex = (0xA + c1 - 'a') << 4;
-                else if(c1 >= 'A')
-                    hex = (0xA + c1 - 'A') << 4;
-                else
-                    hex = (c1 - '0') << 4;
+            u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
+                      ((u64)lut[(int)line[ 1]] << 24) |
+                      ((u64)lut[(int)line[ 2]] << 20) |
+                      ((u64)lut[(int)line[ 3]] << 16) |
+                      ((u64)lut[(int)line[ 4]] << 12) |
+                      ((u64)lut[(int)line[ 5]] <<  8) |
+                      ((u64)lut[(int)line[ 6]] <<  4) |
+                      ((u64)lut[(int)line[ 7]])       |
+                      ((u64)lut[(int)line[ 9]] << 60) |
+                      ((u64)lut[(int)line[10]] << 56) |
+                      ((u64)lut[(int)line[11]] << 52) |
+                      ((u64)lut[(int)line[12]] << 48) |
+                      ((u64)lut[(int)line[13]] << 44) |
+                      ((u64)lut[(int)line[14]] << 40) |
+                      ((u64)lut[(int)line[15]] << 36) |
+                      ((u64)lut[(int)line[16]] << 32);
 
-                if(c2 >= 'a')
-                    hex |= (0xA + c2 - 'a') & 0xF;
-                else if(c2 >= 'A')
-                    hex |= (0xA + c2 - 'A') & 0xF;
-                else
-                    hex |= (c2 - '0') & 0xF;
-
-                *((u8 *)codeLine + offsets[i]) = hex;
-
-                if(i != 6)
-                    i += 2; // Skip over 2 hex nibbles
-                else
-                    i += 3; // Skip over 2 hex nibbles + space
-
-            } while( i <= 16 );
+            *codeLine = hex;
 
             g_ctx.cheat->type = CHEAT_NORMAL;
             g_ctx.cheat->numCodeLines++;
