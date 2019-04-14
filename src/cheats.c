@@ -32,7 +32,7 @@ typedef struct cheatDatabaseHandler {
     char name[28]; // cheat database format name
     char extension[4]; // file extension
     
-    cheatsGame_t* (*open)(const char *path, unsigned int *numGames);
+    cheatsGame_t* (*open)(const char *path, unsigned int *numGamesAdded);
     int (*save)(const char *path, const cheatsGame_t *games);
 } cheatDatabaseHandler_t;
 
@@ -631,10 +631,12 @@ int cheatsOpenDatabase(const char* path, int readOnly)
         return 0;
     }
 
-    unsigned int numGamesLoaded;
-    cheatsGame_t *loaded = handler->open(path, &numGamesLoaded);
+    unsigned int numGamesAdded;
+    cheatsGame_t *loaded = handler->open(path, &numGamesAdded);
 
-    if(!loaded || numGamesLoaded <= 0)
+    printf("Added %d games from %s\n", numGamesAdded, path);
+
+    if(numGamesAdded <= 0)
         return 0;
 
     if(readOnly)
@@ -659,25 +661,22 @@ int cheatsOpenDatabase(const char* path, int readOnly)
 
     if(!gamesHead)
     {
-        // No games had previously been loaded, so pass back the list of
-        // games we just loaded.
-        printf(__FUNCTION__ "gamesHead == NULL\n");
+        // No games had previously been loaded
         gamesHead = loaded;
     }
     else
     {
         // Append list of games we just loaded to the tail of the existing list.
-        printf(__FUNCTION__": Appending newly loaded games to end of list passed in\n");
         cheatsGame_t *game = gamesHead;
         while(game->next)
             game = game->next;
 
-        printf(__FUNCTION__ ": Previous list ended with %s\n", game->title);
         game->next = loaded;
     }
 
-    numGames += numGamesLoaded;
+    numGames += numGamesAdded;
 
+    populateGameHashTable();
     findEnableCodes();
 
     return numGames;
@@ -868,9 +867,6 @@ int cheatsLoadGameMenu()
         item->text = game->title;
         item->extra = game;
 
-        unsigned int hash = hashFunction(item->text, strlen(item->text));
-        hashAdd(gameHashes, item, hash);
-
         menuInsertItem(item);
         game = game->next;
         item++;
@@ -953,6 +949,17 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
         menuSetHelpTickerText(HELP_TICKER_CODES_NONE);
 
     return cheat;
+}
+
+cheatsGame_t* cheatsFindGame(const char *name)
+{
+    if(!name)
+        return NULL;
+
+    unsigned int hash = hashFunction(name, strlen(name));
+    cheatsGame_t *game = hashFind(gameHashes, hash);
+
+    return game;
 }
 
 int cheatsGetNumGames()

@@ -80,6 +80,9 @@ void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
 
+// Find a game by title. Returns NULL if a game couldn't be found.
+cheatsGame_t* cheatsFindGame(const char *title);
+
 // Get number of games in the game list
 int cheatsGetNumGames();
 // Get number of cheats in the cheat list 
