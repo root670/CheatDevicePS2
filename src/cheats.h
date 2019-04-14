@@ -34,7 +34,9 @@ Cheat Database --> Game --> Cheat --> Code
 
 typedef struct cheatsCheat {
     char title[81];
-    u8 type:7;
+    u8 type:6;
+    // If readOnly == 1, cannot modify cheat title or codes lines.
+    u8 readOnly:1;
     u8 enabled:1;
 
     u8 numCodeLines;
@@ -45,6 +47,9 @@ typedef struct cheatsCheat {
 
 typedef struct cheatsGame {
     char title[81];
+    // If readOnly == 1, cannot modify game title or read-only cheats. You can,
+    // however, add additional cheats.
+    u8 readOnly:1;
     u16 numCheats;
     cheatsCheat_t *cheats;
 
@@ -58,7 +63,8 @@ typedef struct cheatsGame {
 int killCheats();
 
 // Open a cheat database and load cheats.
-int cheatsOpenDatabase(const char* path);
+// If readOnly is neq 0, games loaded from the database will not be modifiable.
+int cheatsOpenDatabase(const char* path, int readOnly);
 // Save cheat database to a file.
 int cheatsSaveDatabase();
 // Re-enable previously used cheats
@@ -74,32 +80,15 @@ void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
 
-// Create a new game and add it to the game list
-int cheatsAddGame();
-// Rename currently selected game from game list
-int cheatsRenameGame();
-// Delete currently selected game from game list
-int cheatsDeleteGame();
+// Find a game by title. Returns NULL if a game couldn't be found.
+cheatsGame_t* cheatsFindGame(const char *title);
+
 // Get number of games in the game list
 int cheatsGetNumGames();
-
-// Add a cheat to a game's cheat list
-int cheatsAddCheat();
-// Rename currently selected cheat from cheat list
-int cheatsRenameCheat();
-// Delect currently selected cheat from cheat list
-int cheatsDeleteCheat();
 // Get number of cheats in the cheat list 
 int cheatsGetNumCheats();
 // Get number of enabled cheats in the cheat list
 int cheatsGetNumEnabledCheats();
-
-// Add a code line to a cheat
-int cheatsAddCodeLine();
-// Edit currently selected code line
-int cheatsEditCodeLine();
-// Delete currently selected code line
-int cheatsDeleteCodeLine();
 // Get number of code lines in the cheat
 int cheatsGetNumCodeLines();
 

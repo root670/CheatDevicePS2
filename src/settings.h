@@ -17,10 +17,15 @@ int killSettings();
 // Save setting file with current settings.
 int settingsSave();
 
-// Get database path string.
-char* settingsGetDatabasePath();
+// Get read-only database path string.
+char* settingsGetReadOnlyDatabasePath();
 // Set database path string.
-void settingsSetDatabasePath();
+void settingsSetReadOnlyDatabasePath();
+// Get read/write database path string.
+char* settingsGetReadWriteDatabasePath();
+// Set database path string.
+void settingsSetReadWriteDatabasePath();
+
 // Get string array containing numPaths boot paths.
 char** settingsGetBootPaths(int *numPaths);
 void settingsLoadBootMenu();

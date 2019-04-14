@@ -1,13 +1,14 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <time.h>
+
 #include "textcheats.h"
 #include "cheats.h"
 #include "graphics.h"
 #include "objectpool.h"
 #include "util.h"
 #include "libraries/minizip/unzip.h"
-#include <stdio.h>
-#include <string.h>
-#include <ctype.h>
-#include <time.h>
 
 #define TOKEN_TITLE     (1 << 0)
 #define TOKEN_CHEAT     (1 << 1)
@@ -15,47 +16,53 @@
 #define TOKEN_VALID     TOKEN_TITLE|TOKEN_CHEAT|TOKEN_CODE
 #define TOKEN_START     TOKEN_TITLE
 
-static cheatsGame_t *gamesHead = NULL;
-static cheatsGame_t *game = NULL;
-static cheatsCheat_t *cheat = NULL;
-static unsigned int g_numGamesRead = 0;
+typedef struct loadingContext {
+    cheatsGame_t *gamesHead;
+    cheatsGame_t *game;
+    cheatsCheat_t *cheat;
+    unsigned int numGamesAdded;
+} loadingContext_t;
+
+static loadingContext_t g_ctx;
+
+static void loadingContextInit()
+{
+    g_ctx.gamesHead = NULL;
+    g_ctx.game = NULL;
+    g_ctx.cheat = NULL;
+    g_ctx.numGamesAdded = 0;
+}
 
 static int readTextCheats(char *text, size_t len);
 
-cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesRead)
+cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesAdded)
 {
-    FILE *txtFile;
-    char *text;
-    char *buff;
-    size_t txtLen;
-    
-    if(!path)
-        return NULL;
-    if(!numGamesRead)
+    if(!path || !numGamesAdded)
         return NULL;
     
-    txtFile = fopen(path, "r");
+    FILE *txtFile = fopen(path, "r");
     if(!txtFile)
         return NULL;
 
     fseek(txtFile, 0, SEEK_END);
-    txtLen = ftell(txtFile);
+    size_t txtLen = ftell(txtFile);
     fseek(txtFile, 0, SEEK_SET);
     
-    buff = malloc(txtLen + 1);
-    text = buff;
+    char *text = malloc(txtLen + 1);
     fread(text, 1, txtLen, txtFile);
     fclose(txtFile);
 
     // NULL-terminate so cheats can be properly parsed if it doesn't end with a
     // newline character.
     text[txtLen] = '\0';
+
+    loadingContextInit(&g_ctx);
     readTextCheats(text, txtLen);
+    free(text);
+
+    *numGamesAdded = g_ctx.numGamesAdded;
     
-    free(buff);
-    *numGamesRead = g_numGamesRead;
-    
-    return gamesHead;
+    return g_ctx.gamesHead;
 }
 
 // Print game title surrounded by double-quotation marks in buffer. Returns
@@ -123,28 +130,45 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     clock_t start = clock();
     char buf[8192];
     int index = 0;
-    float progress = 0;
     const cheatsGame_t *game = games;
+
+    int numGamesProcessed = 0;
     while(game)
     {
-        progress += (float)1/cheatsGetNumGames();
-        graphicsDrawLoadingBar(50, 350, progress);
-        graphicsRender();
-
-        if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
+        int wroteGameTitle = 0;
+        if(numGamesProcessed % 500 == 0)
         {
-            index += copyGameTitleToBuffer(&buf[index], game->title);
-        }
-        else
-        {
-            // Flush buffer to file
-            fwrite(buf, 1, index, f);
-            index = copyGameTitleToBuffer(&buf[0], game->title);
+            float progress = (float)numGamesProcessed / cheatsGetNumGames();
+            graphicsDrawLoadingBar(50, 350, progress);
+            graphicsRender();
         }
 
-        cheatsCheat_t *cheat = game->cheats;
+        const cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
+            if(cheat->readOnly)
+            {
+                // Cheat is from a read-only database, so we don't want to
+                // duplicate it in the file being written.
+                cheat = cheat->next;
+                continue;
+            }
+
+            if(!wroteGameTitle)
+            {
+                if(index + strlen(game->title) + 3 < sizeof(buf)) // 3 = 2 double-quotes + 1 newline character
+                {
+                    index += copyGameTitleToBuffer(&buf[index], game->title);
+                }
+                else
+                {
+                    // Flush buffer to file
+                    fwrite(buf, 1, index, f);
+                    index = copyGameTitleToBuffer(&buf[0], game->title);
+                }
+                wroteGameTitle = 1;
+            }
+
             if(index + strlen(cheat->title) + 1 < sizeof(buf))
             {
                 index += copyCheatTitleToBuffer(&buf[index], cheat->title);
@@ -174,8 +198,8 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
             }
             cheat = cheat->next;
         }
-        buf[index++] = '\n';
         game = game->next;
+        numGamesProcessed++;
     }
 
     // Flush remaining buffer to file
@@ -189,9 +213,9 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     return 1;
 }
 
-cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
+cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
 {
-    if(!path || !numGamesRead)
+    if(!path || !numGamesAdded)
         return NULL;
 
     unzFile zipFile = unzOpen(path);
@@ -217,6 +241,8 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
     }
 
     // Read all .txt files in the archive
+    cheatsGame_t *gamesHead = NULL;
+    unsigned int numGamesAddedTotal = 0;
     int hasNextFile = UNZ_OK;
     while(hasNextFile == UNZ_OK)
     {
@@ -259,11 +285,31 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
         // NULL-terminate so cheats can be properly parsed if it doesn't end
         // with a newline character.
         text[zipFileInfo.uncompressed_size] = '\0';
+
+        loadingContextInit(&g_ctx);
         readTextCheats(text, zipFileInfo.uncompressed_size);
         
         free(text);
-
         unzCloseCurrentFile(zipFile);
+
+        if(!gamesHead)
+        {
+            printf("gamesHead == NULL\n");
+            gamesHead = g_ctx.gamesHead;
+        }
+        else
+        {
+            printf("Appending to end of game list being built");
+            // Append to end of game list bring built
+            cheatsGame_t *game = gamesHead;
+            while(game->next)
+                game = game->next;
+            
+            printf("Previous last title was %s\n", game->title);
+            game->next = g_ctx.gamesHead;
+        }
+
+        numGamesAddedTotal += g_ctx.numGamesAdded;
 
         // Get next file, or exit the loop if there are no more files in the
         // archive.
@@ -272,11 +318,11 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesRead)
                             NULL, 0,
                             NULL, 0);
     };
-    
+
     unzClose(zipFile);
 
-    *numGamesRead = g_numGamesRead;
-    
+    *numGamesAdded = numGamesAddedTotal;
+
     return gamesHead;
 }
 
@@ -328,123 +374,142 @@ static int parseLine(const char *line, const int len)
 {
     if(len < 1)
         return 0;
-    cheatsGame_t *newGame;
+
     int token = getToken(line, len);
 
-    switch(token)
+    if(token == TOKEN_TITLE)
     {
-        case TOKEN_TITLE: // Create new game
-            newGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
+        // Use existing game or create new one
+        char tempName[81];
+        strncpy(tempName, line+1, sizeof(tempName));
+        tempName[len-2] = '\0'; // Remove trailing '"'
 
-            if(!game)
+        // Try to find existing game with this title
+        cheatsGame_t *thisGame = cheatsFindGame(tempName);
+
+        if(!thisGame)
+        {
+            // No game with this title exists, so create a new one
+            thisGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
+            if(!g_ctx.game)
             {
-                // First game
-                gamesHead = newGame;
-                game = gamesHead;
+                // First game added
+                g_ctx.gamesHead = thisGame;
             }
             else
+                g_ctx.game->next = thisGame;
+
+            strncpy(thisGame->title, tempName, 81);
+            g_ctx.numGamesAdded += 1;
+        }
+        else
+        {
+            // Add cheats to end of game's existing cheat list
+            cheatsCheat_t *cheat = thisGame->cheats;
+            if(cheat)
             {
-                if(game->codeLinesUsed > 0)
-                {
-                    // Free excess memory from the previous game's code list
-                    game->codeLinesCapacity = game->codeLinesUsed;
-                    game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
-                }
-                
-                game->next = newGame;
-                game = newGame;
+                while(cheat->next)
+                    cheat = cheat->next;
             }
-            
-            strncpy(game->title, line+1, 81);
-            game->title[strlen(line) - 2] = '\0'; // Remove trailing '"'
-            game->next = NULL;
-            g_numGamesRead += 1;
-            break;
-            
-        case TOKEN_CHEAT: // Add new cheat to game
-            if(!game)
-                return 0;
 
-            cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
+            g_ctx.cheat = cheat;
+        }
 
-            if(game->cheats == NULL)
-            {
-                game->cheats = newCheat;
-                cheat = game->cheats;
-            }
-            else
-            {
-                cheat->next = newCheat;
-                cheat = cheat->next;
-            }
-            
-            strncpy(cheat->title, line, 81);
-            cheat->type = CHEAT_HEADER;
-            cheat->next = NULL;
-            game->numCheats++;
-            break;
-            
-        case TOKEN_CODE: // Add code to cheat
-            if(!game || !cheat)
-                return 0;
-            
-            if(!game->codeLines)
-            {
-                game->codeLinesCapacity = 1;
-                game->codeLines = calloc(game->codeLinesCapacity, sizeof(u64));
-            }
-            else if(game->codeLinesUsed == game->codeLinesCapacity)
-            {
-                game->codeLinesCapacity *= 2;
-                game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
-            }
-            
-            if(cheat->numCodeLines == 0)
-            {
-                cheat->codeLinesOffset = game->codeLinesUsed;
-            }
-            
-            u64 *codeLine = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
+        if(g_ctx.game && g_ctx.game->codeLinesUsed > 0)
+        {
+            // Free excess memory from the previous game's code list
+            g_ctx.game->codeLinesCapacity = g_ctx.game->codeLinesUsed;
+            g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+        }
 
-            // Decode pair of 32-bit hexidecimal text values
-            int i = 0;
-            static char offsets[] = {3, 0, 2, 0, 1, 0, 0, 0, 0, 7, 0, 6, 0, 5, 0, 4};
-            do
-            {
-                char c1 = line[i];
-                char c2 = line[i + 1];
-                u8 hex = 0;
+        g_ctx.game = thisGame;
+    }
+    else if (token == TOKEN_CHEAT)
+    {
+        // Add new cheat to game
+        if(!g_ctx.game)
+            return 0;
 
-                if(c1 >= 'a')
-                    hex = (0xA + c1 - 'a') << 4;
-                else if(c1 >= 'A')
-                    hex = (0xA + c1 - 'A') << 4;
-                else
-                    hex = (c1 - '0') << 4;
+        cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
 
-                if(c2 >= 'a')
-                    hex |= (0xA + c2 - 'a') & 0xF;
-                else if(c2 >= 'A')
-                    hex |= (0xA + c2 - 'A') & 0xF;
-                else
-                    hex |= (c2 - '0') & 0xF;
+        if(!g_ctx.game->cheats)
+        {
+            // Game's first cheat
+            g_ctx.game->cheats = newCheat;
+        }
+        else
+            g_ctx.cheat->next = newCheat;
 
-                *((u8 *)codeLine + offsets[i]) = hex;
+        g_ctx.cheat = newCheat;
+        
+        strncpy(g_ctx.cheat->title, line, 81);
+        g_ctx.cheat->type = CHEAT_HEADER;
+        g_ctx.cheat->next = NULL;
+        g_ctx.game->numCheats++;
+    }
+    else if(token == TOKEN_CODE)
+    {
+        // Add code to cheat
+        if(!g_ctx.game || !g_ctx.cheat)
+            return 0;
+        
+        if(!g_ctx.game->codeLines)
+        {
+            g_ctx.game->codeLinesCapacity = 1;
+            g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
+        }
+        else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
+        {
+            g_ctx.game->codeLinesCapacity *= 2;
+            g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+        }
+        
+        if(g_ctx.cheat->numCodeLines == 0)
+            g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
+        
+        u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
 
-                if(i != 6)
-                    i += 2; // Skip over 2 hex nibbles
-                else
-                    i += 3; // Skip over 2 hex nibbles + space
+        // Decode pair of 32-bit hexidecimal text values
+        static const unsigned char lut[] = {
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,
+            // 0x30: [0-9]
+            0,1,2,3,4,5,6,7,8,9,
+            0,0,0,0,0,0,0,
+            // 0x41: [A-F]
+            0xa,0xb,0xc,0xd,0xe,0xf,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,
+            // 0x61: [a-f]
+            0xa,0xb,0xc,0xd,0xe,0xf
+        };
 
-            } while( i <= 16 );
+        u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
+                    ((u64)lut[(int)line[ 1]] << 24) |
+                    ((u64)lut[(int)line[ 2]] << 20) |
+                    ((u64)lut[(int)line[ 3]] << 16) |
+                    ((u64)lut[(int)line[ 4]] << 12) |
+                    ((u64)lut[(int)line[ 5]] <<  8) |
+                    ((u64)lut[(int)line[ 6]] <<  4) |
+                    ((u64)lut[(int)line[ 7]])       |
+                    ((u64)lut[(int)line[ 9]] << 60) |
+                    ((u64)lut[(int)line[10]] << 56) |
+                    ((u64)lut[(int)line[11]] << 52) |
+                    ((u64)lut[(int)line[12]] << 48) |
+                    ((u64)lut[(int)line[13]] << 44) |
+                    ((u64)lut[(int)line[14]] << 40) |
+                    ((u64)lut[(int)line[15]] << 36) |
+                    ((u64)lut[(int)line[16]] << 32);
 
-            cheat->type = CHEAT_NORMAL;
-            cheat->numCodeLines++;
-            game->codeLinesUsed++;
-            break;
-            
-        default:
-            break;
+        *codeLine = hex;
+
+        g_ctx.cheat->type = CHEAT_NORMAL;
+        g_ctx.cheat->numCodeLines++;
+        g_ctx.game->codeLinesUsed++;
     }
     
     return 1;
@@ -452,6 +517,9 @@ static int parseLine(const char *line, const int len)
 
 static int readTextCheats(char *text, size_t len)
 {
+    if(!text || len <= 0 )
+        return 0;
+
     char *endPtr = text + len;
     u32 lineNum = 0;
 
@@ -459,12 +527,6 @@ static int readTextCheats(char *text, size_t len)
     
     while(text < endPtr)
     {
-        if((lineNum % 5000) == 0)
-        {
-            float progress = 1.0 - ((endPtr - text)/(float)len);
-            graphicsDrawLoadingBar(100, 375, progress);
-            graphicsRender();
-        }
         char *end = strchr(text, '\n');
         if(!end) // Reading the last line
             end = endPtr - 1;
