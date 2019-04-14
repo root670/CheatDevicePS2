@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <debug.h>
 #include <libpad.h>
+
 #include "graphics.h"
 #include "menus.h"
 #include "cheats.h"
 #include "settings.h"
 #include "util.h"
-#include "database.h"
 
 int main(int argc, char *argv[])
 {
@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     if(readWritePath && !cheatsOpenDatabase(readWritePath, 0))
     {
         char error[255];
-        sprintf(error, "Error loading cheat database \"%s\"!", readWritePath);
+        sprintf(error, "Error loading read/write cheat database \"%s\"!", readWritePath);
         displayError(error);
     }
     

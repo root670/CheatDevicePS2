@@ -1,12 +1,3 @@
-#include "cheats.h"
-#include "database.h"
-#include "textcheats.h"
-#include "menus.h"
-#include "graphics.h"
-#include "util.h"
-#include "hash.h"
-#include "objectpool.h"
-#include "settings.h"
 #include <debug.h>
 #include <kernel.h>
 #include <stdio.h>
@@ -14,6 +5,15 @@
 #include <malloc.h>
 #include <erl.h>
 #include <floatlib.h>
+
+#include "cheats.h"
+#include "textcheats.h"
+#include "menus.h"
+#include "graphics.h"
+#include "util.h"
+#include "hash.h"
+#include "objectpool.h"
+#include "settings.h"
 
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
@@ -37,7 +37,6 @@ typedef struct cheatDatabaseHandler {
 } cheatDatabaseHandler_t;
 
 static cheatDatabaseHandler_t cheatDatabaseHandlers[] = {
-    {"Binary Database (.cdb)", "cdb", cdbOpen, NULL},
     {"Text File (.txt)", "txt", textCheatsOpen, textCheatsSave},
     {"Text File in ZIP (.zip)", "zip", textCheatsOpenZip, NULL}
 };
