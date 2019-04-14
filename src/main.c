@@ -18,10 +18,19 @@ int main(int argc, char *argv[])
     initSettings();
     initMenus();
     
-    if(!cheatsOpenDatabase(settingsGetDatabasePath()))
+    char *readOnlyPath = settingsGetReadOnlyDatabasePath();
+    if(readOnlyPath && !cheatsOpenDatabase(readOnlyPath, 1))
     {
         char error[255];
-        sprintf(error, "Error loading cheat database \"%s\"!", settingsGetDatabasePath());
+        sprintf(error, "Error loading read-only cheat database \"%s\"!", readOnlyPath);
+        displayError(error);
+    }
+
+    char *readWritePath = settingsGetReadWriteDatabasePath();
+    if(readWritePath && !cheatsOpenDatabase(readWritePath, 0))
+    {
+        char error[255];
+        sprintf(error, "Error loading cheat database \"%s\"!", readWritePath);
         displayError(error);
     }
     
