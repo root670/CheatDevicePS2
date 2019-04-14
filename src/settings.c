@@ -48,7 +48,7 @@ static void getINIString(struct ini_info *ini, char **dst, const char *keyName, 
         return;
 
     const char *value = ini ? ini_get(ini, "CheatDevicePS2", keyName) : NULL;
-    if(value)
+    if(value && strlen(value) > 0)
         *dst = strdup(value);
     else
         *dst = defaultValue ? strdup(defaultValue) : NULL;
@@ -194,8 +194,10 @@ int settingsSave()
     }
 
     fputs("[CheatDevicePS2]\n", iniFile);
-    fprintf(iniFile, "databaseReadOnly = %s\n", settings.databaseReadOnlyPath);
-    fprintf(iniFile, "databaseReadWrite = %s\n", settings.databaseReadWritePath);
+    fprintf(iniFile, "databaseReadOnly = %s\n",
+        settings.databaseReadOnlyPath ? settings.databaseReadOnlyPath : "");
+    fprintf(iniFile, "databaseReadWrite = %s\n",
+        settings.databaseReadWritePath ? settings.databaseReadWritePath : "");
     fprintf(iniFile, "boot1 = %s\n", settings.bootPaths[0]);
     fprintf(iniFile, "boot2 = %s\n", settings.bootPaths[1]);
     fprintf(iniFile, "boot3 = %s\n", settings.bootPaths[2]);
@@ -220,7 +222,8 @@ void settingsSetReadOnlyDatabasePath(const char *path)
     if(!initialized || !path)
         return;
 
-    free(settings.databaseReadOnlyPath);
+    if(settings.databaseReadOnlyPath)
+        free(settings.databaseReadOnlyPath);
     settings.databaseReadOnlyPath = strdup(path);
     settingsChanged = 1;
 }
@@ -238,7 +241,8 @@ void settingsSetReadWriteDatabasePath(const char *path)
     if(!initialized || !path)
         return;
 
-    free(settings.databaseReadWritePath);
+    if(settings.databaseReadWritePath)
+        free(settings.databaseReadWritePath);
     settings.databaseReadWritePath = strdup(path);
     settingsChanged = 1;
 }
