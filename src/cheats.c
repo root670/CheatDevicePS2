@@ -857,8 +857,6 @@ int cheatsLoadGameMenu()
     cheatsGame_t *game = gamesHead;
     menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
     menuItem_t *item = items;
-
-    gameHashes = hashNewTable(numGames);
     
     while(game)
     {
