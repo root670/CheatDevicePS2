@@ -849,8 +849,6 @@ static void onDisplayCodeContextMenu(const menuItem_t *selected)
 
 int cheatsLoadGameMenu()
 {
-    menuSetHelpTickerText(HELP_TICKER_GAMES);
-
     if(!gamesHead)
         return 0;
 
