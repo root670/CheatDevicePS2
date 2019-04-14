@@ -630,7 +630,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
         return 0;
     }
 
-    unsigned int numGamesAdded;
+    unsigned int numGamesAdded = 0;
     cheatsGame_t *loaded = handler->open(path, &numGamesAdded);
 
     printf("Added %d games from %s\n", numGamesAdded, path);
