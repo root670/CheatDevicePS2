@@ -336,6 +336,7 @@ int cheatsSaveDatabase()
         // TODO: Prompt for new location
         displayError("No read-write save handler is available!!!\nDefaulting to one...");
         path = "CheatDatabase_RW.txt";
+        settingsSetReadWriteDatabasePath(path);
     }
 
     // Confirm user wants to write save changes
