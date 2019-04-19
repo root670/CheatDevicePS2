@@ -527,16 +527,13 @@ static const char *CODE_KEYBOARD_CHARS = \
 #define CODE_KEYBOARD_ACCEPT_ROW CODE_KEYBOARD_ROWS
 #define CODE_KEYBOARD_CANCEL_ROW CODE_KEYBOARD_ACCEPT_ROW + 1
 
-static int displayCodeEditMenu(u64 *code, const int isNewCode)
+static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
 {
     if(!code)
         return 0;
-
-    u32 addr = (u32)*((u32 *)code);
-    u32 val  = (u32)*((u32 *)code + 1);
     
-    char codeString[18];
-    snprintf(codeString, 18, "%08X %08X", addr, val);
+    char codeString[sizeof(cheatsCodeLine_t) * 2 + 2];
+    snprintf(codeString, sizeof(codeString), codeLineFormatString, code->address, code->value);
 
     menuSetTempHelpTickerText(HELP_TICKER_CODE_EDIT_MENU);
 
@@ -564,7 +561,7 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
             else if(row == CODE_KEYBOARD_ACCEPT_ROW)
             {
                 // Update code value
-                sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
+                sscanf(codeString, codeLineFormatString, &code->address, &code->value);
                 ret = 1;
             }
             else if(row == CODE_KEYBOARD_CANCEL_ROW)
@@ -576,7 +573,7 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
         else if(pad_pressed & PAD_START)
         {
             // Update code value
-            sscanf(codeString, "%08X %08X", (u32 *)code, ((u32 *)code + 1));
+            sscanf(codeString, codeLineFormatString, &code->address, &code->value);
             ret = 1;
         }
 
@@ -706,12 +703,12 @@ static int displayCodeEditMenu(u64 *code, const int isNewCode)
     return ret;
 }
 
-int displayNewCodeEditMenu(u64 *code)
+int displayNewCodeEditMenu(cheatsCodeLine_t *code)
 {
     return displayCodeEditMenu(code, 1);
 }
 
-int displayExistingCodeEditMenu(u64 *code)
+int displayExistingCodeEditMenu(cheatsCodeLine_t *code)
 {
     graphicsDrawTextCentered(125, COLOR_GREEN, "Edit Code Line");
     return displayCodeEditMenu(code, 0);

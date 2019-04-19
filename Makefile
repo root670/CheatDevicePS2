@@ -7,8 +7,8 @@ DTL_T10000 = 0
 
 EE_BIN = cheatdevice.elf
 
-# For minizip
-EE_CFLAGS += -DUSE_FILE32API
+EE_CFLAGS += -DUSE_FILE32API # For minizip
+EE_CFLAGS += -D__PS2__
 
 # Helper libraries
 OBJS += src/libraries/upng.o

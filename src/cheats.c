@@ -24,10 +24,30 @@ static FILE *historyFile;
 static int numGames = 0;
 static int numEnabledCheats = 0;
 static int numEnabledCodes = 0;
-static u64 lastSelectedCode = 0;
+static cheatsCodeLine_t lastSelectedCode = {0, 0};
 static int cheatDatabaseDirty = 0;
 
+#ifdef __PS2__
 extern unsigned char _engine_erl_start[];
+
+/* used by cheat engine */
+int (*get_max_hooks)(void);
+int (*get_num_hooks)(void);
+int (*add_hook)(u32 addr, u32 val);
+void (*clear_hooks)(void);
+
+int (*get_max_codes)(void);
+void (*set_max_codes)(int num);
+int (*get_num_codes)(void);
+int (*add_code)(u32 addr, u32 val);
+void (*clear_codes)(void);
+
+const char *codeLineFormatString = "%08X %08X";
+#endif // __PS2__
+
+#ifdef __PSX__
+const char *codeLineFormatString = "%08X %04X";
+#endif // __PSX__
 
 typedef struct cheatDatabaseHandler {
     char name[28]; // cheat database format name
@@ -110,13 +130,14 @@ static void populateCheatHashTable(int numEntries)
 
     while(cheat != NULL)
     {
-        unsigned int hash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
+        unsigned int hash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * sizeof(cheatsCodeLine_t));
         hashAdd(cheatHashes, cheat, hash);
 
         cheat = cheat->next;
     }
 }
 
+#ifdef __PS2__
 static void findEnableCodes()
 {
     cheatsGame_t *game = gamesHead;
@@ -125,13 +146,13 @@ static void findEnableCodes()
         cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
-            u64 *codeLine = game->codeLines + cheat->codeLinesOffset;
+            cheatsCodeLine_t *codeLine = game->codeLines + cheat->codeLinesOffset;
+
             int line = 0;
             int numHookLines = 0;
             while(line < cheat->numCodeLines)
             {
-                u32 addr = codeLine[line];
-                if((addr & 0xF0000000) == 0x90000000)
+                if((codeLine[line].address & 0xF0000000) == 0x90000000)
                     numHookLines++;
 
                 line++;
@@ -145,6 +166,7 @@ static void findEnableCodes()
         game = game->next;
     }
 }
+#endif // __PS2__
 
 static int displayAddGame()
 {
@@ -384,10 +406,10 @@ static int displayDeleteCheat()
         cheat = cheat->next;
     }
 
-    u64 *dst = selectedGame->codeLines + selectedCheat->codeLinesOffset;
-    u64 *src = dst + selectedCheat->numCodeLines;
+    cheatsCodeLine_t *dst = selectedGame->codeLines + selectedCheat->codeLinesOffset;
+    cheatsCodeLine_t *src = dst + selectedCheat->numCodeLines;
     size_t copyLength = selectedGame->codeLinesUsed - (selectedCheat->codeLinesOffset + selectedCheat->numCodeLines);
-    memmove(dst, src, copyLength * sizeof(u64));
+    memmove(dst, src, copyLength * sizeof(cheatsCodeLine_t));
 
     selectedGame->codeLinesUsed -= selectedCheat->numCodeLines;
 
@@ -403,7 +425,8 @@ static int displayAddCodeLine(cheatsGame_t *game, cheatsCheat_t *cheat)
     if(!game || !cheat)
         return 0;
     
-    u64 newCode = lastSelectedCode;
+    cheatsCodeLine_t newCode;
+    memcpy(&newCode, &lastSelectedCode, sizeof(cheatsCodeLine_t));
     if(displayNewCodeEditMenu(&newCode) == 0)
         return 0;
 
@@ -411,13 +434,13 @@ static int displayAddCodeLine(cheatsGame_t *game, cheatsCheat_t *cheat)
     {
         // First code line
         game->codeLinesCapacity = 1;
-        game->codeLines = calloc(1, sizeof(u64));
+        game->codeLines = calloc(1, sizeof(cheatsCodeLine_t));
     }
     else if (game->codeLinesUsed == game->codeLinesCapacity)
     {
         // Need to allocate more space to add another code line
         game->codeLinesCapacity *= 2;
-        game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(u64));
+        game->codeLines = realloc(game->codeLines, game->codeLinesCapacity * sizeof(cheatsCodeLine_t));
     }
 
     // Move all subsequent cheat's code lines to make room for the new code
@@ -428,11 +451,11 @@ static int displayAddCodeLine(cheatsGame_t *game, cheatsCheat_t *cheat)
         cheatNext = cheatNext->next;
     }
 
-    u64 *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
-    u64 *dst = src + 1;
-    memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(u64));
+    cheatsCodeLine_t *src = game->codeLines + cheat->codeLinesOffset + cheat->numCodeLines;
+    cheatsCodeLine_t *dst = src + 1;
+    memmove(dst, src, (game->codeLinesUsed - (cheat->codeLinesOffset + cheat->numCodeLines)) * sizeof(cheatsCodeLine_t));
 
-    *src = newCode;
+    memcpy((void *)src, (void *)&newCode, sizeof(cheatsCodeLine_t));;
     lastSelectedCode = newCode;
     cheat->numCodeLines++;
     game->codeLinesUsed++;
@@ -450,20 +473,17 @@ static int displayEditCodeLine()
     if(menuGetActive() != MENU_CODES)
         return 0;
 
-    u64 *selectedCode = menuGetActiveItemExtra();
+    cheatsCodeLine_t *selectedCode = menuGetActiveItemExtra();
     if(!selectedCode)
         return 0;
 
-    lastSelectedCode = *selectedCode;
+    memcpy((void *)&lastSelectedCode, (void *)selectedCode, sizeof(cheatsCodeLine_t));
 
     if(!displayExistingCodeEditMenu(selectedCode))
         return 0;
-    
-    u32 addr = (u32)*((u32 *)selectedCode);
-    u32 val  = (u32)*((u32 *)selectedCode + 1);
-    
-    char newCodeLine[18];
-    snprintf(newCodeLine, 18, "%08X %08X", addr, val);
+
+    char newCodeLine[sizeof(cheatsCodeLine_t) * 2 + 2]; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
+    snprintf(newCodeLine, sizeof(newCodeLine), codeLineFormatString, selectedCode->address, selectedCode->value);
     menuRenameActiveItem(newCodeLine);
     cheatDatabaseDirty = 1;
 
@@ -490,9 +510,9 @@ static int displayDeleteCodeLine()
         cheatNext = cheatNext->next;
     }
 
-    u64 *dst = (u64 *)menuGetActiveItemExtra();
-    u64 *src = dst + 1;
-    size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(u64);
+    cheatsCodeLine_t *dst = (cheatsCodeLine_t *)menuGetActiveItemExtra();
+    cheatsCodeLine_t *src = dst + 1;
+    size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(cheatsCodeLine_t);
     memmove(dst, src, length);
 
     cheat->numCodeLines--;
@@ -527,7 +547,7 @@ int cheatsLoadHistory()
         populateCheatHashTable(game->numCheats);
 
         int i;
-        for(i = 0; i < historyLength - 4; i+= 4)
+        for(i = 0; i < historyLength - 4; i += 4)
         {
             unsigned int cheatHash;
             fread(&cheatHash, 4, 1, historyFile);
@@ -955,12 +975,11 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
     int i;
     for(i = 0; i < cheat->numCodeLines; i++)
     {
-        u64 *code = game->codeLines + cheat->codeLinesOffset + i;
-        u32 addr  = (u32)*((u32 *)code);
-        u32 val   = (u32)*((u32 *)code + 1);
+        cheatsCodeLine_t *code = game->codeLines + cheat->codeLinesOffset + i;
 
-        item->text = malloc(18);
-        snprintf(item->text, 18, "%08X %08X", addr, val);
+        size_t strLen = sizeof(cheatsCodeLine_t) * 2 + 2;
+        item->text = malloc(strLen);
+        snprintf(item->text, strLen, codeLineFormatString, code->address, code->value);
 
         item->type = MENU_ITEM_NORMAL;
         item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
@@ -1200,6 +1219,7 @@ char* cheatsGetActiveGameTitle()
     return activeGame->title;
 }
 
+#ifdef __PS2__
 void SetupERL()
 {
     struct erl_record_t *erl;
@@ -1241,11 +1261,11 @@ void SetupERL()
 
     printf("Symbols loaded.\n");
 }
+#endif // __PS2__
 
 static void readCodes(cheatsCheat_t *cheats)
 {
     int i;
-    u32 addr, val;
     int nextCodeCanBeHook = 1;
     cheatsCheat_t *cheat = cheats;
 
@@ -1266,9 +1286,8 @@ static void readCodes(cheatsCheat_t *cheats)
 
         for(i = 0; i < cheat->numCodeLines; ++i)
         {
+            cheatsCodeLine_t *code = activeGame->codeLines + cheat->codeLinesOffset + i;
             u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
-            addr = (u32)*((u32 *)code);
-            val  = (u32)*((u32 *)code + 1);
 
             if(cheat->type == CHEAT_VALUE_MAPPED &&
                cheat->valueMapLine == i)
@@ -1278,34 +1297,34 @@ static void readCodes(cheatsCheat_t *cheats)
 
                 // Clear bits that will be modified
                 if(mapValue <= 0xFF)
-                    val &= 0xFFFFFF00;
+                    code->value &= 0xFFFFFF00;
                 else if(mapValue <= 0xFFFF)
-                    val &= 0xFFFF0000;
+                    code->value &= 0xFFFF0000;
                 else if(mapValue <= 0xFFFFFF)
-                    val &= 0xFF000000;
+                    code->value &= 0xFF000000;
                 else
-                    val &= 0;
+                    code->value &= 0;
 
-                val |= map->values[cheat->valueMapChoice];
+                code->value |= map->values[cheat->valueMapChoice];
             }
 
-            if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
+            if(((code->address & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
             {
-                printf("hook: %08X %08X\n", addr, val);
-                add_hook(addr, val);
+                printf("hook: %08X %08X\n", code->address, code->value);
+                add_hook(code->address, code->value);
             }
             else
             {
-                printf("code: %08X %08X\n", addr, val);
-                add_code(addr, val);
+                printf("code: %08X %08X\n", code->address, code->value);
+                add_code(code->address, code->value);
             }
 
             // Prevent second line of a 2-line code from being treated as a hook if it starts with a 9
-            if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
+            if ((code->address & 0xf0000000) == 0x40000000 || (code->address & 0xf0000000) == 0x30000000)
                 nextCodeCanBeHook = 0;
             else
                 nextCodeCanBeHook = 1;
-        }
+    }
 
         cheat = cheat->next;
     }

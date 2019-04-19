@@ -307,19 +307,19 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
             int i;
             for(i = 0; i < cheat->numCodeLines; i++)
             {
-                u32 addr = game->codeLines[cheat->codeLinesOffset + i];
-                u32 val = game->codeLines[cheat->codeLinesOffset + i] >> 32;
+                cheatsCodeLine_t *code = game->codeLines + cheat->codeLinesOffset + i;
+
                 if(!valueMappedCheat || i != cheat->valueMapLine)
                 {
                     if(index + 18 < sizeof(buf))
                     {
-                        index += copyCodeToBuffer(&buf[index], addr, val);
+                        index += copyCodeToBuffer(&buf[index], code->address, code->value);
                     }
                     else
                     {
                         // Flush buffer to file
                         fwrite(buf, 1, index, f);
-                        index = copyCodeToBuffer(&buf[0], addr, val);
+                        index = copyCodeToBuffer(&buf[0], code->address, code->value);
                     }
                 }
                 else
@@ -329,12 +329,12 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
 
                     if(index + 17 + strlen(mapName) < sizeof(buf)) // worst case: 8 char address + 1 space + 6 char value + $ char + mapName + null char
                     {
-                        index += copyValueMappedCodeToBuffer(&buf[index], addr, val, mapName, map->bytesPerEntry);
+                        index += copyValueMappedCodeToBuffer(&buf[index], code->address, code->value, mapName, map->bytesPerEntry);
                     }
                     else
                     {
                         fwrite(buf, 1, index, f);
-                        index = copyValueMappedCodeToBuffer(&buf[index], addr, val, mapName, map->bytesPerEntry);
+                        index = copyValueMappedCodeToBuffer(&buf[index], code->address, code->value, mapName, map->bytesPerEntry);
                     }
                 }
             }
@@ -697,18 +697,18 @@ static inline int readCodeLine(const char *line, int len)
     if(!g_ctx.game->codeLines)
     {
         g_ctx.game->codeLinesCapacity = 1;
-        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
+        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(cheatsCodeLine_t));
     }
     else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
     {
         g_ctx.game->codeLinesCapacity *= 2;
-        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(cheatsCodeLine_t));
     }
     
     if(g_ctx.cheat->numCodeLines == 0)
         g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
     
-    u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
+    cheatsCodeLine_t *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
 
     // Decode pair of 32-bit hexidecimal text values
     static const unsigned char lut[] = {
@@ -746,7 +746,8 @@ static inline int readCodeLine(const char *line, int len)
               ((u64)lut[(int)line[15]] << 36) |
               ((u64)lut[(int)line[16]] << 32);
 
-    *codeLine = hex;
+    codeLine->address = (u32)hex;
+    codeLine->value   = (u32)(hex >> 32);
 
     if(g_ctx.cheat->type != CHEAT_VALUE_MAPPED)
         g_ctx.cheat->type = CHEAT_NORMAL;
@@ -883,7 +884,7 @@ static inline int readMapEntryLine(const char *line, int len)
         g_ctx.valueMap->keys = malloc(nameLength);
     else
         g_ctx.valueMap->keys = realloc(g_ctx.valueMap->keys, g_ctx.valueMap->keysLength + nameLength);
-        
+
     memcpy(g_ctx.valueMap->keys + g_ctx.valueMap->keysLength, name, nameLength);
     g_ctx.valueMap->keysLength += nameLength;
 
@@ -908,18 +909,18 @@ static inline int readMappedCodeLine(const char *line, int len)
     if(!g_ctx.game->codeLines)
     {
         g_ctx.game->codeLinesCapacity = 1;
-        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
+        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(cheatsValueMap_t));
     }
     else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
     {
         g_ctx.game->codeLinesCapacity *= 2;
-        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(cheatsValueMap_t));
     }
     
     if(g_ctx.cheat->numCodeLines == 0)
         g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
     
-    u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
+    cheatsCodeLine_t *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
 
     // Decode 32-bit hexidecimal text values for address
     static const unsigned char lut[] = {
@@ -940,7 +941,7 @@ static inline int readMappedCodeLine(const char *line, int len)
         0xa,0xb,0xc,0xd,0xe,0xf
     };
 
-    u64 address = ((u64)lut[(int)line[0]] << 28) |
+    u32 address = ((u64)lut[(int)line[0]] << 28) |
                   ((u64)lut[(int)line[1]] << 24) |
                   ((u64)lut[(int)line[2]] << 20) |
                   ((u64)lut[(int)line[3]] << 16) |
@@ -954,16 +955,17 @@ static inline int readMappedCodeLine(const char *line, int len)
 
     // Get 0-6 digits for value appearing before the map reference
     int i = 0;
-    u64 value = 0;
+    u32 value = 0;
     while(c != end && *c != '$')
     {
-        value |= (u64)lut[(int)*c++] << (60 - 4*i);
+        value |= (u32)lut[(int)*c++] << (28 - 4*i);
         i++;
-        value |= (u64)lut[(int)*c++] << (60 - 4*i);
+        value |= (u32)lut[(int)*c++] << (28 - 4*i);
         i++;
     }
 
-    *codeLine = address | value;
+    codeLine->address = address;
+    codeLine->value   = value;
 
     // Skip over $
     c++;

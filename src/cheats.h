@@ -36,6 +36,22 @@ Cheat Database --> Game --> Cheat --> Code
 | Game 2
 */
 
+const char *codeLineFormatString;
+
+#ifdef __PS2__
+typedef struct cheatsCodeLine {
+    u32 address;
+    u32 value;
+} cheatsCodeLine_t;
+#elif __PSX__
+#pragma pack(1)
+typedef struct cheatsCodeLine {
+    u32 address;
+    u16 value;
+} cheatsCodeLine_t;
+#pragma pack()
+#endif
+
 typedef struct cheatsCheat {
     char title[81];
     u8 type:2;
@@ -68,7 +84,11 @@ typedef struct cheatsValueMap {
     int keysLength;
     // Values for each key, corresponding to the nth cstring in keys
     // (ex: {0x00000000, 0x00000001})
+#ifdef __PS2__
     u32 *values;
+#elif __PSX__
+    u16 *values;
+#endif
     // Number of bytes each value occupies
     // (ex: 1)
     u8 bytesPerEntry;
@@ -85,7 +105,7 @@ typedef struct cheatsGame {
     u16 numCheats;
     cheatsCheat_t *cheats;
 
-    u64 *codeLines;
+    cheatsCodeLine_t *codeLines;
     u32 codeLinesCapacity;
     u32 codeLinesUsed;
 
@@ -144,17 +164,5 @@ int cheatsSetActiveGame(cheatsGame_t *game);
 char* cheatsGetActiveGameTitle();
 // Setup up the cheat engine and load active cheats
 void cheatsInstallCodesForEngine();
-
-/* used by cheat engine */
-int (*get_max_hooks)(void);
-int (*get_num_hooks)(void);
-int (*add_hook)(u32 addr, u32 val);
-void (*clear_hooks)(void);
-
-int (*get_max_codes)(void);
-void (*set_max_codes)(int num);
-int (*get_num_codes)(void);
-int (*add_code)(u32 addr, u32 val);
-void (*clear_codes)(void);
 
 #endif

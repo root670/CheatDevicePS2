@@ -8,6 +8,8 @@
 
 #include <tamtypes.h>
 
+#include "cheats.h"
+
 #define READ_8(address) \
 *((unsigned char *)address)
 
@@ -48,9 +50,9 @@ int displayError(const char *error);
 // Get user input for a string
 int displayTextEditMenu(char *dstStr, int dstLen, const char *initialStr, const char *prompt);
 // Get user input for an existing code line.
-int displayExistingCodeEditMenu(u64 *code);
+int displayExistingCodeEditMenu(cheatsCodeLine_t *code);
 // Get user input for a new code line
-int displayNewCodeEditMenu(u64 *code);
+int displayNewCodeEditMenu(cheatsCodeLine_t *code);
 
 // Get number of lines in str.
 int getNumLines(const char *str);
