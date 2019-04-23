@@ -8,13 +8,19 @@
 
 #include "cheats.h"
 
-// Open TXT cheat database. Returns list of new games added.
-cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesAdded);
+// Open TXT cheat database. If the loaded database contains new games,
+// gamesAdded will point to the first new game and numGamesAdded will be greater
+// than zero. Returns 1 if the file was successfully read or doesn't exist,
+// otherwise 0.
+int textCheatsOpen(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded);
 // Save internal cheat database to TXT cheat database.
 int textCheatsSave(const char *path, const cheatsGame_t *games);
 
-// Open TXT cheat database contained in a ZIP file. Returns list of new games added.
-cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded);
+// Open TXT cheat database contained in a ZIP file. If the loaded database
+// contains new games, gamesAdded will point to the first new game and
+// numGamesAdded will be greater than zero. Returns 1 if the file was
+// successfully read or doesn't exist, otherwise 0.
+int textCheatsOpenZip(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded);
 // Save internal cheat database to TXT cheat database contained in a ZIP file.
 int textCheatsSaveZip(const char *path, const cheatsGame_t *games);
 

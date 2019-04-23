@@ -17,8 +17,9 @@
 
 static cheatsGame_t *gamesHead = NULL;
 static cheatsGame_t *activeGame = NULL;
-static hashTable_t *gameHashes = NULL;
-static hashTable_t *cheatHashes = NULL;
+static hashTable_t *gameHashes = NULL; // game title -> cheatGames_t*
+static hashTable_t *gameMenuHashes = NULL; // game title -> menuItem_t*
+static hashTable_t *cheatHashes = NULL; // code lines -> cheatsGame_t*
 static FILE *historyFile;
 static int numGames = 0;
 static int numEnabledCheats = 0;
@@ -32,7 +33,7 @@ typedef struct cheatDatabaseHandler {
     char name[28]; // cheat database format name
     char extension[4]; // file extension
     
-    cheatsGame_t* (*open)(const char *path, unsigned int *numGamesAdded);
+    int (*open)(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded);
     int (*save)(const char *path, const cheatsGame_t *games);
 } cheatDatabaseHandler_t;
 
@@ -526,9 +527,9 @@ int cheatsLoadHistory()
 
     unsigned int lastGameHash;
     fread(&lastGameHash, 4, 1, historyFile);
-    menuItem_t *lastGameMenu = (menuItem_t *)hashFind(gameHashes, lastGameHash);
+    menuItem_t *lastGameMenu = (menuItem_t *)hashFind(gameMenuHashes, lastGameHash);
 
-    if(lastGameMenu != NULL)
+    if(lastGameMenu)
     {
         cheatsGame_t *game = (cheatsGame_t *)lastGameMenu->extra;
         cheatsSetActiveGame(game);
@@ -631,18 +632,18 @@ int cheatsOpenDatabase(const char* path, int readOnly)
     }
 
     unsigned int numGamesAdded = 0;
-    cheatsGame_t *loaded = handler->open(path, &numGamesAdded);
+    cheatsGame_t *gamesAdded = NULL;
+    
+    if(!handler->open(path, &gamesAdded, &numGamesAdded))
+        return 0;
 
     printf("Added %d games from %s\n", numGamesAdded, path);
-
-    if(numGamesAdded <= 0)
-        return 0;
 
     if(readOnly)
     {
         // Set read-only flag for all games and cheats that were loaded from
         // this database.
-        cheatsGame_t *game = loaded;
+        cheatsGame_t *game = gamesAdded;
         while(game)
         {
             game->readOnly = 1;
@@ -661,7 +662,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
     if(!gamesHead)
     {
         // No games had previously been loaded
-        gamesHead = loaded;
+        gamesHead = gamesAdded;
     }
     else
     {
@@ -670,7 +671,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
         while(game->next)
             game = game->next;
 
-        game->next = loaded;
+        game->next = gamesAdded;
     }
 
     numGames += numGamesAdded;
@@ -678,7 +679,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
     populateGameHashTable();
     findEnableCodes();
 
-    return numGames;
+    return 1;
 }
 
 int cheatsSaveDatabase()
@@ -855,12 +856,15 @@ int cheatsLoadGameMenu()
     cheatsGame_t *game = gamesHead;
     menuItem_t *items = calloc(numGames, sizeof(menuItem_t));
     menuItem_t *item = items;
+    gameMenuHashes = hashNewTable(numGames);
     
     while(game)
     {
         item->type = MENU_ITEM_NORMAL;
         item->text = game->title;
         item->extra = game;
+        unsigned int hash = hashFunction(game->title, strlen(game->title));
+        hashAdd(gameMenuHashes, item, hash);
 
         menuInsertItem(item);
         game = game->next;

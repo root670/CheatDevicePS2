@@ -35,19 +35,22 @@ static void loadingContextInit()
 
 static int readTextCheats(char *text, size_t len);
 
-cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesAdded)
+int textCheatsOpen(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded)
 {
-    if(!path || !numGamesAdded)
-        return NULL;
+    if(!path || !gamesAdded || !numGamesAdded)
+        return 0;
     
     FILE *txtFile = fopen(path, "r");
     if(!txtFile)
-        return NULL;
+        return 1;
 
     fseek(txtFile, 0, SEEK_END);
     size_t txtLen = ftell(txtFile);
     fseek(txtFile, 0, SEEK_SET);
     
+    if(txtLen == 0)
+        return 1; // Empty file.
+
     char *text = malloc(txtLen + 1);
     fread(text, 1, txtLen, txtFile);
     fclose(txtFile);
@@ -60,9 +63,10 @@ cheatsGame_t* textCheatsOpen(const char *path, unsigned int *numGamesAdded)
     readTextCheats(text, txtLen);
     free(text);
 
+    *gamesAdded    = g_ctx.gamesHead;
     *numGamesAdded = g_ctx.numGamesAdded;
     
-    return g_ctx.gamesHead;
+    return 1;
 }
 
 // Print game title surrounded by double-quotation marks in buffer. Returns
@@ -213,20 +217,20 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     return 1;
 }
 
-cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
+int textCheatsOpenZip(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded)
 {
-    if(!path || !numGamesAdded)
-        return NULL;
+    if(!path || !gamesAdded || !numGamesAdded)
+        return 0;
 
     unzFile zipFile = unzOpen(path);
     if(!zipFile)
-        return NULL;
+        return 1; // File doesn't exist.
 
     unz_global_info zipGlobalInfo;
     if(unzGetGlobalInfo(zipFile, &zipGlobalInfo) != UNZ_OK)
     {
         unzClose(zipFile);
-        return NULL;
+        return 0;
     }
 
     unz_file_info64 zipFileInfo;
@@ -237,7 +241,7 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
                       NULL, 0) != UNZ_OK)
     {
         unzClose(zipFile);
-        return NULL;
+        return 0;
     }
 
     // Read all .txt files in the archive
@@ -261,8 +265,11 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
         if(unzOpenCurrentFile(zipFile) != UNZ_OK)
         {
             unzClose(zipFile);
-            return NULL;
+            return 0;
         }
+
+        if(zipFileInfo.uncompressed_size == 0)
+            continue; // Empty file.
 
         // +1 to NULL-terminate later
         char *text = malloc(zipFileInfo.uncompressed_size + 1);
@@ -270,7 +277,7 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
         {
             unzCloseCurrentFile(zipFile);
             unzClose(zipFile);
-            return NULL;
+            return 0;
         }
 
         if(unzReadCurrentFile(zipFile, text, zipFileInfo.uncompressed_size) < 0)
@@ -279,7 +286,7 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
             free(text);
             unzCloseCurrentFile(zipFile);
             unzClose(zipFile);
-            return NULL;
+            return 0;
         }
 
         // NULL-terminate so cheats can be properly parsed if it doesn't end
@@ -294,18 +301,15 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
 
         if(!gamesHead)
         {
-            printf("gamesHead == NULL\n");
             gamesHead = g_ctx.gamesHead;
         }
         else
         {
-            printf("Appending to end of game list being built");
             // Append to end of game list bring built
             cheatsGame_t *game = gamesHead;
             while(game->next)
                 game = game->next;
             
-            printf("Previous last title was %s\n", game->title);
             game->next = g_ctx.gamesHead;
         }
 
@@ -322,8 +326,9 @@ cheatsGame_t* textCheatsOpenZip(const char *path, unsigned int *numGamesAdded)
     unzClose(zipFile);
 
     *numGamesAdded = numGamesAddedTotal;
+    *gamesAdded    = gamesHead;
 
-    return gamesHead;
+    return 1;
 }
 
 int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
