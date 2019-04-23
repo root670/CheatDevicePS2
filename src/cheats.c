@@ -551,6 +551,7 @@ int cheatsLoadHistory()
     }
 
     fclose(historyFile);
+    hashDestroyTable(gameMenuHashes);
 
     return 1;
 }
