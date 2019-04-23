@@ -542,11 +542,13 @@ int cheatsLoadHistory()
             fread(&cheatHash, 4, 1, historyFile);
             cheatsCheat_t *cheat = (cheatsCheat_t *)hashFind(cheatHashes, cheatHash);
 
-            if(cheat != NULL && cheat->type != CHEAT_ENABLECODE)
-                cheatsToggleCheat(cheat);
+            if(!cheat || cheat->type == CHEAT_ENABLECODE)
+                continue;
+            
+            cheatsToggleCheat(cheat);
+            menuSetActiveItem(lastGameMenu);
         }
 
-        menuSetActiveItem(lastGameMenu);
         hashDestroyTable(cheatHashes);
     }
 
