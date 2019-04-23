@@ -28,19 +28,19 @@ static cheatsCodeLine_t lastSelectedCode = {0, 0};
 static int cheatDatabaseDirty = 0;
 
 #ifdef __PS2__
-extern unsigned char _engine_erl_start[];
+    extern unsigned char _engine_erl_start[];
 
-/* used by cheat engine */
-int (*get_max_hooks)(void);
-int (*get_num_hooks)(void);
-int (*add_hook)(u32 addr, u32 val);
-void (*clear_hooks)(void);
+    /* used by cheat engine */
+    int (*get_max_hooks)(void);
+    int (*get_num_hooks)(void);
+    int (*add_hook)(u32 addr, u32 val);
+    void (*clear_hooks)(void);
 
-int (*get_max_codes)(void);
-void (*set_max_codes)(int num);
-int (*get_num_codes)(void);
-int (*add_code)(u32 addr, u32 val);
-void (*clear_codes)(void);
+    int (*get_max_codes)(void);
+    void (*set_max_codes)(int num);
+    int (*get_num_codes)(void);
+    int (*add_code)(u32 addr, u32 val);
+    void (*clear_codes)(void);
 
     const char *cheatsCodeFormatString = "%08X %08X";
     int cheatsCodeStringLength = 18; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
@@ -484,8 +484,8 @@ static int displayEditCodeLine()
     if(!displayExistingCodeEditMenu(selectedCode))
         return 0;
 
-    char newCodeLine[sizeof(cheatsCodeLine_t) * 2 + 2]; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
-    snprintf(newCodeLine, sizeof(newCodeLine), codeLineFormatString, selectedCode->address, selectedCode->value);
+    char newCodeLine[cheatsCodeStringLength];
+    snprintf(newCodeLine, sizeof(newCodeLine), cheatsCodeFormatString, selectedCode->address, selectedCode->value);
     menuRenameActiveItem(newCodeLine);
     cheatDatabaseDirty = 1;
 
@@ -506,7 +506,7 @@ static int displayDeleteCodeLine()
     // this code
     cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsCheat_t *cheatNext = cheat->next;
-    while(cheatNext != NULL)
+    while(cheatNext)
     {
         cheatNext->codeLinesOffset--;
         cheatNext = cheatNext->next;
@@ -514,8 +514,12 @@ static int displayDeleteCodeLine()
 
     cheatsCodeLine_t *dst = (cheatsCodeLine_t *)menuGetActiveItemExtra();
     cheatsCodeLine_t *src = dst + 1;
-    size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(cheatsCodeLine_t);
-    memmove(dst, src, length);
+    cheatsCodeLine_t *end = game->codeLines + game->codeLinesUsed;
+    if(end != dst)
+    {
+        size_t length = (end - src) * sizeof(cheatsCodeLine_t);
+        memmove(dst, src, length);
+    }
 
     cheat->numCodeLines--;
     game->codeLinesUsed--;
@@ -1288,7 +1292,6 @@ static void readCodes(cheatsCheat_t *cheats)
         for(i = 0; i < cheat->numCodeLines; ++i)
         {
             cheatsCodeLine_t *code = activeGame->codeLines + cheat->codeLinesOffset + i;
-            u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
 
             if(cheat->type == CHEAT_VALUE_MAPPED &&
                cheat->valueMapLine == i)
