@@ -28,7 +28,6 @@ static char *settingsPath = "host:CheatDevicePS2.ini";
 static char *settingsPath = "CheatDevicePS2.ini";
 #endif
 
-static char *defaultDatabase = "CheatDevicePS2.cdb";
 static char *defaultBootPaths[] = {
     "mass:BOOT/BOOT.ELF",
     "mass:BOOT/ESR.ELF",
