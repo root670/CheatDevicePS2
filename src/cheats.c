@@ -42,11 +42,13 @@ int (*get_num_codes)(void);
 int (*add_code)(u32 addr, u32 val);
 void (*clear_codes)(void);
 
-const char *codeLineFormatString = "%08X %08X";
+    const char *cheatsCodeFormatString = "%08X %08X";
+    int cheatsCodeStringLength = 18; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
 #endif // __PS2__
 
 #ifdef __PSX__
-const char *codeLineFormatString = "%08X %04X";
+    const char *cheatsCodeFormatString = "%08X %04X";
+    int cheatsCodeStringLength = 14; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
 #endif // __PSX__
 
 typedef struct cheatDatabaseHandler {
@@ -977,9 +979,8 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
     {
         cheatsCodeLine_t *code = game->codeLines + cheat->codeLinesOffset + i;
 
-        size_t strLen = sizeof(cheatsCodeLine_t) * 2 + 2;
-        item->text = malloc(strLen);
-        snprintf(item->text, strLen, codeLineFormatString, code->address, code->value);
+        item->text = malloc(cheatsCodeStringLength);
+        snprintf(item->text, cheatsCodeStringLength, cheatsCodeFormatString, code->address, code->value);
 
         item->type = MENU_ITEM_NORMAL;
         item->extra = (void *)(game->codeLines + cheat->codeLinesOffset + i);
@@ -1280,7 +1281,7 @@ static void readCodes(cheatsCheat_t *cheats)
         if(historyFile && cheat->type == CHEAT_NORMAL)
         {
             // Save cheat's hash
-            unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
+            unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * sizeof(cheatsCodeLine_t));
             fwrite(&cheatHash, 4, 1, historyFile);
         }
 

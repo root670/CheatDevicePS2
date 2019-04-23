@@ -17,29 +17,32 @@
 #include <libmc.h>
 #include <unistd.h>
 
-#ifdef _DTL_T10000
-extern u8  _sio2man_irx_start[];
-extern int _sio2man_irx_size;
-extern u8  _mcman_irx_start[];
-extern int _mcman_irx_size;
-extern u8  _mcserv_irx_start[];
-extern int _mcserv_irx_size;
-extern u8  _padman_irx_start[];
-extern int _padman_irx_size;
-#endif
+#ifdef __PS2__
+    #ifdef _DTL_T10000
+        extern u8  _sio2man_irx_start[];
+        extern int _sio2man_irx_size;
+        extern u8  _mcman_irx_start[];
+        extern int _mcman_irx_size;
+        extern u8  _mcserv_irx_start[];
+        extern int _mcserv_irx_size;
+        extern u8  _padman_irx_start[];
+        extern int _padman_irx_size;
+    #endif // _DTL_T10000
 
-extern u8  _iomanX_irx_start[];
-extern int _iomanX_irx_size;
-extern u8  _usbd_irx_start[];
-extern int _usbd_irx_size;
-extern u8  _usbhdfsd_irx_start[];
-extern int _usbhdfsd_irx_size;
+    extern u8  _iomanX_irx_start[];
+    extern int _iomanX_irx_size;
+    extern u8  _usbd_irx_start[];
+    extern int _usbd_irx_size;
+    extern u8  _usbhdfsd_irx_start[];
+    extern int _usbhdfsd_irx_size;
+#endif // __PS2__
 
 void loadModules()
 {
     int ret;
     printf("\n ** Loading main modules **\n");
 
+#ifdef __PS2__
     /* IOP reset routine taken from ps2rd */
     SifInitRpc(0);
 
@@ -95,6 +98,7 @@ void loadModules()
     #endif
 
     padInitialize();
+#endif // __PS2__
 }
 
 void handlePad()
@@ -532,8 +536,8 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
     if(!code)
         return 0;
     
-    char codeString[sizeof(cheatsCodeLine_t) * 2 + 2];
-    snprintf(codeString, sizeof(codeString), codeLineFormatString, code->address, code->value);
+    char codeString[cheatsCodeStringLength];
+    snprintf(codeString, cheatsCodeStringLength, cheatsCodeFormatString, code->address, code->value);
 
     menuSetTempHelpTickerText(HELP_TICKER_CODE_EDIT_MENU);
 
@@ -561,7 +565,7 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
             else if(row == CODE_KEYBOARD_ACCEPT_ROW)
             {
                 // Update code value
-                sscanf(codeString, codeLineFormatString, &code->address, &code->value);
+                sscanf(codeString, cheatsCodeFormatString, &code->address, &code->value);
                 ret = 1;
             }
             else if(row == CODE_KEYBOARD_CANCEL_ROW)
@@ -573,7 +577,7 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
         else if(pad_pressed & PAD_START)
         {
             // Update code value
-            sscanf(codeString, codeLineFormatString, &code->address, &code->value);
+            sscanf(codeString, cheatsCodeFormatString, &code->address, &code->value);
             ret = 1;
         }
 

@@ -36,22 +36,26 @@ Cheat Database --> Game --> Cheat --> Code
 | Game 2
 */
 
-const char *codeLineFormatString;
+const char *cheatsCodeFormatString;
+extern int cheatsCodeStringLength;
 
 #ifdef __PS2__
-typedef struct cheatsCodeLine {
-    u32 address;
-    u32 value;
-} cheatsCodeLine_t;
-#elif __PSX__
-#pragma pack(1)
-typedef struct cheatsCodeLine {
-    u32 address;
-    u16 value;
-} cheatsCodeLine_t;
-#pragma pack()
-#endif
+    typedef struct cheatsCodeLine {
+        u32 address;
+        u32 value;
+    } cheatsCodeLine_t;
+#endif // __PS2__
 
+#ifdef __PSX__
+    #pragma pack(1)
+    typedef struct cheatsCodeLine {
+        u32 address;
+        u16 value;
+    } cheatsCodeLine_t;
+    #pragma pack()
+#endif // __PSX__
+
+#pragma pack(1)
 typedef struct cheatsCheat {
     char title[81];
     u8 type:2;
@@ -71,6 +75,7 @@ typedef struct cheatsCheat {
 
     struct cheatsCheat *next;
 } cheatsCheat_t;
+#pragma pack()
 
 // List of values with corresponding keys to use in a cheat of type
 // CHEAT_VALUE_MAPPED
@@ -97,6 +102,7 @@ typedef struct cheatsValueMap {
     u8 numEntries;
 } cheatsValueMap_t;
 
+#pragma pack(1)
 typedef struct cheatsGame {
     char title[81];
     // If readOnly == 1, cannot modify game title or read-only cheats. You can,
@@ -114,6 +120,7 @@ typedef struct cheatsGame {
 
     struct cheatsGame *next;
 } cheatsGame_t;
+#pragma pack()
 
 int killCheats();
 
