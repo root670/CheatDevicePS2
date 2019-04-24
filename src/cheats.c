@@ -754,7 +754,7 @@ static void onCodeSelected(const menuItem_t *selected)
 
 static void onDisplayGameContextMenu(const menuItem_t *selected)
 {
-    cheatsGame_t *game = (cheatsGame_t *)selected->extra;
+    cheatsGame_t *game = selected ? (cheatsGame_t *)selected->extra : NULL;
     if(numGames == 0 || (game && game->readOnly))
     {
         const char *items[] = {"Add Game", "Cancel"};
@@ -853,6 +853,11 @@ static void onDisplayCodeContextMenu(const menuItem_t *selected)
 
 int cheatsLoadGameMenu()
 {
+    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
+    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayGameContextMenu);
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onGameSelected);
+    menuSetHelpTickerText(HELP_TICKER_GAMES);
+
     if(!gamesHead)
         return 0;
 
@@ -873,11 +878,6 @@ int cheatsLoadGameMenu()
         game = game->next;
         item++;
     }
-
-    menuSetCallback(MENU_CALLBACK_AFTER_DRAW, cheatsDrawStats);
-    menuSetCallback(MENU_CALLBACK_PRESSED_SQUARE, onDisplayGameContextMenu);
-    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onGameSelected);
-    menuSetHelpTickerText(HELP_TICKER_GAMES);
 
     return 1;
 }
