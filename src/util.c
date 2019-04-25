@@ -866,6 +866,22 @@ char* getFileBasename(const char *filename)
     return ret;
 }
 
+const char *getNthString(const char *str, int n)
+{
+    if(!str)
+        return NULL;
+
+    const char *c = str;
+    while(n)
+    {
+        if(!*c)
+            n--;
+        c++;
+    }
+
+    return c;
+}
+
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen)
 {
     /*----------------------------------------------------------------------------*\

@@ -63,6 +63,9 @@ const char* getFileExtension(const char *filename);
 // Get file path without extension.
 char* getFileBasename(const char *filename);
 
+// Find N-th cstring in an array of concatenated cstrings.
+const char *getNthString(const char *str, int n);
+
 unsigned long mycrc32(unsigned long inCrc32, const void *buf, long bufLen);
 
 #endif
