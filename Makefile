@@ -54,7 +54,6 @@ OBJS += resources/background_png.o
 OBJS += resources/check_png.o
 OBJS += resources/gamepad_png.o
 OBJS += resources/cube_png.o
-OBJS += resources/cogs_png.o
 OBJS += resources/savemanager_png.o
 OBJS += resources/flashdrive_png.o
 OBJS += resources/memorycard1_png.o
@@ -116,7 +115,6 @@ endif
 	@bin2o resources/check.png resources/check_png.o _check_png
 	@bin2o resources/gamepad.png resources/gamepad_png.o _gamepad_png
 	@bin2o resources/cube.png resources/cube_png.o _cube_png
-	@bin2o resources/cogs.png resources/cogs_png.o _cogs_png
 	@bin2o resources/savemanager.png resources/savemanager_png.o _savemanager_png
 	@bin2o resources/flashdrive.png resources/flashdrive_png.o _flashdrive_png
 	@bin2o resources/memorycard1.png resources/memorycard1_png.o _memorycard1_png
