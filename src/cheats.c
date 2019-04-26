@@ -125,12 +125,6 @@ static void findEnableCodes()
         cheatsCheat_t *cheat = game->cheats;
         while(cheat)
         {
-            if(cheat->type == CHEAT_HEADER)
-            {
-                cheat = cheat->next;
-                continue;
-            }
-
             u64 *codeLine = game->codeLines + cheat->codeLinesOffset;
             int line = 0;
             int numHookLines = 0;
@@ -143,10 +137,8 @@ static void findEnableCodes()
                 line++;
             }
 
-            if(numHookLines == cheat->numCodeLines)
+            if(numHookLines > 0 && (numHookLines == cheat->numCodeLines))
                 cheat->type = CHEAT_ENABLECODE;
-            else
-                cheat->type = CHEAT_NORMAL;
 
             cheat = cheat->next;
         }
