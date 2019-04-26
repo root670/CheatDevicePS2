@@ -147,7 +147,9 @@ int menuRemoveAllItems()
             free(item->text);
     }
 
-    if(activeMenu->identifier == MENU_CHEATS && activeMenu->items[0])
+    if(activeMenu->identifier == MENU_CHEATS ||
+       activeMenu->identifier == MENU_CODES &&
+       activeMenu->items[0])
     {
         free(activeMenu->items[0]);
     }
