@@ -20,6 +20,7 @@ typedef struct menuIcon {
 static GSGLOBAL *gsGlobal;
 static GSTEXTURE bg;
 static GSTEXTURE check;
+static GSTEXTURE hamburgerIcon;
 static GSTEXTURE font;
 static GSTEXTURE gamepad;
 static GSTEXTURE cube;
@@ -48,6 +49,8 @@ extern u8  _background_png_start[];
 extern int _background_png_size;
 extern u8  _check_png_start[];
 extern int _check_png_size;
+extern u8  _hamburgerIcon_png_start[];
+extern int _hamburgerIcon_png_size;
 extern u8  _gamepad_png_start[];
 extern int _gamepad_png_size;
 extern u8  _cube_png_start[];
@@ -173,6 +176,7 @@ int initGraphics()
         graphicsLoadPNG(&check, _check_png_start, _check_png_size, 0);
         graphicsLoadPNG(&gamepad, _gamepad_png_start, _gamepad_png_size, 1);
         graphicsLoadPNG(&cube, _cube_png_start, _cube_png_size, 1);
+        graphicsLoadPNG(&hamburgerIcon, _hamburgerIcon_png_start, _hamburgerIcon_png_size, 0);
         graphicsLoadPNG(&savemanager, _savemanager_png_start, _savemanager_png_size, 1);
         graphicsLoadPNG(&flashdrive, _flashdrive_png_start, _flashdrive_png_size, 1);
         graphicsLoadPNG(&memorycard1, _memorycard1_png_start, _memorycard1_png_size, 1);
@@ -700,6 +704,23 @@ void graphicsDrawPointer(float x, float y)
                                         y + check.Height,
                                         check.Width,
                                         check.Height,
+                                        1,
+                                        0x80808080);
+    gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+}
+
+void graphicsDrawHamburger(float x, float y)
+{
+    gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+    gsKit_prim_sprite_texture(gsGlobal, &hamburgerIcon,
+                                        x,
+                                        y,
+                                        0,
+                                        0,
+                                        x + hamburgerIcon.Width,
+                                        y + hamburgerIcon.Height,
+                                        hamburgerIcon.Width,
+                                        hamburgerIcon.Height,
                                         1,
                                         0x80808080);
     gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);

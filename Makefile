@@ -52,6 +52,7 @@ endif
 # Graphic resources
 OBJS += resources/background_png.o
 OBJS += resources/check_png.o
+OBJS += resources/hamburgerIcon_png.o
 OBJS += resources/gamepad_png.o
 OBJS += resources/cube_png.o
 OBJS += resources/savemanager_png.o
@@ -113,6 +114,8 @@ endif
 	@# Graphics
 	@bin2o resources/background.png resources/background_png.o _background_png
 	@bin2o resources/check.png resources/check_png.o _check_png
+	@bin2o resources/hamburgerIcon.png resources/hamburgerIcon_png.o _hamburgerIcon_png
+
 	@bin2o resources/gamepad.png resources/gamepad_png.o _gamepad_png
 	@bin2o resources/cube.png resources/cube_png.o _cube_png
 	@bin2o resources/savemanager.png resources/savemanager_png.o _savemanager_png

@@ -21,7 +21,8 @@ typedef enum {
 
 typedef enum {
     MENU_ITEM_NORMAL,
-    MENU_ITEM_HEADER
+    MENU_ITEM_HEADER,
+    MENU_ITEM_HAMBURGER_BUTTON, // Normal item with hamburger button near it
 } menuItemType_t;
 
 typedef enum {

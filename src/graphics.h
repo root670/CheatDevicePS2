@@ -38,6 +38,8 @@ void graphicsDrawDeviceMenu(int activeItem);
 void graphicsDrawAboutPage();
 // Draw selection pointer at (x,y)
 void graphicsDrawPointer(float x, float y);
+// Draw hamburger icon at (x,y)
+void graphicsDrawHamburger(float x, float y);
 // Draw blue translucent rectangular box
 void graphicsDrawPromptBox(float width, float height);
 // Draw solid black rectangular box

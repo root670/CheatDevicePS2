@@ -661,7 +661,7 @@ static void drawMenuItems()
         {
             menuItem_t *item = activeMenu->items[idx];
 
-            if(item->type == MENU_ITEM_NORMAL)
+            if(item->type == MENU_ITEM_NORMAL || item->type == MENU_ITEM_HAMBURGER_BUTTON)
             {
                 if(activeMenu->identifier == MENU_CHEATS && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
                     graphicsDrawText(50, y, COLOR_YELLOW, item->text);
@@ -677,6 +677,11 @@ static void drawMenuItems()
             else
             {
                 graphicsDrawText(50, y, COLOR_GREEN, item->text);
+            }
+
+            if(item->type == MENU_ITEM_HAMBURGER_BUTTON)
+            {
+                graphicsDrawHamburger(graphicsGetDisplayWidth() - 50, y);
             }
 
             if(idx == activeMenu->currentItem)
