@@ -302,21 +302,7 @@ int menuSetActive(menuID_t id)
 
     activeMenu = &menues[id];
 
-    if(id == MENU_CODES && (activeMenu->text != menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text)) // Refresh code menu if a new cheat was chosen
-    {
-        if(menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->type == MENU_ITEM_NORMAL)
-        {
-            menuRemoveAllItems();
-            activeMenu->text = menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->text;
-            activeMenu->extra = cheatsLoadCodeMenu((cheatsCheat_t *)menues[MENU_CHEATS].items[menues[MENU_CHEATS].currentItem]->extra,
-            (cheatsGame_t *) menues[MENU_CHEATS].extra);
-        }
-        else
-        {
-            activeMenu = &menues[MENU_CHEATS]; // Header doesn't have any codes to see, so go back
-        }
-    }
-    else if(id == MENU_BOOT)
+    if(id == MENU_BOOT)
     {
         activeMenu->text = menuTitleBootMenu;
         menuRemoveAllItems();

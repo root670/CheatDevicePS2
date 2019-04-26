@@ -438,7 +438,6 @@ static int displayAddCodeLine(cheatsGame_t *game, cheatsCheat_t *cheat)
     game->codeLinesUsed++;
 
     // Reload code menu
-    menuRemoveAllItems();
     cheatsLoadCodeMenu(cheat, game);
     menuGoToBottom();
     cheatDatabaseDirty = 1;
@@ -788,8 +787,12 @@ static void onDisplayCheatContextMenu(const menuItem_t *selected)
 
         if(ret == 0)
             displayAddCheat(menuGetActiveExtra());
-        else if(ret == 1)
+        else if(ret == 1 && (cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE))
+        {
             menuSetActive(MENU_CODES);
+            cheatsGame_t *game = (cheatsGame_t *)menuGetExtra(MENU_CHEATS);
+            cheatsLoadCodeMenu(cheat, game);
+        }
         else if(ret == 2)
             displayRenameCheat();
         else if(ret == 3)
@@ -910,6 +913,13 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
 {
     if(!cheat || !game)
         return NULL;
+
+    if(menuGetActive() != MENU_CODES)
+        return NULL;
+
+    menuRemoveAllItems();
+    menuSetActiveText(cheat->title);
+    menuSetActiveExtra(cheat);
 
     /* Build the menu */
     menuItem_t *items = calloc(cheat->numCodeLines, sizeof(menuItem_t));
