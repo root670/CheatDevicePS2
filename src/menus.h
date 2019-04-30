@@ -12,6 +12,7 @@ typedef enum {
     MENU_GAMES,
     MENU_CHEATS,
     MENU_CODES,
+    MENU_MAP_VALUES,
     MENU_MAIN,
     MENU_BOOT,
     MENU_SAVE_DEVICES,

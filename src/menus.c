@@ -8,6 +8,7 @@
 #include "saves.h"
 #include "startgame.h"
 #include "pad.h"
+#include "util.h"
 
 static menuState_t menues[NUMMENUS];
 static menuState_t *activeMenu = NULL;
@@ -35,6 +36,7 @@ int initMenus()
 
         menues[MENU_GAMES].isSorted = 1;
         menues[MENU_SAVES].isSorted = 1;
+        menues[MENU_MAP_VALUES].isSorted = 1;
         menues[MENU_CODES].freeTextWhenRemoved = 1;
         menues[MENU_SAVES].freeTextWhenRemoved = 1;
 
@@ -147,8 +149,9 @@ int menuRemoveAllItems()
             free(item->text);
     }
 
-    if(activeMenu->identifier == MENU_CHEATS ||
-       activeMenu->identifier == MENU_CODES &&
+    if((activeMenu->identifier == MENU_CHEATS ||
+        activeMenu->identifier == MENU_CODES ||
+        activeMenu->identifier == MENU_MAP_VALUES) &&
        activeMenu->items[0])
     {
         free(activeMenu->items[0]);
@@ -651,8 +654,20 @@ static void drawMenuItems()
 
             if(item->type == MENU_ITEM_NORMAL || item->type == MENU_ITEM_HAMBURGER_BUTTON)
             {
-                if(activeMenu->identifier == MENU_CHEATS && item->extra && ((cheatsCheat_t *) item->extra)->enabled)
+                cheatsCheat_t *cheat = item ? (cheatsCheat_t *)item->extra : NULL;
+                if(activeMenu->identifier == MENU_CHEATS &&
+                   cheat->enabled)
+                {
                     graphicsDrawText(50, y, COLOR_YELLOW, item->text);
+
+                    if(cheat->type == CHEAT_VALUE_MAPPED)
+                    {
+                        cheatsGame_t *game = activeMenu->extra;
+                        // Too much indirection...
+                        const char *selection = getNthString(game->valueMaps[cheat->valueMapIndex].keys, cheat->valueMapChoice);
+                        graphicsDrawTextRightJustified(graphicsGetDisplayWidth() - 60, y, COLOR_YELLOW, selection);
+                    }
+                }
                 else if(activeMenu->identifier == MENU_GAMES &&
                         cheatsIsActiveGame((cheatsGame_t *) item->extra) &&
                         cheatsGetNumEnabledCheats() > 0)

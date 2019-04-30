@@ -11,14 +11,18 @@
 #include "menus.h"
 
 typedef enum {
-    CHEAT_NORMAL,       // Cheat with code lines
-    CHEAT_HEADER,       // Cheat without code lines
-    CHEAT_ENABLECODE    // Cheat with only 9-type code lines
+    CHEAT_NORMAL,      // Cheat with code lines
+    CHEAT_HEADER,      // Cheat without code lines
+    CHEAT_ENABLECODE,  // Cheat with only 9-type code lines
+    CHEAT_VALUE_MAPPED // Cheat with value chosen from value map
 } cheatTitleType_t;
 
-// Memory constraints
+// Global memory constraints
 #define MAX_GAMES   2000
 #define MAX_CHEATS  180000
+
+// Per-game memory constraints
+#define MAX_VALUE_MAPS 15
 
 /*
 Cheats are stored top-down like this:
@@ -34,16 +38,39 @@ Cheat Database --> Game --> Cheat --> Code
 
 typedef struct cheatsCheat {
     char title[81];
-    u8 type:6;
+    u8 type:2;
     // If readOnly == 1, cannot modify cheat title or codes lines.
     u8 readOnly:1;
     u8 enabled:1;
+    // If type is CHEAT_VALUE_MAPPED, this is an index into game->valueMaps
+    u8 valueMapIndex:4; // max value == 15
+
+    // Chosen value in the list variable
+    u16 valueMapChoice;
 
     u8 numCodeLines;
     u16 codeLinesOffset;
 
     struct cheatsCheat *next;
 } cheatsCheat_t;
+
+// List of values with corresponding keys to use in a cheat of type
+// CHEAT_VALUE_MAPPED
+typedef struct cheatsValueMap {
+    char title[16];
+    // Keys for each value seperated by null characters
+    // (ex: "Potion\0Elixer\0")
+    char *keys;
+    // Total memory size allocated by keys
+    // (ex: 14)
+    int keysLength;
+    // Values for each key, corresponding to the nth cstring in keys
+    // (ex: {0x00000000, 0x00000001})
+    u32 *values;
+    // Number of values & keys set
+    // (ex: 2)
+    u8 numEntries;
+} cheatsValueMap_t;
 
 typedef struct cheatsGame {
     char title[81];
@@ -56,6 +83,9 @@ typedef struct cheatsGame {
     u64 *codeLines;
     u32 codeLinesCapacity;
     u32 codeLinesUsed;
+
+    cheatsValueMap_t *valueMaps;
+    u8 numValueMaps;
 
     struct cheatsGame *next;
 } cheatsGame_t;
@@ -79,6 +109,8 @@ int cheatsLoadGameMenu();
 void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
+// Create a menu with a value-mapped cheat's keys
+void cheatsLoadValueMapMenu(cheatsValueMap_t *map);
 
 // Find a game by title. Returns NULL if a game couldn't be found.
 cheatsGame_t* cheatsFindGame(const char *title);

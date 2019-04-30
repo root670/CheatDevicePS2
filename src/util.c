@@ -116,7 +116,8 @@ void handlePad()
        currentMenu == MENU_CHEATS ||
        currentMenu == MENU_CODES ||
        currentMenu == MENU_BOOT ||
-       currentMenu == MENU_SAVES)
+       currentMenu == MENU_SAVES ||
+       currentMenu == MENU_MAP_VALUES)
     {
         if(pad_rapid & PAD_UP)
             menuUp();
@@ -264,6 +265,19 @@ void handlePad()
         {
             menuRemoveAllItems();
             menuSetActive(MENU_SAVE_DEVICES);
+        }
+    }
+
+    else if(currentMenu == MENU_MAP_VALUES)
+    {
+        if(pad_rapid & PAD_R1)
+            menuDownRepeat(10);
+        else if(pad_rapid & PAD_L1)
+            menuUpRepeat(10);
+
+        if(pad_pressed & PAD_CIRCLE)
+        {
+            menuSetActive(MENU_CHEATS);
         }
     }
 }

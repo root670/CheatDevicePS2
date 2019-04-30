@@ -733,6 +733,21 @@ static void onCheatSelected(const menuItem_t *selected)
         cheatsSetActiveGame(menuGetActiveExtra());
         cheatsToggleCheat(cheat);
     }
+    else if(cheat && cheat->type == CHEAT_VALUE_MAPPED)
+    {
+        if(cheat->enabled)
+        {
+            cheatsToggleCheat(cheat);
+        }
+        else
+        {
+            cheatsGame_t *game = menuGetActiveExtra();
+            cheatsValueMap_t *map = &game->valueMaps[cheat->valueMapIndex];
+            menuSetActive(MENU_MAP_VALUES);
+            menuSetActiveExtra(cheat);
+            cheatsLoadValueMapMenu(map);
+        }
+    }
 }
 
 static void onCodeSelected(const menuItem_t *selected)
@@ -741,6 +756,14 @@ static void onCodeSelected(const menuItem_t *selected)
         displayEditCodeLine();
     else
         displayAddCodeLine(menuGetExtra(MENU_CHEATS), menuGetActiveExtra());
+}
+
+static void onValueMapSelected(const menuItem_t *selected)
+{
+    cheatsCheat_t *cheat = menuGetActiveExtra();
+    cheat->valueMapChoice = (u32)selected->extra;
+    cheatsToggleCheat(cheat);
+    menuSetActive(MENU_CHEATS);
 }
 
 static void onDisplayGameContextMenu(const menuItem_t *selected)
@@ -891,6 +914,8 @@ void cheatsLoadCheatMenu(cheatsGame_t* game)
     {
         if(cheat->type == CHEAT_NORMAL || cheat->type == CHEAT_ENABLECODE)
             item->type = MENU_ITEM_NORMAL;
+        else if(cheat->type == CHEAT_VALUE_MAPPED)
+            item->type = MENU_ITEM_HAMBURGER_BUTTON;
         else
             item->type = MENU_ITEM_HEADER;
 
@@ -953,6 +978,35 @@ cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game)
         menuSetHelpTickerText(HELP_TICKER_CODES_NONE);
 
     return cheat;
+}
+
+void cheatsLoadValueMapMenu(cheatsValueMap_t *map)
+{
+    if(!map)
+        return;
+
+    if(menuGetActive() != MENU_MAP_VALUES)
+        return;
+
+    menuRemoveAllItems();
+    menuSetActiveText(map->title);
+
+    // Build the menu
+    menuItem_t *items = calloc(map->numEntries, sizeof(menuItem_t));
+    menuItem_t *item = items;
+
+    int i;
+    for(i = 0; i < map->numEntries; i++)
+    {
+        char *name = (char *)getNthString(map->keys, i);
+        item->text = name;
+        item->extra = (void *)i;
+        menuInsertItem(item);
+
+        item++;
+    }
+
+    menuSetCallback(MENU_CALLBACK_PRESSED_CROSS, onValueMapSelected);
 }
 
 cheatsGame_t* cheatsFindGame(const char *name)
@@ -1056,6 +1110,8 @@ int cheatsToggleCheat(cheatsCheat_t *cheat)
                 "This cheat doesn't contain any code lines.\n"
                 "Please add some on the next screen.");
             menuSetActive(MENU_CODES);
+            cheatsGame_t *game = (cheatsGame_t *)menuGetExtra(MENU_CHEATS);
+            cheatsLoadCodeMenu(cheat, game);
             return 0;
         }
         
