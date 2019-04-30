@@ -26,6 +26,8 @@ int initGraphics();
 void graphicsDrawText(float x, float y, graphicsColor_t color, const char *format, ...);
 // Draw centered text at y with a color
 void graphicsDrawTextCentered(float y, graphicsColor_t color, const char *format, ...);
+// Draw text starting from (x,y) and growing to the left with a color
+void graphicsDrawTextRightJustified(float x, float y, graphicsColor_t color, const char *format, ...);
 // Draw a single character at (x, y) with a color
 void graphicsDrawChar(float x, float y, char c, graphicsColor_t color);
 // Draw loading bar at (x,y). Progress must be within range [0.0, 1.0].

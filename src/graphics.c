@@ -552,6 +552,55 @@ void graphicsDrawTextCentered(float y, graphicsColor_t color, const char *format
     graphicsPrintText((gsGlobal->Width - lineWidth)/2.0, y, start, graphicsColorTable[color]); // last line
 }
 
+void graphicsDrawTextRightJustified(float x, float y, graphicsColor_t color, const char *format, ...)
+{
+    va_list args;
+    char buffer[4096];
+    
+    va_start(args, format);
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+
+    char const *cptr = buffer;
+    char const *start = buffer;
+    double lineWidth = 0;
+    
+    while(*cptr)
+    {
+        if(*cptr == '\n')
+        {
+            *cptr = '\0';
+            graphicsPrintText(x - lineWidth, y, start, graphicsColorTable[color]);
+            *cptr = '\n';
+            cptr++;
+            lineWidth = 0;
+            start = cptr;
+            y += 22;
+            continue;
+        }
+        else if(*cptr == '{')
+        {
+            // Read special sequence
+            const char *ret;
+            GSTEXTURE *specialTexture;
+            ret = getSpecialTexture(cptr, &specialTexture);
+
+            if(ret != NULL)
+            {
+                lineWidth += specialTexture->Width;
+                cptr = ret;
+                continue;
+            }
+        }
+
+        int char_codepoint = *cptr++;
+        stb_fontchar *cdata = &fontdata[char_codepoint - STB_SOMEFONT_FIRST_CHAR];
+        lineWidth += cdata->advance;
+    }
+    
+    graphicsPrintText(x - lineWidth, y, start, graphicsColorTable[color]); // last line
+}
+
 void graphicsDrawLoadingBar(float x, float y, float progress)
 {
     float height = 10.0f;
