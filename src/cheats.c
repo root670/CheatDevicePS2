@@ -761,7 +761,9 @@ static void onCodeSelected(const menuItem_t *selected)
 static void onValueMapSelected(const menuItem_t *selected)
 {
     cheatsCheat_t *cheat = menuGetActiveExtra();
+    cheatsGame_t *game = (cheatsGame_t *)menuGetExtra(MENU_CHEATS);
     cheat->valueMapChoice = (u32)selected->extra;
+    cheatsSetActiveGame(game);
     cheatsToggleCheat(cheat);
     menuSetActive(MENU_CHEATS);
 }
@@ -1249,38 +1251,46 @@ static void readCodes(cheatsCheat_t *cheats)
 
     while(cheat)
     {
-        if(cheat->enabled)
-        {
-            if(historyFile && cheat->type != CHEAT_ENABLECODE)
-            {
-                // Save cheat's hash
-                unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
-                fwrite(&cheatHash, 4, 1, historyFile);
-            }
+        if(!cheat->enabled)
+            continue;
 
-            for(i = 0; i < cheat->numCodeLines; ++i)
+        if(historyFile && cheat->type == CHEAT_NORMAL)
+        {
+            // Save cheat's hash
+            unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * 8);
+            fwrite(&cheatHash, 4, 1, historyFile);
+        }
+
+        for(i = 0; i < cheat->numCodeLines; ++i)
+        {
+            u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
+            addr = (u32)*((u32 *)code);
+
+            if(cheat->type == CHEAT_VALUE_MAPPED &&
+               cheat->valueMapLine == i)
             {
-                u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
-                addr = (u32)*((u32 *)code);
+                cheatsValueMap_t *map = &activeGame->valueMaps[cheat->valueMapIndex];
+                val = map->values[cheat->valueMapChoice];
+            }
+            else
                 val  = (u32)*((u32 *)code + 1);
 
-                if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
-                {
-                    printf("hook: %08X %08X\n", addr, val);
-                    add_hook(addr, val);
-                }
-                else
-                {
-                    printf("code: %08X %08X\n", addr, val);
-                    add_code(addr, val);
-                }
-
-                // Prevent second line of a 2-line code from being treated as a hook if it starts with a 9
-                if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
-                    nextCodeCanBeHook = 0;
-                else
-                    nextCodeCanBeHook = 1;
+            if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
+            {
+                printf("hook: %08X %08X\n", addr, val);
+                add_hook(addr, val);
             }
+            else
+            {
+                printf("code: %08X %08X\n", addr, val);
+                add_code(addr, val);
+            }
+
+            // Prevent second line of a 2-line code from being treated as a hook if it starts with a 9
+            if ((addr & 0xf0000000) == 0x40000000 || (addr & 0xf0000000) == 0x30000000)
+                nextCodeCanBeHook = 0;
+            else
+                nextCodeCanBeHook = 1;
         }
 
         cheat = cheat->next;

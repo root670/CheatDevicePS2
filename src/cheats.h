@@ -45,8 +45,10 @@ typedef struct cheatsCheat {
     // If type is CHEAT_VALUE_MAPPED, this is an index into game->valueMaps
     u8 valueMapIndex:4; // max value == 15
 
-    // Chosen value in the list variable
+    // Index of value chosen from value map
     u16 valueMapChoice;
+    // Code line to use the chosen value
+    u8  valueMapLine;
 
     u8 numCodeLines;
     u16 codeLinesOffset;

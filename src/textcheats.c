@@ -353,6 +353,8 @@ int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
     return 1;
 }
 
+#define CONSUME_WHITESPACE(p, end) while(p != end && isspace(*p)) p++;
+
 // Determine token type for line.
 static inline int getToken(const char *line, const int len)
 {
@@ -534,25 +536,26 @@ static int parseLine(const char *line, const int len)
         };
 
         u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
-                    ((u64)lut[(int)line[ 1]] << 24) |
-                    ((u64)lut[(int)line[ 2]] << 20) |
-                    ((u64)lut[(int)line[ 3]] << 16) |
-                    ((u64)lut[(int)line[ 4]] << 12) |
-                    ((u64)lut[(int)line[ 5]] <<  8) |
-                    ((u64)lut[(int)line[ 6]] <<  4) |
-                    ((u64)lut[(int)line[ 7]])       |
-                    ((u64)lut[(int)line[ 9]] << 60) |
-                    ((u64)lut[(int)line[10]] << 56) |
-                    ((u64)lut[(int)line[11]] << 52) |
-                    ((u64)lut[(int)line[12]] << 48) |
-                    ((u64)lut[(int)line[13]] << 44) |
-                    ((u64)lut[(int)line[14]] << 40) |
-                    ((u64)lut[(int)line[15]] << 36) |
-                    ((u64)lut[(int)line[16]] << 32);
+                  ((u64)lut[(int)line[ 1]] << 24) |
+                  ((u64)lut[(int)line[ 2]] << 20) |
+                  ((u64)lut[(int)line[ 3]] << 16) |
+                  ((u64)lut[(int)line[ 4]] << 12) |
+                  ((u64)lut[(int)line[ 5]] <<  8) |
+                  ((u64)lut[(int)line[ 6]] <<  4) |
+                  ((u64)lut[(int)line[ 7]])       |
+                  ((u64)lut[(int)line[ 9]] << 60) |
+                  ((u64)lut[(int)line[10]] << 56) |
+                  ((u64)lut[(int)line[11]] << 52) |
+                  ((u64)lut[(int)line[12]] << 48) |
+                  ((u64)lut[(int)line[13]] << 44) |
+                  ((u64)lut[(int)line[14]] << 40) |
+                  ((u64)lut[(int)line[15]] << 36) |
+                  ((u64)lut[(int)line[16]] << 32);
 
         *codeLine = hex;
 
-        g_ctx.cheat->type = CHEAT_NORMAL;
+        if(g_ctx.cheat->type != CHEAT_VALUE_MAPPED)
+            g_ctx.cheat->type = CHEAT_NORMAL;
         g_ctx.cheat->numCodeLines++;
         g_ctx.game->codeLinesUsed++;
     }
@@ -569,8 +572,7 @@ static int parseLine(const char *line, const int len)
         const char *end = line + len;
 
         // Skip whitespace before map name
-        while(c != end && isspace(*c))
-            c++;
+        CONSUME_WHITESPACE(c, end);
 
         // Get map name
         int i = 0;
@@ -650,8 +652,7 @@ static int parseLine(const char *line, const int len)
         u32 value = strtol(hex, NULL, 16);
 
         // Skip whitespace before seperator (':' or '=')
-        while(c != end && isspace(*c))
-            c++;
+        CONSUME_WHITESPACE(c, end);
 
         if(*c != ':' && *c != '=' && *c != '-')
         {
@@ -663,8 +664,7 @@ static int parseLine(const char *line, const int len)
         c++;
 
         // Skip whitespace after seperator
-        while(c != end && isspace(*c))
-            c++;
+        CONSUME_WHITESPACE(c, end);
 
         // Get key
         char name[32];
@@ -745,7 +745,6 @@ static int parseLine(const char *line, const int len)
 
         *codeLine = hex;
 
-
         const char *c   = line + 10;
         const char *end = line + len;
 
@@ -769,6 +768,7 @@ static int parseLine(const char *line, const int len)
 
         g_ctx.cheat->valueMapIndex = map - g_ctx.game->valueMaps;
         g_ctx.cheat->type = CHEAT_VALUE_MAPPED;
+        g_ctx.cheat->valueMapLine = g_ctx.cheat->numCodeLines;
         g_ctx.cheat->numCodeLines++;
         g_ctx.game->codeLinesUsed++;
     }
