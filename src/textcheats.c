@@ -359,35 +359,38 @@ int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
 static inline int getToken(const char *line, const int len)
 {
     const char *c;
-    int numDigits = 0, ret;
+    int numDigits = 0;
     
     if (!line || len <= 0)
         return 0;
 
     if(line[0] == '"' && line[len-1] == '"')
-        ret = TOKEN_TITLE;
+        return TOKEN_TITLE;
 
-    else if(line[0] == '[' && line[len-1] == ']')
-        ret = TOKEN_MAP_START;
+    if(line[0] == '[' && line[len-1] == ']')
+        return TOKEN_MAP_START;
 
-    else if(len > 3 &&
-            ((g_ctx.lastToken == TOKEN_MAP_START) || 
-             (g_ctx.lastToken == TOKEN_MAP_ENTRY) ||
-             (g_ctx.lastToken == 0)) &&
-            ((line[2] == ':') ||
-             (line[2] == '=') ||
-             (line[3] == '=') ||
-             (line[3] == '-')))
+    if(len > 10 && len <= 24 && line[9] == '$')
+        return TOKEN_CODE_MAPPED;
+
+    if(len > 3 &&
+       ((g_ctx.lastToken == TOKEN_MAP_START) || 
+        (g_ctx.lastToken == TOKEN_MAP_ENTRY) ||
+        (g_ctx.lastToken == 0)))
     {
-        ret = TOKEN_MAP_ENTRY;
-    }
+        c = line;
+        while(isxdigit(*c++))
+            numDigits++;
 
-    else if(len > 10 && len <= 24 && line[9] == '$')
-    {
-        ret = TOKEN_CODE_MAPPED;
+        if(numDigits == 2 || numDigits == 4 || numDigits == 8)
+        {
+            CONSUME_WHITESPACE(c, line + len);
+            if (*c == ':' || *c == '=' || *c == '-')
+                return TOKEN_MAP_ENTRY;
+        }
     }
     
-    else if(len == 17 && line[8] == ' ')
+    if(len == 17 && line[8] == ' ')
     {
         c = line;
         while(*c)
@@ -397,19 +400,17 @@ static inline int getToken(const char *line, const int len)
         }
         
         if(numDigits == 16)
-            ret = TOKEN_CODE;
+            return TOKEN_CODE;
         else
-            ret = TOKEN_CHEAT;
-    }  
+            return TOKEN_CHEAT;
+    }
     
     else if((line[0] == '/' && line[1] == '/') ||
              line[0] == '#')
-        ret = 0; // Comment
+        return 0; // Comment
     
     else
-        ret = TOKEN_CHEAT;
-
-    return ret;
+        return TOKEN_CHEAT;
 }
 
 // Parse line and process token.
