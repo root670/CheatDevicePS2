@@ -354,67 +354,101 @@ int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
 }
 
 #define CONSUME_WHITESPACE(p, end) while(p != end && isspace(*p)) p++;
+#define LIKELY(x) __builtin_expect(!!(x), 1)
+#define UNLIKELY(x) __builtin_expect(!!(x), 0)
+
+static const unsigned char isCodeDigitLUT[] = {
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,
+            // 0x20: space
+            1,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,
+            // 0x30: [0-9]
+            1,1,1,1,1,1,1,1,1,1,
+            0,0,0,0,0,0,0,
+            // 0x41: [A-F]
+            1,1,1,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,
+            // 0x61: [a-f]
+            1,1,1,1,1,1,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0,0,0,0,0,0,0,0,0,
+            0,0
+        };
 
 // Determine token type for line.
-static inline int getToken(const char *line, const int len)
+static inline int getToken(const unsigned char *line, const int len)
 {
-    const char *c;
-    int numDigits = 0;
-    
+    const unsigned char *c;
+    int numTokens = 0;
+
     if (!line || len <= 0)
         return 0;
 
-    if(line[0] == '"' && line[len-1] == '"')
+    if(UNLIKELY(line[0] == '"' && line[len-1] == '"'))
         return TOKEN_TITLE;
 
-    if(line[0] == '[' && line[len-1] == ']')
+    if(UNLIKELY(line[0] == '[' && line[len-1] == ']'))
         return TOKEN_MAP_START;
 
-    if(len > 10 && len <= 24 && line[9] == '$')
+    if(UNLIKELY(len > 10 && len <= 24 && line[9] == '$'))
         return TOKEN_CODE_MAPPED;
 
-    if(len > 3 &&
+    if(UNLIKELY(len > 3 &&
        ((g_ctx.lastToken == TOKEN_MAP_START) || 
         (g_ctx.lastToken == TOKEN_MAP_ENTRY) ||
-        (g_ctx.lastToken == 0)))
+        (g_ctx.lastToken == 0))))
     {
         c = line;
         while(isxdigit(*c++))
-            numDigits++;
+            numTokens++;
 
-        if(numDigits == 2 || numDigits == 4 || numDigits == 8)
+        if(numTokens == 2 || numTokens == 4 || numTokens == 8)
         {
             CONSUME_WHITESPACE(c, line + len);
             if (*c == ':' || *c == '=' || *c == '-')
                 return TOKEN_MAP_ENTRY;
         }
     }
-    
+
     if(len == 17 && line[8] == ' ')
     {
         c = line;
-        while(*c)
-        {
-            if(isxdigit(*c++))
-                numDigits++;
-        }
-        
-        if(numDigits == 16)
+        while(isCodeDigitLUT[*c++])
+            numTokens++;
+
+        if(numTokens == 17)
             return TOKEN_CODE;
         else
             return TOKEN_CHEAT;
     }
-    
-    else if((line[0] == '/' && line[1] == '/') ||
-             line[0] == '#')
+
+    if(((*(short *)line) == 0x2F2F) || line[0] == '#')
         return 0; // Comment
-    
-    else
-        return TOKEN_CHEAT;
+
+    return TOKEN_CHEAT;
 }
 
 // Parse line and process token.
-static int parseLine(const char *line, const int len)
+static inline int parseLine(const char *line, const int len)
 {
     if(len < 1)
         return 0;
