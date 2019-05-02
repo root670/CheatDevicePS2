@@ -1252,7 +1252,10 @@ static void readCodes(cheatsCheat_t *cheats)
     while(cheat)
     {
         if(!cheat->enabled)
+        {
+            cheat = cheat->next;
             continue;
+        }
 
         if(historyFile && cheat->type == CHEAT_NORMAL)
         {
