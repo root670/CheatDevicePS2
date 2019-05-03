@@ -418,10 +418,13 @@ static inline int getToken(const unsigned char *line, const int len)
         (g_ctx.lastToken == 0))))
     {
         c = line;
-        while(isxdigit(*c++))
+        while(isxdigit(*c))
+        {
+            c++;
             numTokens++;
+        }
 
-        if(numTokens == 2 || numTokens == 4 || numTokens == 8)
+        if(numTokens >= 1 && numTokens <= 8)
         {
             CONSUME_WHITESPACE(c, line + len);
             if (*c == ':' || *c == '=' || *c == '-')
