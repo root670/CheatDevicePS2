@@ -409,8 +409,45 @@ static inline int getToken(const unsigned char *line, const int len)
     if(UNLIKELY(line[0] == '[' && line[len-1] == ']'))
         return TOKEN_MAP_START;
 
-    if(UNLIKELY(len > 10 && len <= 24 && line[9] == '$'))
+    if(UNLIKELY(len >= 11 && len <= 26 && line[9] == '$'))
+    {
+        c = line;
+        while(isCodeDigitLUT[*c++])
+            numTokens++;
+
+        if(numTokens == 9)
+            return TOKEN_CODE_MAPPED;
+    }
+
+    if(UNLIKELY(len >= 13 && len <= 28 && line[11] == '$'))
+    {
+        c = line;
+        while(isCodeDigitLUT[*c++])
+            numTokens++;
+
+        if(numTokens == 11)
+            return TOKEN_CODE_MAPPED;
+    }
+
+    if(UNLIKELY(len > 15 && len <= 30 && line[13] == '$'))
+    {
+        c = line;
+        while(isCodeDigitLUT[*c++])
+            numTokens++;
+
+        if(numTokens == 13)
+            return TOKEN_CODE_MAPPED;
+    }
+    
+    if(UNLIKELY(len > 15 && len <= 30 && line[15] == '$'))
+    {
+        c = line;
+        while(isCodeDigitLUT[*c++])
+            numTokens++;
+
+        if(numTokens == 15)
         return TOKEN_CODE_MAPPED;
+    }
 
     if(UNLIKELY(len > 3 &&
        ((g_ctx.lastToken == TOKEN_MAP_START) || 
@@ -778,7 +815,7 @@ static inline int readMappedCodeLine(const char *line, int len)
         0xa,0xb,0xc,0xd,0xe,0xf
     };
 
-    u64 hex = ((u64)lut[(int)line[0]] << 28) |
+    u64 address = ((u64)lut[(int)line[0]] << 28) |
                 ((u64)lut[(int)line[1]] << 24) |
                 ((u64)lut[(int)line[2]] << 20) |
                 ((u64)lut[(int)line[3]] << 16) |
@@ -787,14 +824,28 @@ static inline int readMappedCodeLine(const char *line, int len)
                 ((u64)lut[(int)line[6]] <<  4) |
                 ((u64)lut[(int)line[7]]);
 
-    *codeLine = hex;
-
-    const char *c   = line + 10;
+    const char *c   = line + 9;
     const char *end = line + len;
+
+    // Get 0-6 digits for value appearing before the map reference
+    int i = 0;
+    u64 value = 0;
+    while(c != end && *c != '$')
+    {
+        value |= (u64)lut[(int)*c++] << (60 - 4*i);
+        i++;
+        value |= (u64)lut[(int)*c++] << (60 - 4*i);
+        i++;
+    }
+
+    *codeLine = address | value;
+
+    // Skip over $
+    c++;
 
     // Get map name
     char mapName[sizeof(g_ctx.mapName)];
-    int i = 0;
+    i = 0;
     while(c != end && (i < sizeof(mapName) - 1) && !isspace(*c))
     {
         mapName[i++] = *c++;

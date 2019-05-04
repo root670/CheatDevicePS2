@@ -1268,15 +1268,26 @@ static void readCodes(cheatsCheat_t *cheats)
         {
             u64 *code = activeGame->codeLines + cheat->codeLinesOffset + i;
             addr = (u32)*((u32 *)code);
+            val  = (u32)*((u32 *)code + 1);
 
             if(cheat->type == CHEAT_VALUE_MAPPED &&
                cheat->valueMapLine == i)
             {
                 cheatsValueMap_t *map = &activeGame->valueMaps[cheat->valueMapIndex];
-                val = map->values[cheat->valueMapChoice];
+                u32 mapValue = map->values[cheat->valueMapChoice];
+
+                // Clear bits that will be modified
+                if(mapValue <= 0xFF)
+                    val &= 0xFFFFFF00;
+                else if(mapValue <= 0xFFFF)
+                    val &= 0xFFFF0000;
+                else if(mapValue <= 0xFFFFFF)
+                    val &= 0xFF000000;
+                else
+                    val &= 0;
+
+                val |= map->values[cheat->valueMapChoice];
             }
-            else
-                val  = (u32)*((u32 *)code + 1);
 
             if(((addr & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
             {
