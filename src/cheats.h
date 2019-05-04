@@ -22,7 +22,7 @@ typedef enum {
 #define MAX_CHEATS  180000
 
 // Per-game memory constraints
-#define MAX_VALUE_MAPS 15
+#define MAX_VALUE_MAPS 16
 
 /*
 Cheats are stored top-down like this:
