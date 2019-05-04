@@ -74,6 +74,28 @@ void *hashFind(hashTable_t *table, unsigned int hash)
     return table->values[i];
 }
 
+int hashFindValue(hashTable_t *table, unsigned int hash)
+{
+    unsigned int i;
+
+    if(!table)
+        return -1;
+
+    i = hash % table->size;
+
+    while(table->hashes[i] != hash)
+    {
+        if(table->hashes[i] == 0) // not in table
+            return -1;
+        else if(i == table->size - 1) // last entry in table
+            i = 0;
+        else // try next entry
+            i++;
+    }
+
+    return (int)table->values[i];
+}
+
 void hashAdd(hashTable_t *table, void *ptr, unsigned int hash)
 {
     unsigned int i;
@@ -90,4 +112,22 @@ void hashAdd(hashTable_t *table, void *ptr, unsigned int hash)
 
     table->hashes[i] = hash;
     table->values[i] = ptr;
+}
+
+void hashAddValue(hashTable_t *table, int value, unsigned int hash)
+{
+    unsigned int i;
+
+    i = hash % table->size;
+
+    while(table->hashes[i] != 0)
+    {
+        if(i == table->size - 1) // last entry in table
+            i = 0;
+        else // try next entry
+            i++;
+    }
+
+    table->hashes[i] = hash;
+    table->values[i] = (void *)value;
 }
