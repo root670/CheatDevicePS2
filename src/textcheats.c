@@ -26,7 +26,7 @@ typedef struct loadingContext {
     int lastToken; // Previous line's token type
     char mapName[16]; // name of current value map
     cheatsValueMap_t *valueMap; // Current value map
-    hashTable_t *listHashes; // list name -> cheatsValueMap_t*
+    hashTable_t *listHashes; // list name -> valueMapIndex
 } loadingContext_t;
 
 static loadingContext_t g_ctx;
@@ -627,12 +627,12 @@ static int readMapStartLine(const char *line, int len)
         return 0; // Can't use a zero-length name
 
     unsigned int hash = hashFunction(g_ctx.mapName, strlen(g_ctx.mapName));
-    cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
 
-    if(map)
+    int mapIndex = hashFindValue(g_ctx.listHashes, hash);
+    if(mapIndex >= 0)
     {
         // Use existing list with this name
-        g_ctx.valueMap = map;
+        g_ctx.valueMap = &g_ctx.game->valueMaps[mapIndex];
     }
     else
     {
@@ -657,9 +657,9 @@ static int readMapStartLine(const char *line, int len)
         memset(g_ctx.valueMap, 0, sizeof(cheatsValueMap_t));
 
         strncpy(g_ctx.valueMap->title, g_ctx.mapName, sizeof(g_ctx.mapName));
-        g_ctx.game->numValueMaps++;
 
-        hashAdd(g_ctx.listHashes, g_ctx.valueMap, hash);
+        hashAddValue(g_ctx.listHashes, g_ctx.game->numValueMaps, hash);
+        g_ctx.game->numValueMaps++;
     }
 
     return 1;
@@ -804,13 +804,11 @@ static inline int readMappedCodeLine(const char *line, int len)
 
     // Get map associated with this name
     unsigned int hash = hashFunction(mapName, i);
-    cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
-    if(!map)
-    {
+    int mapIndex = hashFindValue(g_ctx.listHashes, hash);
+    if(mapIndex < 0)
         return 0; // Map not found
-    }
 
-    g_ctx.cheat->valueMapIndex = map - g_ctx.game->valueMaps;
+    g_ctx.cheat->valueMapIndex = mapIndex;
     g_ctx.cheat->type = CHEAT_VALUE_MAPPED;
     g_ctx.cheat->valueMapLine = g_ctx.cheat->numCodeLines;
     g_ctx.cheat->numCodeLines++;
