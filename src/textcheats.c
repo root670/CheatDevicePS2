@@ -450,6 +450,375 @@ static inline int getToken(const unsigned char *line, const int len)
     return TOKEN_CHEAT;
 }
 
+static inline int readGameTitleLine(const char *line, int len)
+{
+    // Use existing game or create new one
+    char tempName[81];
+    strncpy(tempName, line+1, sizeof(tempName));
+    tempName[len-2] = '\0'; // Remove trailing '"'
+
+    // Try to find existing game with this title
+    cheatsGame_t *thisGame = cheatsFindGame(tempName);
+
+    if(!thisGame)
+    {
+        // No game with this title exists, so create a new one
+        thisGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
+        if(!g_ctx.game)
+        {
+            // First game added
+            g_ctx.gamesHead = thisGame;
+        }
+        else
+            g_ctx.game->next = thisGame;
+
+        strncpy(thisGame->title, tempName, 81);
+        g_ctx.numGamesAdded += 1;
+    }
+    else
+    {
+        // Add cheats to end of game's existing cheat list
+        cheatsCheat_t *cheat = thisGame->cheats;
+        if(cheat)
+        {
+            while(cheat->next)
+                cheat = cheat->next;
+        }
+
+        g_ctx.cheat = cheat;
+    }
+
+    if(g_ctx.game && g_ctx.game->codeLinesUsed > 0)
+    {
+        // Free excess memory from the previous game's code list
+        g_ctx.game->codeLinesCapacity = g_ctx.game->codeLinesUsed;
+        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+    }
+
+    g_ctx.game = thisGame;
+    g_ctx.valueMap = NULL;
+    hashDestroyTable(g_ctx.listHashes);
+    g_ctx.listHashes = hashNewTable(15);
+
+    return 1;
+}
+
+static inline int readCheatTitleLine(const char *line, int len)
+{
+    // Add new cheat to game
+    if(!g_ctx.game)
+        return 0;
+
+    cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
+
+    if(!g_ctx.game->cheats)
+    {
+        // Game's first cheat
+        g_ctx.game->cheats = newCheat;
+    }
+    else
+        g_ctx.cheat->next = newCheat;
+
+    g_ctx.cheat = newCheat;
+    
+    strncpy(g_ctx.cheat->title, line, 81);
+    g_ctx.cheat->type = CHEAT_HEADER;
+    g_ctx.cheat->next = NULL;
+    g_ctx.game->numCheats++;
+
+    return 1;
+}
+
+static inline int readCodeLine(const char *line, int len)
+{
+    // Add code to cheat
+    if(!g_ctx.game || !g_ctx.cheat)
+        return 0;
+    
+    if(!g_ctx.game->codeLines)
+    {
+        g_ctx.game->codeLinesCapacity = 1;
+        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
+    }
+    else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
+    {
+        g_ctx.game->codeLinesCapacity *= 2;
+        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+    }
+    
+    if(g_ctx.cheat->numCodeLines == 0)
+        g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
+    
+    u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
+
+    // Decode pair of 32-bit hexidecimal text values
+    static const unsigned char lut[] = {
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        // 0x30: [0-9]
+        0,1,2,3,4,5,6,7,8,9,
+        0,0,0,0,0,0,0,
+        // 0x41: [A-F]
+        0xa,0xb,0xc,0xd,0xe,0xf,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,
+        // 0x61: [a-f]
+        0xa,0xb,0xc,0xd,0xe,0xf
+    };
+
+    u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
+              ((u64)lut[(int)line[ 1]] << 24) |
+              ((u64)lut[(int)line[ 2]] << 20) |
+              ((u64)lut[(int)line[ 3]] << 16) |
+              ((u64)lut[(int)line[ 4]] << 12) |
+              ((u64)lut[(int)line[ 5]] <<  8) |
+              ((u64)lut[(int)line[ 6]] <<  4) |
+              ((u64)lut[(int)line[ 7]])       |
+              ((u64)lut[(int)line[ 9]] << 60) |
+              ((u64)lut[(int)line[10]] << 56) |
+              ((u64)lut[(int)line[11]] << 52) |
+              ((u64)lut[(int)line[12]] << 48) |
+              ((u64)lut[(int)line[13]] << 44) |
+              ((u64)lut[(int)line[14]] << 40) |
+              ((u64)lut[(int)line[15]] << 36) |
+              ((u64)lut[(int)line[16]] << 32);
+
+    *codeLine = hex;
+
+    if(g_ctx.cheat->type != CHEAT_VALUE_MAPPED)
+        g_ctx.cheat->type = CHEAT_NORMAL;
+    g_ctx.cheat->numCodeLines++;
+    g_ctx.game->codeLinesUsed++;
+
+    return 1;
+}
+
+static int readMapStartLine(const char *line, int len)
+{
+    // All of the following are equivalent:
+    // {xx}
+    // { xx}
+    // {xx }
+    // { xx }
+
+    // Skip past starting character ('[')
+    const char *c = line + 1;
+    const char *end = line + len;
+
+    // Skip whitespace before map name
+    CONSUME_WHITESPACE(c, end);
+
+    // Get map name
+    int i = 0;
+    while((c != end) &&
+            (i < sizeof(g_ctx.mapName) - 1) &&
+            (!isspace(*c)) &&
+            (*c != ']'))
+    {
+        g_ctx.mapName[i++] = *c++;
+    }
+        g_ctx.mapName[i] = '\0';
+
+    if(i == 0)
+        return 0; // Can't use a zero-length name
+
+    unsigned int hash = hashFunction(g_ctx.mapName, strlen(g_ctx.mapName));
+    cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
+
+    if(map)
+    {
+        // Use existing list with this name
+        g_ctx.valueMap = map;
+    }
+    else
+    {
+        if(g_ctx.game->numValueMaps >= MAX_VALUE_MAPS)
+        {
+            // Exceeded maximum number of value maps for this game
+            printf("Exceeded maximum number of value maps for this game (%d)\n", MAX_VALUE_MAPS);
+            return 0;
+        }
+
+        // Add new list
+        if(!g_ctx.game->valueMaps)
+        {
+            g_ctx.game->valueMaps = malloc(sizeof(cheatsValueMap_t));
+        }
+        else
+        {
+            g_ctx.game->valueMaps = realloc(g_ctx.game->valueMaps, sizeof(cheatsValueMap_t) * (g_ctx.game->numValueMaps + 1));
+        }
+
+        g_ctx.valueMap = &(g_ctx.game->valueMaps[g_ctx.game->numValueMaps]);
+        memset(g_ctx.valueMap, 0, sizeof(cheatsValueMap_t));
+
+        strncpy(g_ctx.valueMap->title, g_ctx.mapName, sizeof(g_ctx.mapName));
+        g_ctx.game->numValueMaps++;
+
+        hashAdd(g_ctx.listHashes, g_ctx.valueMap, hash);
+    }
+
+    return 1;
+}
+
+static inline int readMapEntryLine(const char *line, int len)
+{
+    // All of the following are equivalent:
+    // 00:Value
+    // 00: Value
+    // 00 : Value
+    // 00=Value
+    // 00 = Value
+
+    if(!g_ctx.valueMap)
+    {
+        printf("Value map list not set\n");
+        return 0;
+    }
+
+    const char *c   = line;
+    const char *end = line + len;
+
+    // Get value
+    char hex[9];
+    int i = 0;
+    while(c != end && (i < sizeof(hex)-1) && isxdigit(*c))
+        hex[i++] = *c++;
+
+    hex[i] = '\0';
+    u32 value = strtol(hex, NULL, 16);
+
+    // Skip whitespace before seperator (':' or '=')
+    CONSUME_WHITESPACE(c, end);
+
+    if(*c != ':' && *c != '=' && *c != '-')
+    {
+        printf("invalid seperator character (%c)\n", *c);
+        return 0; // Valid seperator not found
+    }
+
+    // Skip seperator
+    c++;
+
+    // Skip whitespace after seperator
+    CONSUME_WHITESPACE(c, end);
+
+    // Get key
+    char name[32];
+    i = 0;
+    while(i < (sizeof(name) - 1) && c != end)
+        name[i++] = *c++;
+    name[i] = '\0';
+
+    size_t nameLength = strlen(name) + 1;
+
+    // Add key to list
+    if(!g_ctx.valueMap->keys)
+        g_ctx.valueMap->keys = malloc(nameLength);
+    else
+        g_ctx.valueMap->keys = realloc(g_ctx.valueMap->keys, g_ctx.valueMap->keysLength + nameLength);
+        
+    memcpy(g_ctx.valueMap->keys + g_ctx.valueMap->keysLength, name, nameLength);
+    g_ctx.valueMap->keysLength += nameLength;
+
+    // Add value to list
+    if(!g_ctx.valueMap->values)
+        g_ctx.valueMap->values = malloc(sizeof(value));
+    else
+        g_ctx.valueMap->values = realloc(g_ctx.valueMap->values, (g_ctx.valueMap->numEntries + 1) * sizeof(value));
+
+    g_ctx.valueMap->values[g_ctx.valueMap->numEntries] = value;
+    g_ctx.valueMap->numEntries++;
+
+    return 1;
+}
+
+static inline int readMappedCodeLine(const char *line, int len)
+{
+    // Add code to cheat
+    if(!g_ctx.game || !g_ctx.cheat)
+        return 0;
+    
+    if(!g_ctx.game->codeLines)
+    {
+        g_ctx.game->codeLinesCapacity = 1;
+        g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
+    }
+    else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
+    {
+        g_ctx.game->codeLinesCapacity *= 2;
+        g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
+    }
+    
+    if(g_ctx.cheat->numCodeLines == 0)
+        g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
+    
+    u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
+
+    // Decode 32-bit hexidecimal text values for address
+    static const unsigned char lut[] = {
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,
+        // 0x30: [0-9]
+        0,1,2,3,4,5,6,7,8,9,
+        0,0,0,0,0,0,0,
+        // 0x41: [A-F]
+        0xa,0xb,0xc,0xd,0xe,0xf,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,
+        // 0x61: [a-f]
+        0xa,0xb,0xc,0xd,0xe,0xf
+    };
+
+    u64 hex = ((u64)lut[(int)line[0]] << 28) |
+                ((u64)lut[(int)line[1]] << 24) |
+                ((u64)lut[(int)line[2]] << 20) |
+                ((u64)lut[(int)line[3]] << 16) |
+                ((u64)lut[(int)line[4]] << 12) |
+                ((u64)lut[(int)line[5]] <<  8) |
+                ((u64)lut[(int)line[6]] <<  4) |
+                ((u64)lut[(int)line[7]]);
+
+    *codeLine = hex;
+
+    const char *c   = line + 10;
+    const char *end = line + len;
+
+    // Get map name
+    char mapName[sizeof(g_ctx.mapName)];
+    int i = 0;
+    while(c != end && (i < sizeof(mapName) - 1) && !isspace(*c))
+    {
+        mapName[i++] = *c++;
+    }
+
+    mapName[i] = '\0';
+
+    // Get map associated with this name
+    unsigned int hash = hashFunction(mapName, i);
+    cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
+    if(!map)
+    {
+        return 0; // Map not found
+    }
+
+    g_ctx.cheat->valueMapIndex = map - g_ctx.game->valueMaps;
+    g_ctx.cheat->type = CHEAT_VALUE_MAPPED;
+    g_ctx.cheat->valueMapLine = g_ctx.cheat->numCodeLines;
+    g_ctx.cheat->numCodeLines++;
+    g_ctx.game->codeLinesUsed++;
+
+    return 1;
+}
+
 // Parse line and process token.
 static inline int parseLine(const char *line, const int len)
 {
@@ -461,354 +830,27 @@ static inline int parseLine(const char *line, const int len)
 
     if(token == TOKEN_TITLE)
     {
-        // Use existing game or create new one
-        char tempName[81];
-        strncpy(tempName, line+1, sizeof(tempName));
-        tempName[len-2] = '\0'; // Remove trailing '"'
-
-        // Try to find existing game with this title
-        cheatsGame_t *thisGame = cheatsFindGame(tempName);
-
-        if(!thisGame)
-        {
-            // No game with this title exists, so create a new one
-            thisGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
-            if(!g_ctx.game)
-            {
-                // First game added
-                g_ctx.gamesHead = thisGame;
-            }
-            else
-                g_ctx.game->next = thisGame;
-
-            strncpy(thisGame->title, tempName, 81);
-            g_ctx.numGamesAdded += 1;
-        }
-        else
-        {
-            // Add cheats to end of game's existing cheat list
-            cheatsCheat_t *cheat = thisGame->cheats;
-            if(cheat)
-            {
-                while(cheat->next)
-                    cheat = cheat->next;
-            }
-
-            g_ctx.cheat = cheat;
-        }
-
-        if(g_ctx.game && g_ctx.game->codeLinesUsed > 0)
-        {
-            // Free excess memory from the previous game's code list
-            g_ctx.game->codeLinesCapacity = g_ctx.game->codeLinesUsed;
-            g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
-        }
-
-        g_ctx.game = thisGame;
-        g_ctx.valueMap = NULL;
-        hashDestroyTable(g_ctx.listHashes);
-        g_ctx.listHashes = hashNewTable(15);
+        return readGameTitleLine(line, len);
     }
     else if (token == TOKEN_CHEAT)
     {
-        // Add new cheat to game
-        if(!g_ctx.game)
-            return 0;
-
-        cheatsCheat_t *newCheat = objectPoolAllocate(OBJECTPOOLTYPE_CHEAT);
-
-        if(!g_ctx.game->cheats)
-        {
-            // Game's first cheat
-            g_ctx.game->cheats = newCheat;
-        }
-        else
-            g_ctx.cheat->next = newCheat;
-
-        g_ctx.cheat = newCheat;
-        
-        strncpy(g_ctx.cheat->title, line, 81);
-        g_ctx.cheat->type = CHEAT_HEADER;
-        g_ctx.cheat->next = NULL;
-        g_ctx.game->numCheats++;
+        return readCheatTitleLine(line, len);
     }
     else if(token == TOKEN_CODE)
     {
-        // Add code to cheat
-        if(!g_ctx.game || !g_ctx.cheat)
-            return 0;
-        
-        if(!g_ctx.game->codeLines)
-        {
-            g_ctx.game->codeLinesCapacity = 1;
-            g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
-        }
-        else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
-        {
-            g_ctx.game->codeLinesCapacity *= 2;
-            g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
-        }
-        
-        if(g_ctx.cheat->numCodeLines == 0)
-            g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
-        
-        u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
-
-        // Decode pair of 32-bit hexidecimal text values
-        static const unsigned char lut[] = {
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,
-            // 0x30: [0-9]
-            0,1,2,3,4,5,6,7,8,9,
-            0,0,0,0,0,0,0,
-            // 0x41: [A-F]
-            0xa,0xb,0xc,0xd,0xe,0xf,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,
-            // 0x61: [a-f]
-            0xa,0xb,0xc,0xd,0xe,0xf
-        };
-
-        u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
-                  ((u64)lut[(int)line[ 1]] << 24) |
-                  ((u64)lut[(int)line[ 2]] << 20) |
-                  ((u64)lut[(int)line[ 3]] << 16) |
-                  ((u64)lut[(int)line[ 4]] << 12) |
-                  ((u64)lut[(int)line[ 5]] <<  8) |
-                  ((u64)lut[(int)line[ 6]] <<  4) |
-                  ((u64)lut[(int)line[ 7]])       |
-                  ((u64)lut[(int)line[ 9]] << 60) |
-                  ((u64)lut[(int)line[10]] << 56) |
-                  ((u64)lut[(int)line[11]] << 52) |
-                  ((u64)lut[(int)line[12]] << 48) |
-                  ((u64)lut[(int)line[13]] << 44) |
-                  ((u64)lut[(int)line[14]] << 40) |
-                  ((u64)lut[(int)line[15]] << 36) |
-                  ((u64)lut[(int)line[16]] << 32);
-
-        *codeLine = hex;
-
-        if(g_ctx.cheat->type != CHEAT_VALUE_MAPPED)
-            g_ctx.cheat->type = CHEAT_NORMAL;
-        g_ctx.cheat->numCodeLines++;
-        g_ctx.game->codeLinesUsed++;
+        return readCodeLine(line, len);
     }
     else if(token == TOKEN_MAP_START)
     {
-        // All of the following are equivalent:
-        // {xx}
-        // { xx}
-        // {xx }
-        // { xx }
-
-        // Skip past starting character ('[')
-        const char *c = line + 1;
-        const char *end = line + len;
-
-        // Skip whitespace before map name
-        CONSUME_WHITESPACE(c, end);
-
-        // Get map name
-        int i = 0;
-        while((c != end) &&
-              (i < sizeof(g_ctx.mapName) - 1) &&
-              (!isspace(*c)) &&
-              (*c != ']'))
-        {
-            g_ctx.mapName[i++] = *c++;
-        }
-         g_ctx.mapName[i] = '\0';
-
-        if(i == 0)
-            return 0; // Can't use a zero-length name
-
-        unsigned int hash = hashFunction(g_ctx.mapName, strlen(g_ctx.mapName));
-        cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
-
-        if(map)
-        {
-            // Use existing list with this name
-            g_ctx.valueMap = map;
-        }
-        else
-        {
-            if(g_ctx.game->numValueMaps >= MAX_VALUE_MAPS)
-            {
-                // Exceeded maximum number of value maps for this game
-                printf("Exceeded maximum number of value maps for this game (%d)\n", MAX_VALUE_MAPS);
-                return 0;
-            }
-
-            // Add new list
-            if(!g_ctx.game->valueMaps)
-            {
-                g_ctx.game->valueMaps = malloc(sizeof(cheatsValueMap_t));
-            }
-            else
-            {
-                g_ctx.game->valueMaps = realloc(g_ctx.game->valueMaps, sizeof(cheatsValueMap_t) * (g_ctx.game->numValueMaps + 1));
-            }
-
-            g_ctx.valueMap = &(g_ctx.game->valueMaps[g_ctx.game->numValueMaps]);
-            memset(g_ctx.valueMap, 0, sizeof(cheatsValueMap_t));
-
-            strncpy(g_ctx.valueMap->title, g_ctx.mapName, sizeof(g_ctx.mapName));
-            g_ctx.game->numValueMaps++;
-
-            hashAdd(g_ctx.listHashes, g_ctx.valueMap, hash);
-        }
+        return readMapStartLine(line, len);
     }
     else if(token == TOKEN_MAP_ENTRY)
     {
-        // All of the following are equivalent:
-        // 00:Value
-        // 00: Value
-        // 00 : Value
-        // 00=Value
-        // 00 = Value
-
-        if(!g_ctx.valueMap)
-        {
-            printf("Value map list not set\n");
-            return 0;
-        }
-
-        const char *c   = line;
-        const char *end = line + len;
-
-        // Get value
-        char hex[9];
-        int i = 0;
-        while(c != end && (i < sizeof(hex)-1) && isxdigit(*c))
-            hex[i++] = *c++;
-
-        hex[i] = '\0';
-        u32 value = strtol(hex, NULL, 16);
-
-        // Skip whitespace before seperator (':' or '=')
-        CONSUME_WHITESPACE(c, end);
-
-        if(*c != ':' && *c != '=' && *c != '-')
-        {
-            printf("invalid seperator character (%c)\n", *c);
-            return 0; // Valid seperator not found
-        }
-
-        // Skip seperator
-        c++;
-
-        // Skip whitespace after seperator
-        CONSUME_WHITESPACE(c, end);
-
-        // Get key
-        char name[32];
-        i = 0;
-        while(i < (sizeof(name) - 1) && c != end)
-            name[i++] = *c++;
-        name[i] = '\0';
-
-        size_t nameLength = strlen(name) + 1;
-
-        // Add key to list
-        if(!g_ctx.valueMap->keys)
-            g_ctx.valueMap->keys = malloc(nameLength);
-        else
-            g_ctx.valueMap->keys = realloc(g_ctx.valueMap->keys, g_ctx.valueMap->keysLength + nameLength);
-            
-        memcpy(g_ctx.valueMap->keys + g_ctx.valueMap->keysLength, name, nameLength);
-        g_ctx.valueMap->keysLength += nameLength;
-
-        // Add value to list
-        if(!g_ctx.valueMap->values)
-            g_ctx.valueMap->values = malloc(sizeof(value));
-        else
-            g_ctx.valueMap->values = realloc(g_ctx.valueMap->values, (g_ctx.valueMap->numEntries + 1) * sizeof(value));
-
-        g_ctx.valueMap->values[g_ctx.valueMap->numEntries] = value;
-        g_ctx.valueMap->numEntries++;
+        return readMapEntryLine(line, len);
     }
     else if(token == TOKEN_CODE_MAPPED)
     {
-        // Add code to cheat
-        if(!g_ctx.game || !g_ctx.cheat)
-            return 0;
-        
-        if(!g_ctx.game->codeLines)
-        {
-            g_ctx.game->codeLinesCapacity = 1;
-            g_ctx.game->codeLines = calloc(g_ctx.game->codeLinesCapacity, sizeof(u64));
-        }
-        else if(g_ctx.game->codeLinesUsed == g_ctx.game->codeLinesCapacity)
-        {
-            g_ctx.game->codeLinesCapacity *= 2;
-            g_ctx.game->codeLines = realloc(g_ctx.game->codeLines, g_ctx.game->codeLinesCapacity * sizeof(u64));
-        }
-        
-        if(g_ctx.cheat->numCodeLines == 0)
-            g_ctx.cheat->codeLinesOffset = g_ctx.game->codeLinesUsed;
-        
-        u64 *codeLine = g_ctx.game->codeLines + g_ctx.cheat->codeLinesOffset + g_ctx.cheat->numCodeLines;
-
-        // Decode 32-bit hexidecimal text values for address
-        static const unsigned char lut[] = {
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,
-            // 0x30: [0-9]
-            0,1,2,3,4,5,6,7,8,9,
-            0,0,0,0,0,0,0,
-            // 0x41: [A-F]
-            0xa,0xb,0xc,0xd,0xe,0xf,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,
-            // 0x61: [a-f]
-            0xa,0xb,0xc,0xd,0xe,0xf
-        };
-
-        u64 hex = ((u64)lut[(int)line[0]] << 28) |
-                  ((u64)lut[(int)line[1]] << 24) |
-                  ((u64)lut[(int)line[2]] << 20) |
-                  ((u64)lut[(int)line[3]] << 16) |
-                  ((u64)lut[(int)line[4]] << 12) |
-                  ((u64)lut[(int)line[5]] <<  8) |
-                  ((u64)lut[(int)line[6]] <<  4) |
-                  ((u64)lut[(int)line[7]]);
-
-        *codeLine = hex;
-
-        const char *c   = line + 10;
-        const char *end = line + len;
-
-        // Get map name
-        char mapName[sizeof(g_ctx.mapName)];
-        int i = 0;
-        while(c != end && (i < sizeof(mapName) - 1) && !isspace(*c))
-        {
-            mapName[i++] = *c++;
-        }
-
-        mapName[i] = '\0';
-
-        // Get map associated with this name
-        unsigned int hash = hashFunction(mapName, i);
-        cheatsValueMap_t *map = hashFind(g_ctx.listHashes, hash);
-        if(!map)
-        {
-            return 0; // Map not found
-        }
-
-        g_ctx.cheat->valueMapIndex = map - g_ctx.game->valueMaps;
-        g_ctx.cheat->type = CHEAT_VALUE_MAPPED;
-        g_ctx.cheat->valueMapLine = g_ctx.cheat->numCodeLines;
-        g_ctx.cheat->numCodeLines++;
-        g_ctx.game->codeLinesUsed++;
+        return readMappedCodeLine(line, len);
     }
     
     return 1;
