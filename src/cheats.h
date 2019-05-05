@@ -69,6 +69,9 @@ typedef struct cheatsValueMap {
     // Values for each key, corresponding to the nth cstring in keys
     // (ex: {0x00000000, 0x00000001})
     u32 *values;
+    // Number of bytes each value occupies
+    // (ex: 1)
+    u8 bytesPerEntry;
     // Number of values & keys set
     // (ex: 2)
     u8 numEntries;

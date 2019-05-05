@@ -109,6 +109,26 @@ static inline int copyCheatTitleToBuffer(char *buffer, const char *cheatTitle)
     return length;
 }
 
+// Print value map title in buffer. Returns number of bytes written.
+static inline int copyValueMapTitleToBuffer(char *buffer, const char *mapTitle)
+{
+    int length = 0;
+    buffer[length++] = '[';
+    strcpy(&buffer[length], mapTitle);
+    length += strlen(mapTitle);
+    buffer[length++] = ']';
+    buffer[length++] = '\n';
+
+    return length;
+}
+
+// Print value map entry in buffer. Returns number of bytes written
+static inline int copyValueMapEntryToBuffer(char *buffer, const char *key, u32 value)
+{
+    int length = sprintf(buffer, "%X = %s\n", value, key);
+    return length;
+}
+
 // Print "<addr> <val>\n" in text buffer. Returns number of bytes written.
 static inline int copyCodeToBuffer(char *buffer, u32 addr, u32 val)
 {
@@ -132,6 +152,48 @@ static inline int copyCodeToBuffer(char *buffer, u32 addr, u32 val)
     buffer[index++] = '\n';
 
     return 18; // 8 characters for address + space + 8 characters for value + newline
+}
+
+static inline int copyValueMappedCodeToBuffer(char *buffer, u32 addr, u32 val, const char *mapName, int bytesPerEntry)
+{
+    int i;
+    int index = 0;
+    const char *hexLUT = "0123456789ABCDEF";
+
+    // Convert address to ASCII
+    for(i = 0; i < 8; i++)
+    {
+        u8 nibble = (addr >> (28 - i*4)) & 0xF;
+        buffer[index++] = hexLUT[nibble];
+    }
+    buffer[index++] = ' ';
+
+    // Find first non-zero nibble from the right so we can position the map
+    // reference immediately after it.
+    int refStart;
+    for(refStart = (7 - bytesPerEntry*2); refStart >= 0; refStart--)
+    {
+        u8 nibble = (val >> (28 - refStart*4)) & 0xF;
+        if(nibble)
+            break;
+    }
+
+    refStart++; // Skip past the non-zero nibble
+
+    // Convert value to ASCII
+    for(i = 0; i < refStart; i++)
+    {
+        u8 nibble = (val >> (28 - i*4)) & 0xF;
+        buffer[index++] = hexLUT[nibble];
+    }
+
+    // Write map reference
+    buffer[index++] = '$';
+    strcpy(&buffer[index], mapName);
+    index += strlen(mapName);
+    buffer[index++] = '\n';
+
+    return index;
 }
 
 int textCheatsSave(const char *path, const cheatsGame_t *games)
@@ -187,6 +249,46 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
                     index = copyGameTitleToBuffer(&buf[0], game->title);
                 }
                 wroteGameTitle = 1;
+
+                int i;
+                for(i = 0; i < game->numValueMaps; i++)
+                {
+                    const cheatsValueMap_t *map = game->valueMaps + i;
+                    const char *mapTitle = map->title;
+                    if(index + strlen(mapTitle) + 3 < sizeof(buf)) // 3 = 1 open bracket + 1 close bracket + 1 newline character
+                    {
+                        index += copyValueMapTitleToBuffer(&buf[index], mapTitle);
+                    }
+                    else
+                    {
+                        // Flush buffer to file
+                        fwrite(buf, 1, index, f);
+                        index = copyValueMapTitleToBuffer(&buf[0], mapTitle);
+                    }
+
+                    int j;
+                    for(j = 0; j < map->numEntries; j++)
+                    {
+                        const char *key = getNthString(map->keys, j);
+                        const u32 value = map->values[j];
+                        int valueLength;
+                        if(value <= 0xFF)
+                            valueLength = 2;
+                        else if(value <= 0xFFFF)
+                            valueLength = 4;
+                        else
+                            valueLength = 8;
+                        if(index + strlen(key) + valueLength + 4) // 4 = 2 spaces + 1 separating character + 1 newline character
+                        {
+                            index += copyValueMapEntryToBuffer(&buf[index], key, value);
+                        }
+                        else
+                        {
+                            fwrite(buf, 1, index, f);
+                            index = copyValueMapEntryToBuffer(&buf[index], key, value);
+                        }
+                    }
+                }
             }
 
             if(index + strlen(cheat->title) + 1 < sizeof(buf))
@@ -200,20 +302,40 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
                 index = copyCheatTitleToBuffer(&buf[0], cheat->title);
             }
 
+            int valueMappedCheat = cheat->type;
+
             int i;
             for(i = 0; i < cheat->numCodeLines; i++)
             {
                 u32 addr = game->codeLines[cheat->codeLinesOffset + i];
                 u32 val = game->codeLines[cheat->codeLinesOffset + i] >> 32;
-                if(index + 18 < sizeof(buf))
+                if(!valueMappedCheat || i != cheat->valueMapLine)
                 {
-                    index += copyCodeToBuffer(&buf[index], addr, val);
+                    if(index + 18 < sizeof(buf))
+                    {
+                        index += copyCodeToBuffer(&buf[index], addr, val);
+                    }
+                    else
+                    {
+                        // Flush buffer to file
+                        fwrite(buf, 1, index, f);
+                        index = copyCodeToBuffer(&buf[0], addr, val);
+                    }
                 }
                 else
                 {
-                    // Flush buffer to file
-                    fwrite(buf, 1, index, f);
-                    index = copyCodeToBuffer(&buf[0], addr, val);
+                    const cheatsValueMap_t *map = &game->valueMaps[cheat->valueMapIndex];
+                    char *mapName = map->title;
+
+                    if(index + 17 + strlen(mapName) < sizeof(buf)) // worst case: 8 char address + 1 space + 6 char value + $ char + mapName + null char
+                    {
+                        index += copyValueMappedCodeToBuffer(&buf[index], addr, val, mapName, map->bytesPerEntry);
+                    }
+                    else
+                    {
+                        fwrite(buf, 1, index, f);
+                        index = copyValueMappedCodeToBuffer(&buf[index], addr, val, mapName, map->bytesPerEntry);
+                    }
                 }
             }
             cheat = cheat->next;
@@ -358,41 +480,41 @@ int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
 #define UNLIKELY(x) __builtin_expect(!!(x), 0)
 
 static const unsigned char isCodeDigitLUT[] = {
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,
-            // 0x20: space
-            1,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,
-            // 0x30: [0-9]
-            1,1,1,1,1,1,1,1,1,1,
-            0,0,0,0,0,0,0,
-            // 0x41: [A-F]
-            1,1,1,1,1,1,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,
-            // 0x61: [a-f]
-            1,1,1,1,1,1,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0,0,0,0,0,0,0,0,0,
-            0,0
-        };
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,
+    // 0x20: space
+    1,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,
+    // 0x30: [0-9]
+    1,1,1,1,1,1,1,1,1,1,
+    0,0,0,0,0,0,0,
+    // 0x41: [A-F]
+    1,1,1,1,1,1,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,
+    // 0x61: [a-f]
+    1,1,1,1,1,1,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,0,0,
+    0,0
+};
 
 // Determine token type for line.
 static inline int getToken(const unsigned char *line, const int len)
@@ -446,7 +568,7 @@ static inline int getToken(const unsigned char *line, const int len)
             numTokens++;
 
         if(numTokens == 15)
-        return TOKEN_CODE_MAPPED;
+            return TOKEN_CODE_MAPPED;
     }
 
     if(UNLIKELY(len > 3 &&
@@ -729,6 +851,9 @@ static inline int readMapEntryLine(const char *line, int len)
     hex[i] = '\0';
     u32 value = strtol(hex, NULL, 16);
 
+    if(g_ctx.valueMap->bytesPerEntry == 0)
+        g_ctx.valueMap->bytesPerEntry = i/2 + i%2; // Round up to nearest even number.
+
     // Skip whitespace before seperator (':' or '=')
     CONSUME_WHITESPACE(c, end);
 
@@ -816,13 +941,13 @@ static inline int readMappedCodeLine(const char *line, int len)
     };
 
     u64 address = ((u64)lut[(int)line[0]] << 28) |
-                ((u64)lut[(int)line[1]] << 24) |
-                ((u64)lut[(int)line[2]] << 20) |
-                ((u64)lut[(int)line[3]] << 16) |
-                ((u64)lut[(int)line[4]] << 12) |
-                ((u64)lut[(int)line[5]] <<  8) |
-                ((u64)lut[(int)line[6]] <<  4) |
-                ((u64)lut[(int)line[7]]);
+                  ((u64)lut[(int)line[1]] << 24) |
+                  ((u64)lut[(int)line[2]] << 20) |
+                  ((u64)lut[(int)line[3]] << 16) |
+                  ((u64)lut[(int)line[4]] << 12) |
+                  ((u64)lut[(int)line[5]] <<  8) |
+                  ((u64)lut[(int)line[6]] <<  4) |
+                  ((u64)lut[(int)line[7]]);
 
     const char *c   = line + 9;
     const char *end = line + len;
