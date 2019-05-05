@@ -603,7 +603,7 @@ static inline int getToken(const unsigned char *line, const int len)
             return TOKEN_CHEAT;
     }
 
-    if(((*(short *)line) == 0x2F2F) || line[0] == '#')
+    if((line[0] == '/' && line[1] == '/') || line[0] == '#')
         return 0; // Comment
 
     return TOKEN_CHEAT;
