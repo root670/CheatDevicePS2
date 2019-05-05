@@ -523,10 +523,12 @@ static int displayDeleteCodeLine()
 
     cheat->numCodeLines--;
     game->codeLinesUsed--;
-    menuRemoveActiveItem();
+
+    // Reload code menu
+    cheatsLoadCodeMenu(cheat, game);
     cheatDatabaseDirty = 1;
 
-    return 0;
+    return 1;
 }
 
 int cheatsLoadHistory()
