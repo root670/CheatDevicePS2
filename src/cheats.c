@@ -1231,9 +1231,33 @@ char* cheatsGetActiveGameTitle()
     return activeGame->title;
 }
 
-#ifdef __PS2__
-    void SetupERL()
+#ifdef __PS1__
+    static void DisableInter()
     {
+        asm volatile(
+            ".set noreorder\n\t"
+            "mfc0 $v0, $12\n\t"
+            "nop\n\t"
+            "andi $v0, $v0, 0xfffe\n\t"
+            "mtc0 $v0, $12\n\t"
+        );
+    }
+
+    static void EnableInter()
+    {
+        asm volatile(
+            ".set noreorder\n\t"
+            "mfc0 $v0, $12\n\t"
+            "nop\n\t"
+            "ori $v0, $v0, 1\n\t"
+            "mtc0 $v0, $12\n\t"
+        );
+    }
+#endif // __PS1__
+
+    void cheatsInstallEngine()
+    {
+        #ifdef __PS2__
         struct erl_record_t *erl;
 
         erl_add_global_symbol("GetSyscallHandler", (u32)GetSyscallHandler);
@@ -1272,34 +1296,8 @@ char* cheatsGetActiveGameTitle()
         GET_SYMBOL(clear_codes, "clear_codes");
 
         printf("Symbols loaded.\n");
-    }
-#endif // __PS2__
 
-#ifdef __PS1__
-    static void DisableInter()
-    {
-        asm volatile(
-            ".set noreorder\n\t"
-            "mfc0 $v0, $12\n\t"
-            "nop\n\t"
-            "andi $v0, $v0, 0xfffe\n\t"
-            "mtc0 $v0, $12\n\t"
-        );
-    }
-
-    static void EnableInter()
-    {
-        asm volatile(
-            ".set noreorder\n\t"
-            "mfc0 $v0, $12\n\t"
-            "nop\n\t"
-            "ori $v0, $v0, 1\n\t"
-            "mtc0 $v0, $12\n\t"
-        );
-    }
-
-    void cheatsInstallEngine()
-    {
+        #elif __PS1__
         DisableInter();
 
         // Copy engine code
@@ -1312,8 +1310,8 @@ char* cheatsGetActiveGameTitle()
 	    *((unsigned int *)0x800000BC) = 0x0;
 
         EnableInter();
+        #endif
     }
-#endif // __PS1__
 
 static void historyAddCheat(const cheatsGame_t *game, const cheatsCheat_t *cheat)
 {
@@ -1331,7 +1329,6 @@ static void readCodes(cheatsCheat_t *cheats)
 
     #ifdef __PS2__
     int nextCodeCanBeHook = 1;
-    SetupERL();
     #endif
 
     while(cheat)

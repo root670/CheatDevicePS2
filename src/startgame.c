@@ -54,6 +54,7 @@
     extern u8   _bootstrap_elf_start[];
     extern int _bootstrap_elf_size;
 
+    #define GS_BGCOLOUR *((vu32*)0x120000e0)
     #define ELF_PT_LOAD 1
 
     // Load boostrap into memory. Returns bootstrap entrypoint.
@@ -93,7 +94,97 @@ static int discPrompt()
     return (displayPromptMenu(items, 2, promptText) == 0);
 }
 
-extern void startgameGetBootPathFromDisc(char *bootPath, int bootPathLen);
+static void getBootPathFromDisc(char *bootPath, int bootPathLen)
+{
+    #ifdef __PS2__
+    // Wait for disc to be ready
+    while(sceCdGetDiskType() == 1) {}
+    sceCdDiskReady(0);
+    
+    int syscnfFile = open("cdrom0:\\SYSTEM.CNF;1", O_TEXT | O_RDONLY);
+    if(!syscnfFile)
+    {
+        GS_BGCOLOUR = 0x1010B4; // red
+        SleepThread();
+    }
+    
+    char syscnfText[256];
+    int syscnfLen = read(syscnfFile, syscnfText, 255);
+    close(syscnfFile);
+    if(!syscnfLen)
+    {
+        GS_BGCOLOUR = 0x1010B4;
+        SleepThread();
+    }
+    
+    syscnfText[syscnfLen] = '\0';
+
+    int found = 0;
+    char *line = strtok(syscnfText, "\n");
+    while(line)
+    {
+        if(!found)
+        {
+            char *substr = strstr(line, "BOOT2");
+            if(substr)
+            {
+                substr += strlen("BOOT2");
+                while(*substr == ' ' || (*substr == '='))
+                    substr++;
+                
+                strncpy(bootPath, substr, bootPathLen);
+                found = 1;
+            }
+        }
+        
+        line = strtok(NULL, "\n");
+    }
+
+    #elif __PS1__
+    _96_remove();
+	_96_init();
+	
+	printf("Loading SYSTEM.CNF\n");
+	FILE *f = fopen("cdrom:\\SYSTEM.CNF;1", "r");
+	fseek(f, 0, SEEK_END);
+	int syscnfLen = ftell(f);
+	fseek(f, 0, SEEK_SET);
+
+    char syscnfText[256];
+	fread(syscnfText, sizeof(char), syscnfLen, f);
+	fclose(f);
+
+	syscnfText[syscnfLen] = '\0';
+
+    int found = 0;
+	char *line = strtok(syscnfText, "\n");
+	while(line)
+	{
+		if(!found)
+		{
+			char *substr = strstr(line, "BOOT");
+			if(substr)
+			{
+				substr += strlen("BOOT");
+				while(*substr == ' ' || (*substr == '='))
+					substr++;
+				
+				strncpy(bootPath, substr, bootPathLen);
+				found = 1;
+			}
+		}
+		
+		line = strtok(NULL, "\n");
+	}
+    #endif
+}
+
+// PS2 requires the engine to be installed before the codes can be added. PS1
+// requires the PSX_RestoreBIOSState() function to be called before the engine
+// is installed and codes are added. Note that since the BIOS state has been
+// restored, any memory allocated can no longer be deallocated since the
+// structures used by malloc will have been reset, so the killXYZ() functions
+// will fail.
 
 void startgameExecute(const char *path)
 {
@@ -107,7 +198,7 @@ void startgameExecute(const char *path)
         graphicsDrawTextCentered(310, COLOR_YELLOW, "Starting game...");
         graphicsRender();
 
-        startgameGetBootPathFromDisc(bootPath, sizeof(bootPath));
+        getBootPathFromDisc(bootPath, sizeof(bootPath));
     }
     else
     {
@@ -116,13 +207,15 @@ void startgameExecute(const char *path)
 
     cheatsSaveDatabase();
     settingsSave();
-    cheatsInstallCodesForEngine();
-    killMenus();
-    killCheats();
-    killSettings();
-    objectPoolKill();
-    
-    #ifdef __PS2__
+
+    #ifdef __PS2__        
+        cheatsInstallEngine();
+        cheatsInstallCodesForEngine();
+        killMenus();
+        killCheats();
+        killSettings();
+        objectPoolKill();
+
         void *bootstrapEntrypoint = loadBootstrap();
         
         padPortClose(0, 0);
@@ -136,9 +229,15 @@ void startgameExecute(const char *path)
 
         char *argv[2] = {bootPath, "\0"};
 
-        ExecPS2(bootstrapEntrypoint, 0, 2, argv);
+    ExecPS2(bootstrapEntrypoint, 0, 2, argv);
 
     #elif __PS1__
+        // PS1 requires the PSX_RestoreBIOSState() function to be called
+        // before the engine is installed and codes are added. Note that since
+        // the BIOS state has been restored, any memory allocated can no longer
+        // be deallocated since the structures used by malloc will have been
+        // reset. This will cause the killXYZ() functions will fail, so only
+        // call them on PS2.
         printf("Booting \"%s\"\n", bootPath);
         printf("boot : %p (%d bytes)\n", bootPath, strlen(bootPath));
         RemoveVBlankHandler();
@@ -148,6 +247,7 @@ void startgameExecute(const char *path)
         _96_init();
 
         cheatsInstallEngine();
+        cheatsInstallCodesForEngine();
 
         EnterCriticalSection();
 	    LoadExec(bootPath, 0x801FFFF0, 0);
