@@ -1,7 +1,9 @@
-#include "pad.h"
+#ifdef __PS1__
+    #include <stddef.h>
+#endif // __PS1__
 
-#include <tamtypes.h>
-#include <libpad.h>
+#include "pad.h"
+#include "types.h"
 
 typedef struct padState {
     u16 padPressed;
@@ -10,38 +12,69 @@ typedef struct padState {
     u16 initialDelay;       // Number of calls to padPoll() needed before considering a button to be held.
     u16 timeHeld;
     u16 timeHeldDelay;      // While a button is held, require a number of calls to padPoll() to be made before setting padHeld.
+    
+    #ifdef __PS2__
     struct padButtonStatus padStatus;
+    #elif __PS1__
+    unsigned short padStatus;
+    #endif
 } padState_t;
 
-static padState_t padState;
-static char padBuff[256] __attribute__ ((aligned(64)));
+padState_t padState;
+
+#ifdef __PS2__
+    static char padBuff[256] __attribute__ ((aligned(64)));
+#endif // __PS2__
 
 void padInitialize()
 {
+#ifdef __PS2__
     padInit(0);
     padPortOpen(0, 0, padBuff);
     padSetMainMode(0, 0, PAD_MMODE_DIGITAL, PAD_MMODE_LOCK);
+#endif // __PS2__
+
     padState.padOld = 0xFFFF;
     padState.timeHeld = 0;
     padState.initialDelay = 18;
 }
 
-void padPoll(delayTime_t delayTime)
+static inline void getPadStatus()
 {
-    padState.padHeld = 0;
+#ifdef __PS2__
     int state = padGetState(0, 0);
     while((state != PAD_STATE_STABLE) && (state != PAD_STATE_FINDCTP1))
         state = padGetState(0, 0);
 
     padRead(0, 0, &padState.padStatus);
-    padState.padPressed = (0xFFFF ^ padState.padStatus.btns) & ~padState.padOld;
-    padState.padOld = 0xFFFF ^ padState.padStatus.btns;
+
+#elif __PS1__
+    PSX_ReadPad(&padState.padStatus, NULL);
+#endif
+}
+
+static inline u32 getButtons()
+{
+#ifdef __PS2__
+    return 0xFFFF ^ padState.padStatus.btns;
+#elif __PS1__
+    return padState.padStatus;
+#endif
+}
+
+void padPoll(delayTime_t delayTime)
+{
+    getPadStatus();
+
+    padState.padHeld = 0;
+    padState.padPressed = getButtons() & ~padState.padOld;
+    padState.padOld = getButtons();
 
     // padState->padRapid will have an initial delay when a button is held
-    if((0xFFFF ^ padState.padStatus.btns) && (0xFFFF ^ padState.padStatus.btns) == padState.padOld)
+    if(getButtons() && getButtons() == padState.padOld)
     {
         if(padState.timeHeld++ > padState.initialDelay && padState.timeHeld % delayTime == 0) // don't go too fast!
-            padState.padHeld = (0xFFFF ^ padState.padStatus.btns);
+            padState.padHeld = getButtons();
         else
             padState.padHeld = padState.padPressed;
     }

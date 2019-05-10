@@ -1,8 +1,13 @@
 #ifndef PAD_H
 #define PAD_H
 
-#include <tamtypes.h>
-#include <libpad.h>
+#ifdef __PS2__
+    #include <libpad.h>
+#elif __PS1__
+    #include <psx.h>
+#endif
+
+#include "types.h"
 
 typedef enum delayTime {
     DELAYTIME_FAST = 2,
@@ -16,9 +21,9 @@ void padInitialize();
 void padPoll(delayTime_t delayTime);
 
 // Get buttons pressed momentarily
-inline u32 padPressed();
+u32 padPressed();
 
 // Get buttons held down
-inline u32 padHeld();
+u32 padHeld();
 
 #endif // PAD_H
