@@ -6,11 +6,6 @@
 #ifndef GRAPHICS_H
 #define GRAPHICS_H
 
-#include <tamtypes.h>
-#include "gsKit.h"
-#include "dmaKit.h"
-#include "gsToolkit.h"
-
 typedef enum {
     COLOR_BLACK,
     COLOR_WHITE,
@@ -75,6 +70,5 @@ void graphicsDrawBackgroundBottom(unsigned int rows);
 
 // Wait for the next vsync, then render.
 void graphicsRender();
-
 
 #endif
