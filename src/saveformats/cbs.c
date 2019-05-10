@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <fileio.h>
 #include <libmc.h>
 #include <zlib.h>

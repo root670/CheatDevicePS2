@@ -1,8 +1,9 @@
-#include "objectpool.h"
-#include "cheats.h"
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "objectpool.h"
+#include "cheats.h"
 
 #define POOLSIZE_GAME     MAX_GAMES * sizeof(cheatsGame_t)
 #define POOLSIZE_CHEAT    MAX_CHEATS * sizeof(cheatsCheat_t)

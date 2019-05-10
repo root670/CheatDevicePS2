@@ -6,8 +6,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
-#include <tamtypes.h>
-
+#include "types.h"
 #include "cheats.h"
 
 #define READ_8(address) \

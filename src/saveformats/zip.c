@@ -1,4 +1,5 @@
 #include <libmc.h>
+#include <string.h>
 
 #include "zip.h"
 #include "util.h"

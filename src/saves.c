@@ -1,9 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <unistd.h>
 #include <dirent.h>
 #include <fileio.h>
 #include <libmc.h>
 #include <sys/stat.h>
+
 #include "saves.h"
 #include "pad.h"
 #include "menus.h"

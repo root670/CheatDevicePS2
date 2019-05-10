@@ -6,7 +6,7 @@
 #ifndef SAVES_H
 #define SAVES_H
 
-#include <tamtypes.h>
+#include "types.h"
 
 extern const char *flashDriveDevice;
 
