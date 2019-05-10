@@ -162,7 +162,7 @@ release: all
 	cd release && zip -q -9 CheatDevicePS2-$$(git describe).zip *
 
 clean:
-	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o *.elf
+	rm -rf **/*.o *.elf
 	rm -f resources/*.o
 	cd engine && make clean
 	cd bootstrap && make clean
