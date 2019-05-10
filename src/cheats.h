@@ -6,8 +6,7 @@
 #ifndef CHEATS_H
 #define CHEATS_H
 
-#include <tamtypes.h>
-
+#include "types.h"
 #include "menus.h"
 
 typedef enum {
@@ -18,8 +17,13 @@ typedef enum {
 } cheatTitleType_t;
 
 // Global memory constraints
-#define MAX_GAMES   2000
-#define MAX_CHEATS  180000
+#ifdef __PS2__
+    #define MAX_GAMES   2000
+    #define MAX_CHEATS  180000
+#elif __PS1__
+    #define MAX_GAMES   10
+    #define MAX_CHEATS  100
+#endif
 
 // Per-game memory constraints
 #define MAX_VALUE_MAPS 16
@@ -39,21 +43,15 @@ Cheat Database --> Game --> Cheat --> Code
 const char *cheatsCodeFormatString;
 extern int cheatsCodeStringLength;
 
-#ifdef __PS2__
-    typedef struct cheatsCodeLine {
-        u32 address;
-        u32 value;
-    } cheatsCodeLine_t;
-#endif // __PS2__
-
-#ifdef __PSX__
-    #pragma pack(1)
-    typedef struct cheatsCodeLine {
-        u32 address;
-        u16 value;
-    } cheatsCodeLine_t;
-    #pragma pack()
-#endif // __PSX__
+#pragma pack(1)
+typedef struct cheatsCodeLine {
+    u32 address;
+    #ifdef __PS2__
+    u32 value;
+    #elif __PS1__
+    u16 value;
+    #endif
+} cheatsCodeLine_t;
 
 #pragma pack(1)
 typedef struct cheatsCheat {
@@ -91,7 +89,7 @@ typedef struct cheatsValueMap {
     // (ex: {0x00000000, 0x00000001})
 #ifdef __PS2__
     u32 *values;
-#elif __PSX__
+#elif __PS1__
     u16 *values;
 #endif
     // Number of bytes each value occupies
@@ -169,7 +167,9 @@ void cheatsDeactivateGame(cheatsGame_t *game);
 int cheatsSetActiveGame(cheatsGame_t *game);
 // Get title for the active game
 char* cheatsGetActiveGameTitle();
-// Setup up the cheat engine and load active cheats
+// Setup active cheats to be used by the engine
 void cheatsInstallCodesForEngine();
+// Setup the cheat engine
+void cheatsInstallEngine();
 
 #endif

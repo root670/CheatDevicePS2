@@ -1,5 +1,9 @@
 #include <stdio.h>
-#include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+#ifdef __PS2__
+    #include <malloc.h>
+#endif
 
 #include "menus.h"
 #include "graphics.h"
@@ -508,18 +512,21 @@ int menuGoToPreviousHeader()
 void menuToggleItem()
 {
     void *extra;
-    char *text;
     menuItemType_t type;
 
     if(activeMenu->numItems > 0)
     {
         extra = activeMenu->items[activeMenu->currentItem]->extra;
-        text = activeMenu->items[activeMenu->currentItem]->text;
         type = activeMenu->items[activeMenu->currentItem]->type;
+
 
         if(activeMenu->identifier == MENU_SAVES && type != MENU_ITEM_HEADER)
         {
+            #ifdef __PS2__
             savesCopySavePrompt((gameSave_t *) extra);
+            #elif __PS1__
+            if(extra) {};
+            #endif
         }
     }
 }

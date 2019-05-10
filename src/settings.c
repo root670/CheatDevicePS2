@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "libraries/ini.h"
@@ -22,25 +23,28 @@ static settings_t settings;
 static char *diskBootStr = "==Disc==";
 static int settingsChanged = 0;
 
-#ifdef _DTL_T10000
-static char *settingsPath = "host:CheatDevicePS2.ini";
-#else
-static char *settingsPath = "CheatDevicePS2.ini";
+#ifdef __PS2__
+    #ifdef _DTL_T10000
+        static char *settingsPath = "host:CheatDevicePS2.ini";
+    #else
+        static char *settingsPath = "CheatDevicePS2.ini";
+    #endif
+    static char *defaultBootPaths[] = {
+        "mass:BOOT/BOOT.ELF",
+        "mass:BOOT/ESR.ELF",
+        "mc0:BOOT/BOOT.ELF",
+        "mc1:BOOT/BOOT.ELF",
+        "rom:OSDSYS"
+    };
 #endif
 
-static char *defaultBootPaths[] = {
-    "mass:BOOT/BOOT.ELF",
-    "mass:BOOT/ESR.ELF",
-    "mc0:BOOT/BOOT.ELF",
-    "mc1:BOOT/BOOT.ELF",
-    "rom:OSDSYS"
-};
 
 static const char *HELP_TICKER = \
     "{CROSS} Boot     "
     "{SQUARE} Options     "
     "{CIRCLE} Main Menu";
 
+#ifdef __PS2__
 static void getINIString(struct ini_info *ini, char **dst, const char *keyName, const char *defaultValue)
 {
     if(!dst || !keyName)
@@ -120,6 +124,7 @@ static void migrateOldDatabaseSetting()
         }
     }
 }
+#endif // __PS2__
 
 int initSettings()
 {
@@ -127,6 +132,8 @@ int initSettings()
         return 0;
 
     printf("\n ** Initializing Settings **\n");
+
+    #ifdef __PS2__
 
     struct ini_info *ini = ini_load(settingsPath);
 
@@ -159,6 +166,8 @@ int initSettings()
     if(ini)
         ini_free(ini);
 
+    #endif // __PS2__
+
     initialized = 1;
     return 1;
 }
@@ -179,6 +188,21 @@ int killSettings()
 
     return 1;
 }
+
+
+#ifdef __PS1__
+    int fprintf(FILE *fptr, const char *str, ...)
+    {
+        va_list args;
+        char buffer[4096];
+        
+        va_start(args, str);
+        int length = vsnprintf(buffer, sizeof(buffer), str, args);
+        va_end(args);
+
+        return fwrite(buffer, 1, length, fptr);
+    }
+#endif
 
 int settingsSave()
 {

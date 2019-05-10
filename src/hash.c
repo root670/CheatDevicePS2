@@ -1,7 +1,12 @@
-#include "hash.h"
 #include <stdio.h>
-#include <tamtypes.h>
-#include <floatlib.h>
+#include <stdlib.h>
+
+#include "hash.h"
+#ifdef __PS2__
+    #include <floatlib.h>
+#elif __PS1__
+    #include <math.h>
+#endif
 
 hashTable_t *hashNewTable(int numEntries)
 {

@@ -6,7 +6,7 @@
 #ifndef MENUS_H
 #define MENUS_H
 
-#include <tamtypes.h>
+#include "types.h"
 
 typedef enum {
     MENU_GAMES,

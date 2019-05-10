@@ -1,3 +1,19 @@
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+#include <unistd.h>
+#include <stdlib.h>
+
+#ifdef __PS2__
+    #include <loadfile.h>
+    #include <iopcontrol.h>
+    #include <sifrpc.h>
+    #include <iopheap.h>
+    #include <kernel.h>
+    #include <sbv_patches.h>
+    #include <libmc.h>
+#endif // __PS2__
+
 #include "util.h"
 #include "pad.h"
 #include "menus.h"
@@ -6,16 +22,6 @@
 #include "saves.h"
 #include "cheats.h"
 #include "settings.h"
-#include <stdio.h>
-#include <ctype.h>
-#include <loadfile.h>
-#include <iopcontrol.h>
-#include <sifrpc.h>
-#include <iopheap.h>
-#include <kernel.h>
-#include <sbv_patches.h>
-#include <libmc.h>
-#include <unistd.h>
 
 #ifdef __PS2__
     #ifdef _DTL_T10000
@@ -39,7 +45,6 @@
 
 void loadModules()
 {
-    int ret;
     printf("\n ** Loading main modules **\n");
 
 #ifdef __PS2__
@@ -75,6 +80,7 @@ void loadModules()
     sbv_patch_enable_lmb();
     sbv_patch_disable_prefix_check();
 
+    int ret;
     #ifdef _DTL_T10000
     SifExecModuleBuffer(_sio2man_irx_start, _sio2man_irx_size, 0, NULL, &ret);
     SifExecModuleBuffer(_padman_irx_start, _padman_irx_size, 0, NULL, &ret);
@@ -97,8 +103,8 @@ void loadModules()
     mcInit(MC_TYPE_MC);
     #endif
 
-    padInitialize();
 #endif // __PS2__
+    padInitialize();
 }
 
 void handlePad()
@@ -232,12 +238,14 @@ void handlePad()
         if(pad_pressed & PAD_CROSS)
         {
             menuSetActive(MENU_SAVES);
+            #ifdef __PS2__
             if(selectedDevice == 0)
                 savesLoadSaveMenu(MC_SLOT_1);
             if(selectedDevice == 1)
                 savesLoadSaveMenu(MC_SLOT_2);
             if(selectedDevice == 2)
                 savesLoadSaveMenu(FLASH_DRIVE);
+            #endif
         }
         
         if(pad_pressed & PAD_CIRCLE)
@@ -719,7 +727,7 @@ int displayExistingCodeEditMenu(cheatsCodeLine_t *code)
 }
 
 int displayPromptMenu(const char **items, int numItems, const char *header)
-{   
+{
     if(!items || numItems <= 0 || !header)
         return -1;
 
@@ -744,14 +752,23 @@ int displayPromptMenu(const char **items, int numItems, const char *header)
         pad_held = padHeld();
 
         graphicsDrawPromptBoxBlack(maxLength + 10, ((numItems + numHeaderLines) * 22) + 10);
-        graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
+        #ifdef __PS2__
+            graphicsDrawTextCentered(firstItemY - 6, COLOR_GREEN, header);
+        #elif __PS1__
+            graphicsDrawTextCentered(firstItemY, COLOR_GREEN, header);
+        #endif
 
         for(i = 0; i < numItems; i++)
         {
             int y = firstItemY + (i + numHeaderLines)*22;
             if(i == selectedItem)
                 graphicsDrawQuad((graphicsGetDisplayWidth()/2.0) - maxLength/2.0, y, maxLength, 22, COLOR_BLUE);
-            graphicsDrawTextCentered(y - 2, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
+                
+            #ifdef __PS2__
+                graphicsDrawTextCentered(y - 2, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
+            #elif __PS1__
+                graphicsDrawTextCentered(y, i == selectedItem ? COLOR_YELLOW : COLOR_WHITE, items[i]);
+            #endif
         }
 
         graphicsRender();

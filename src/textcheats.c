@@ -1,15 +1,19 @@
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
-#include <time.h>
+#include <stdlib.h>
+#ifdef __PS2__
+    #include <time.h>
+    #include "libraries/minizip/unzip.h"
+#endif // __PS2__
 
 #include "textcheats.h"
+#include "types.h"
 #include "cheats.h"
 #include "graphics.h"
 #include "objectpool.h"
 #include "util.h"
 #include "hash.h"
-#include "libraries/minizip/unzip.h"
 
 #define TOKEN_TITLE       (1 << 0) // "Game"
 #define TOKEN_CHEAT       (1 << 1) // Cheat
@@ -209,7 +213,9 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Saving cheat database...");
     graphicsRender();
 
+    #ifdef __PS2__
     clock_t start = clock();
+    #endif
     char buf[8192];
     int index = 0;
     const cheatsGame_t *game = games;
@@ -325,7 +331,7 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
                 else
                 {
                     const cheatsValueMap_t *map = &game->valueMaps[cheat->valueMapIndex];
-                    char *mapName = map->title;
+                    const char *mapName = map->title;
 
                     if(index + 17 + strlen(mapName) < sizeof(buf)) // worst case: 8 char address + 1 space + 6 char value + $ char + mapName + null char
                     {
@@ -349,14 +355,18 @@ int textCheatsSave(const char *path, const cheatsGame_t *games)
         fwrite(buf, 1, index, f);
 
     fclose(f);
+
+    #ifdef __PS2__
     clock_t end = clock();
     printf("Saving took %f seconds\n", ((float)end - start) / CLOCKS_PER_SEC);
+    #endif
 
     return 1;
 }
 
 int textCheatsOpenZip(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded)
 {
+#if __PS2__
     if(!path || !gamesAdded || !numGamesAdded)
         return 0;
 
@@ -465,8 +475,12 @@ int textCheatsOpenZip(const char *path, cheatsGame_t **gamesAdded, unsigned int 
 
     *numGamesAdded = numGamesAddedTotal;
     *gamesAdded    = gamesHead;
-
     return 1;
+
+#elif __PS1__
+    printf("Reading from cheat database from zip is not supported.\n");
+    return 0;
+#endif
 }
 
 int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
@@ -729,25 +743,30 @@ static inline int readCodeLine(const char *line, int len)
         0xa,0xb,0xc,0xd,0xe,0xf
     };
 
-    u64 hex = ((u64)lut[(int)line[ 0]] << 28) |
-              ((u64)lut[(int)line[ 1]] << 24) |
-              ((u64)lut[(int)line[ 2]] << 20) |
-              ((u64)lut[(int)line[ 3]] << 16) |
-              ((u64)lut[(int)line[ 4]] << 12) |
-              ((u64)lut[(int)line[ 5]] <<  8) |
-              ((u64)lut[(int)line[ 6]] <<  4) |
-              ((u64)lut[(int)line[ 7]])       |
-              ((u64)lut[(int)line[ 9]] << 60) |
-              ((u64)lut[(int)line[10]] << 56) |
-              ((u64)lut[(int)line[11]] << 52) |
-              ((u64)lut[(int)line[12]] << 48) |
-              ((u64)lut[(int)line[13]] << 44) |
-              ((u64)lut[(int)line[14]] << 40) |
-              ((u64)lut[(int)line[15]] << 36) |
-              ((u64)lut[(int)line[16]] << 32);
+    codeLine->address = ((u32)lut[(int)line[ 0]] << 28) |
+                        ((u32)lut[(int)line[ 1]] << 24) |
+                        ((u32)lut[(int)line[ 2]] << 20) |
+                        ((u32)lut[(int)line[ 3]] << 16) |
+                        ((u32)lut[(int)line[ 4]] << 12) |
+                        ((u32)lut[(int)line[ 5]] <<  8) |
+                        ((u32)lut[(int)line[ 6]] <<  4) |
+                        ((u32)lut[(int)line[ 7]]);
 
-    codeLine->address = (u32)hex;
-    codeLine->value   = (u32)(hex >> 32);
+    #ifdef __PS2__
+    codeLine->value = ((u64)lut[(int)line[ 9]] << 28) |
+                      ((u64)lut[(int)line[10]] << 24) |
+                      ((u64)lut[(int)line[11]] << 20) |
+                      ((u64)lut[(int)line[12]] << 16) |
+                      ((u64)lut[(int)line[13]] << 12) |
+                      ((u64)lut[(int)line[14]] <<  8) |
+                      ((u64)lut[(int)line[15]] <<  4) |
+                      ((u64)lut[(int)line[16]]);
+    #elif __PS1__
+    codeLine->value = ((u16)lut[(int)line[ 9]] << 12) |
+                      ((u16)lut[(int)line[10]] <<  8) |
+                      ((u16)lut[(int)line[11]] <<  4) |
+                      ((u16)lut[(int)line[12]]);
+    #endif
 
     if(g_ctx.cheat->type != CHEAT_VALUE_MAPPED)
         g_ctx.cheat->type = CHEAT_NORMAL;
@@ -1001,7 +1020,7 @@ static inline int parseLine(const char *line, const int len)
     if(len < 1)
         return 0;
 
-    int token = getToken(line, len);
+    int token = getToken((const unsigned char *)line, len);
     g_ctx.lastToken = token;
 
     if(token == TOKEN_TITLE)
@@ -1040,7 +1059,9 @@ static int readTextCheats(char *text, size_t len)
     char *endPtr = text + len;
     u32 lineNum = 0;
 
+    #ifdef __PS2__
     clock_t start = clock();
+    #endif
     
     while(text < endPtr)
     {
@@ -1070,8 +1091,10 @@ static int readTextCheats(char *text, size_t len)
         lineNum++;
     }
 
+    #ifdef __PS2__
     clock_t end = clock();
     printf("Loading took %f seconds\n", ((float)end - start) / CLOCKS_PER_SEC);
+    #endif
 
     return 1;
 }

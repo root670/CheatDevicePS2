@@ -1,10 +1,15 @@
-#include <debug.h>
-#include <kernel.h>
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
-#include <erl.h>
-#include <floatlib.h>
+#include <stdlib.h>
+#ifdef __PS2__
+    #include <malloc.h>
+    #include <debug.h>
+    #include <kernel.h>
+    #include <erl.h>
+    #include <floatlib.h>
+#elif __PS1__
+    #include "engine.h"
+#endif
 
 #include "cheats.h"
 #include "textcheats.h"
@@ -46,10 +51,10 @@ static int cheatDatabaseDirty = 0;
     int cheatsCodeStringLength = 18; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
 #endif // __PS2__
 
-#ifdef __PSX__
+#ifdef __PS1__
     const char *cheatsCodeFormatString = "%08X %04X";
     int cheatsCodeStringLength = 14; // 1 byte for each hex octet, 1 for space char, and 1 for null char.
-#endif // __PSX__
+#endif // __PS1__
 
 typedef struct cheatDatabaseHandler {
     char name[28]; // cheat database format name
@@ -139,9 +144,9 @@ static void populateCheatHashTable(int numEntries)
     }
 }
 
-#ifdef __PS2__
 static void findEnableCodes()
 {
+#ifdef __PS2__
     cheatsGame_t *game = gamesHead;
     while(game)
     {
@@ -167,8 +172,8 @@ static void findEnableCodes()
         }
         game = game->next;
     }
-}
 #endif // __PS2__
+}
 
 static int displayAddGame()
 {
@@ -1227,54 +1232,107 @@ char* cheatsGetActiveGameTitle()
 }
 
 #ifdef __PS2__
-void SetupERL()
-{
-    struct erl_record_t *erl;
-
-    erl_add_global_symbol("GetSyscallHandler", (u32)GetSyscallHandler);
-    erl_add_global_symbol("SetSyscall", (u32)SetSyscall);
-
-    /* Install cheat engine ERL */
-    erl = load_erl_from_mem_to_addr(_engine_erl_start, 0x00080000, 0, NULL);
-    if(!erl)
+    void SetupERL()
     {
-        printf("Error loading cheat engine ERL!\n");
-        SleepThread();
+        struct erl_record_t *erl;
+
+        erl_add_global_symbol("GetSyscallHandler", (u32)GetSyscallHandler);
+        erl_add_global_symbol("SetSyscall", (u32)SetSyscall);
+
+        /* Install cheat engine ERL */
+        erl = load_erl_from_mem_to_addr(_engine_erl_start, 0x00080000, 0, NULL);
+        if(!erl)
+        {
+            printf("Error loading cheat engine ERL!\n");
+            SleepThread();
+        }
+
+        erl->flags |= ERL_FLAG_CLEAR;
+        FlushCache(0);
+
+        printf("Installed cheat engine ERL. Getting symbols...\n");
+        struct symbol_t *sym;
+        #define GET_SYMBOL(var, name) \
+        sym = erl_find_local_symbol(name, erl); \
+        if (sym == NULL) { \
+            printf("%s: could not find symbol '%s'\n", __FUNCTION__, name); \
+            SleepThread(); \
+        } \
+        printf("%08x %s\n", (u32)sym->address, name); \
+        var = (typeof(var))sym->address
+
+        GET_SYMBOL(get_max_hooks, "get_max_hooks");
+        GET_SYMBOL(get_num_hooks, "get_num_hooks");
+        GET_SYMBOL(add_hook, "add_hook");
+        GET_SYMBOL(clear_hooks, "clear_hooks");
+        GET_SYMBOL(get_max_codes, "get_max_codes");
+        GET_SYMBOL(set_max_codes, "set_max_codes");
+        GET_SYMBOL(get_num_codes, "get_num_codes");
+        GET_SYMBOL(add_code, "add_code");
+        GET_SYMBOL(clear_codes, "clear_codes");
+
+        printf("Symbols loaded.\n");
+    }
+#endif // __PS2__
+
+#ifdef __PS1__
+    static void DisableInter()
+    {
+        asm volatile(
+            ".set noreorder\n\t"
+            "mfc0 $v0, $12\n\t"
+            "nop\n\t"
+            "andi $v0, $v0, 0xfffe\n\t"
+            "mtc0 $v0, $12\n\t"
+        );
     }
 
-    erl->flags |= ERL_FLAG_CLEAR;
-    FlushCache(0);
+    static void EnableInter()
+    {
+        asm volatile(
+            ".set noreorder\n\t"
+            "mfc0 $v0, $12\n\t"
+            "nop\n\t"
+            "ori $v0, $v0, 1\n\t"
+            "mtc0 $v0, $12\n\t"
+        );
+    }
 
-    printf("Installed cheat engine ERL. Getting symbols...\n");
-    struct symbol_t *sym;
-    #define GET_SYMBOL(var, name) \
-    sym = erl_find_local_symbol(name, erl); \
-    if (sym == NULL) { \
-        printf("%s: could not find symbol '%s'\n", __FUNCTION__, name); \
-        SleepThread(); \
-    } \
-    printf("%08x %s\n", (u32)sym->address, name); \
-    var = (typeof(var))sym->address
+    void cheatsInstallEngine()
+    {
+        DisableInter();
 
-    GET_SYMBOL(get_max_hooks, "get_max_hooks");
-    GET_SYMBOL(get_num_hooks, "get_num_hooks");
-    GET_SYMBOL(add_hook, "add_hook");
-    GET_SYMBOL(clear_hooks, "clear_hooks");
-    GET_SYMBOL(get_max_codes, "get_max_codes");
-    GET_SYMBOL(set_max_codes, "set_max_codes");
-    GET_SYMBOL(get_num_codes, "get_num_codes");
-    GET_SYMBOL(add_code, "add_code");
-    GET_SYMBOL(clear_codes, "clear_codes");
+        // Copy engine code
+        memcpy((void *)0x80000A00, engine, engine_size);
 
-    printf("Symbols loaded.\n");
+        // Install engine hook
+	    *((unsigned int *)0x800000B0) = 0x3c080000;
+	    *((unsigned int *)0x800000B4) = 0x25080A00;
+	    *((unsigned int *)0x800000B8) = 0x01000008;
+	    *((unsigned int *)0x800000BC) = 0x0;
+
+        EnableInter();
+    }
+#endif // __PS1__
+
+static void historyAddCheat(const cheatsGame_t *game, const cheatsCheat_t *cheat)
+{
+    if(!historyFile || !game || !cheat)
+        return;
+
+    unsigned int cheatHash = hashFunction(game->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * sizeof(cheatsCodeLine_t));
+    fwrite(&cheatHash, 4, 1, historyFile);
 }
-#endif // __PS2__
 
 static void readCodes(cheatsCheat_t *cheats)
 {
     int i;
-    int nextCodeCanBeHook = 1;
     cheatsCheat_t *cheat = cheats;
+
+    #ifdef __PS2__
+    int nextCodeCanBeHook = 1;
+    SetupERL();
+    #endif
 
     while(cheat)
     {
@@ -1284,11 +1342,10 @@ static void readCodes(cheatsCheat_t *cheats)
             continue;
         }
 
-        if(historyFile && cheat->type == CHEAT_NORMAL)
+        if(cheat->type == CHEAT_NORMAL)
         {
             // Save cheat's hash
-            unsigned int cheatHash = hashFunction(activeGame->codeLines + cheat->codeLinesOffset, cheat->numCodeLines * sizeof(cheatsCodeLine_t));
-            fwrite(&cheatHash, 4, 1, historyFile);
+            historyAddCheat(activeGame, cheat);
         }
 
         for(i = 0; i < cheat->numCodeLines; ++i)
@@ -1314,6 +1371,7 @@ static void readCodes(cheatsCheat_t *cheats)
                 code->value |= map->values[cheat->valueMapChoice];
             }
 
+            #ifdef __PS2__
             if(((code->address & 0xfe000000) == 0x90000000) && nextCodeCanBeHook)
             {
                 printf("hook: %08X %08X\n", code->address, code->value);
@@ -1330,10 +1388,31 @@ static void readCodes(cheatsCheat_t *cheats)
                 nextCodeCanBeHook = 0;
             else
                 nextCodeCanBeHook = 1;
+            #endif
     }
 
         cheat = cheat->next;
     }
+}
+
+void updateHistory()
+{
+#ifdef __PS2__
+    historyFile = fopen("CheatHistory.bin", "wb");
+    if(historyFile)
+    {
+        unsigned int gameHash = hashFunction(activeGame->title, strlen(activeGame->title));
+        fwrite(&gameHash, 4, 1, historyFile);
+    }
+#endif
+}
+
+void closeHistory()
+{
+#ifdef __PS2__
+    if(historyFile)
+        fclose(historyFile);
+#endif
 }
 
 void cheatsInstallCodesForEngine()
@@ -1341,19 +1420,7 @@ void cheatsInstallCodesForEngine()
     if(!activeGame)
         return;
 
-    SetupERL();
-
-    historyFile = fopen("CheatHistory.bin", "wb");
-    if(historyFile)
-    {
-        unsigned int gameHash = hashFunction(activeGame->title, strlen(activeGame->title));
-        fwrite(&gameHash, 4, 1, historyFile);
-    }
-
-    printf("Setting up codes for code engine\n");
+    updateHistory();
     readCodes(activeGame->cheats);
-    printf("Done setting up codes\n");
-
-    if(historyFile)
-        fclose(historyFile);
+    closeHistory();
 }
