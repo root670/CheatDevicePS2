@@ -6,6 +6,7 @@
     #include <libpad.h>
 #elif __PS1__
     #include <psx.h>
+    #include "pad.h"
 #endif
 
 #include "types.h"
