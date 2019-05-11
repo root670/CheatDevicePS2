@@ -1329,6 +1329,9 @@ static void readCodes(cheatsCheat_t *cheats)
 
     #ifdef __PS2__
     int nextCodeCanBeHook = 1;
+    #elif __PS1__
+    u32 *codeList = (u32 *)0x8000F800;
+    DisableInter();
     #endif
 
     while(cheat)
@@ -1385,11 +1388,18 @@ static void readCodes(cheatsCheat_t *cheats)
                 nextCodeCanBeHook = 0;
             else
                 nextCodeCanBeHook = 1;
-            #endif
-    }
 
+            #elif __PS1__
+            *(codeList++) = code->address;
+            *(codeList++) = (u32)code->value;
+            #endif
+        }
         cheat = cheat->next;
     }
+
+    #ifdef __PS1__
+    EnableInter();
+    #endif
 }
 
 void updateHistory()

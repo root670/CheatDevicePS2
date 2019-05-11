@@ -208,7 +208,7 @@ int settingsSave()
 {
     if(!initialized || !settingsChanged)
         return 0;
-
+    #ifdef __PS2__
     FILE *iniFile = fopen(settingsPath, "w");
     if(iniFile < 0)
     {
@@ -228,6 +228,7 @@ int settingsSave()
     fprintf(iniFile, "boot5 = %s\n", settings.bootPaths[4]);
 
     fclose(iniFile);
+    #endif
 
     return 1;
 }

@@ -78,6 +78,10 @@
 
         return (void *)eh->entry;
     }
+
+#elif __PS1__
+    extern void _96_remove();
+    extern void _96_init();
 #endif
 
 static int discPrompt()
@@ -170,6 +174,7 @@ static void getBootPathFromDisc(char *bootPath, int bootPathLen)
 					substr++;
 				
 				strncpy(bootPath, substr, bootPathLen);
+                bootPath[strlen(bootPath) - 1] = '\0';
 				found = 1;
 			}
 		}
@@ -205,10 +210,10 @@ void startgameExecute(const char *path)
         strncpy(bootPath, path, 100);
     }
 
-    cheatsSaveDatabase();
-    settingsSave();
 
     #ifdef __PS2__        
+        cheatsSaveDatabase();
+        settingsSave();
         cheatsInstallEngine();
         cheatsInstallCodesForEngine();
         killMenus();
