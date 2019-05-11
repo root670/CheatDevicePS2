@@ -302,7 +302,7 @@ static void platformInit()
     GsInit();
     GsSetList(primList);
     GsClearMem();
-    GsSetVideoMode(graphicsGetDisplayWidth(), graphicsGetDisplayHeight(), VMODE_NTSC);
+    GsSetVideoModeEx(graphicsGetDisplayWidth(), graphicsGetDisplayHeight(), VMODE_NTSC, 0, 1, 0);
     GsLoadFont(768, 0, 768, 256);
 
     SetVBlankHandler(vblank_handler);
@@ -1125,7 +1125,7 @@ int graphicsGetDisplayWidth()
 #ifdef __PS2__
     return gsGlobal->Width;
 #elif __PS1__
-    return 512;
+    return 640;
 #endif
 }
 
