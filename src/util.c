@@ -539,6 +539,12 @@ static const char *CODE_KEYBOARD_CHARS = \
 #define CODE_KEYBOARD_ACCEPT_ROW CODE_KEYBOARD_ROWS
 #define CODE_KEYBOARD_CANCEL_ROW CODE_KEYBOARD_ACCEPT_ROW + 1
 
+#ifdef __PS2__
+    #define LAST_OCTET 16
+#elif __PS1__
+    #define LAST_OCTET 12
+#endif
+
 static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
 {
     if(!code)
@@ -567,13 +573,34 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
 
                 if(codeLoc == 7)   
                     codeLoc += 2; // Skip past space in the center
-                else if(codeLoc < 16)
+                else if(codeLoc < LAST_OCTET)
                     codeLoc++;
             }
             else if(row == CODE_KEYBOARD_ACCEPT_ROW)
             {
                 // Update code value
+                #ifdef __PS2__
                 sscanf(codeString, cheatsCodeFormatString, &code->address, &code->value);
+                #elif __PS1__
+                // sscanf() is broken in psxsdk...
+                int i;
+                for(i = 0; i < 8; i++)
+                {
+                    u8 c = codeString[i];
+                    if(c >= 'A')
+                        code->address |= ((0xA + c - 'A') << 4*(7-i));
+                    else
+                        code->address |= (c - '0') << 4*(7-i);
+                }
+                for(i = 9; i < 13; i++)
+                {
+                    u8 c = codeString[i];
+                    if(c >= 'A')
+                        code->value |= ((0xA + c - 'A') << 4*(12-i));
+                    else
+                        code->value |= (c - '0') << 4*(12-i);
+                }
+                #endif
                 ret = 1;
             }
             else if(row == CODE_KEYBOARD_CANCEL_ROW)
@@ -585,7 +612,28 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
         else if(pad_pressed & PAD_START)
         {
             // Update code value
+            #ifdef __PS2__
             sscanf(codeString, cheatsCodeFormatString, &code->address, &code->value);
+            #elif __PS1__
+            // sscanf() is broken in psxsdk...
+            int i;
+            for(i = 0; i < 8; i++)
+            {
+                u8 c = codeString[i];
+                if(c >= 'A')
+                    code->address |= ((0xA + c - 'A') << 4*(7-i));
+                else
+                    code->address |= (c - '0') << 4*(7-i);
+            }
+            for(i = 9; i < 13; i++)
+            {
+                u8 c = codeString[i];
+                if(c >= 'A')
+                    code->value |= ((0xA + c - 'A') << 4*(12-i));
+                else
+                    code->value |= (c - '0') << 4*(12-i);
+            }
+            #endif
             ret = 1;
         }
 
@@ -603,13 +651,13 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
             }
             else
             {
-                codeLoc = 16;
+                codeLoc = LAST_OCTET;
             }
         }
 
         else if(pad_rapid & PAD_R1)
         {
-            if(codeLoc < 16)
+            if(codeLoc < LAST_OCTET)
             {
                 if(codeLoc == 7)
                     codeLoc += 2; // Skip past center space
@@ -668,7 +716,7 @@ static int displayCodeEditMenu(cheatsCodeLine_t *code, const int isNewCode)
 
         // Draw code being edited
         int i;
-        for(i = 0; i < 17; i++)
+        for(i = 0; i <= LAST_OCTET; i++)
         {
             if(i == codeLoc)
                 graphicsDrawQuad(graphicsGetDisplayWidth()/2.0 - (8*17) + i*16, 150, 15, 25, COLOR_BLUE);
