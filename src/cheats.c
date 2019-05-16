@@ -715,7 +715,7 @@ int cheatsSaveDatabase()
 static void onGameSelected(const menuItem_t *selected)
 {
     menuSetActive(MENU_CHEATS);
-    if(selected->extra != menuGetActiveExtra())
+    if(selected && selected->extra != menuGetActiveExtra())
     {
         menuRemoveAllItems();
         menuSetActiveText(selected->text);
