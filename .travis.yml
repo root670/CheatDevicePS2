@@ -9,6 +9,7 @@ script:
 branches:
   only:
   - master
+  - /^v.*$/
 
 deploy:
   provider: releases
