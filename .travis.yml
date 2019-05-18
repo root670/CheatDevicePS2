@@ -14,8 +14,9 @@ deploy:
   provider: releases
   api_key:
     secure: gLQNcvT28Fu0TMJUNBcPPkBhomDphEH3yvPN1AZuilGXusONIbWbnG9ML12DEfLLSfY6Hc0j70BVpZaW4qmHpJIb6wREHD3a9v3tOLamp1fukyLYHG+4yTBhRO4haYhxMsdpRfd/p3Mrq7nj/9yWO05wMv8PXK7BSvNrhzr0ZeHI3efGTsgMWWgRZXRyM+TuSEHxBtlWotM/JS0TH+wyYQl6WHm8VdhXHoM0L1TwBN0pTGIbbaSj700HtcD/6/edvv/IcjMMrKJEl7AW8KtjKLWEQQZvzjW+o/IskQDqklV5pktjkajFQANuAeioBBj5Lthing08ohe0vSzDAwshNRVnr0Il5g7WOElvLk3i1BCfgdGGh1/ItYlY59pcRw7I7F5tDjgMTeLnZfm05E6iaawzPo+m15Zx88iRCuZTWIQIjbbLtELDuAnhhRGaaL8IKF5G2/VC8RL2dau9jtgPut2tm8vUEnMGReIsWs5dBBYbUjEhy3kkOmIAcdEqeZAor0msh4cQXdj+j9puMLw3+Uqn9NA3LnHn2n+JepmcAZaN/L7TMJQlKMzIVwKAWs5odZdx3yIfCIBrsIAYslOFgiwe5txv5V5UF/4TBF6qJPCHZb/xM4NsDGuapqQjb2gDwi8h80Gr4GDpZkt7w4UcfMKNnaMOpyhfjkNTCXfXDZc=
-  file: release/CheatDevicePS2-$TRAVIS_COMMIT.zip
+  file: release/CheatDevicePS2-$TRAVIS_TAG.zip
   draft: true
   skip_cleanup: true
   on:
     repo: root670/CheatDevicePS2
+    tags: true
