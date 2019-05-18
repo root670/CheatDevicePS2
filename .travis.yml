@@ -17,5 +17,3 @@ deploy:
   file: "release/CheatDevicePS2-$TRAVIS_TAG.zip"
   skip_cleanup: true
   draft: true
-  on:
-    tags: true
