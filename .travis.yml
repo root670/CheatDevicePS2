@@ -9,3 +9,13 @@ script:
 branches:
   only:
     - master
+
+deploy:
+  provider: releases
+  api_key: 
+    secure: "iGuJGOs/hAHxe+BoSEWJdTbjvG6V2DKFMimqXUbf1+d5Dn8p6njcJTWcNwxp0EkXvVHRGlbslVVqGu+xf5FDcXxQRuTRrWPCS1cXEns1zphftb68Xv5f+XqAQwG+qbi2hlrA1MDo/47UsRKedsR6X2TuV5BaC97dFW5E9/mDmm7PYDt8veX/nZM3InX+rfnr7XyApKaV9Q852XCaFteiia0R5UnOQVnAF53sS+cQ32vbM9nFv1uaJia74N/TVLhNwfSxszt5nBCeiW5gd28r5K+kGkqWoTYdyU7pDGh+w3UQmByea+g4+nABlNXgdXtRGwe7SHu/9UbQKSE1sWd2Hf5u/z5wUt0w3UBla1ev3llnxr6Kr/76NdCVimBngrQR3LQRemk+v4sKiJDCm60cSBDupAbQosJBGwgqbFeoJZY+SWyL97wGVwzZqs/uRmqhkS3OpFDt85e10ndUwQIO8E1pqBnOZTyEhaBZaPKoGNbKp5W8j8PFqUz0T1EldHPafpINj2ub5lyoWVs4uEjy9pm7i3u0Q6wWIupPlH/FBCqhd84/r2Q6HBnccyrr1W2sGS5NWvJVRBA3vZFqPkIhcAMa6eOVLXFiqfnFQuGKeny5lb+N1WKu5X4Ub3xoY1Rq++iZ2n5pv5AJjed1ZfS+kyBIBBmQUmPFDMb+/Dmksbc="
+  file: "release/CheatDevicePS2-$TRAVIS_TAG.zip"
+  skip_cleanup: true
+  draft: true
+  on:
+    tags: true
