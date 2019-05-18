@@ -1,19 +1,17 @@
 language: c
-
 services:
-  - docker
-
+- docker
 script:
-  - ./docker-make.sh release
-
+- "./docker-make.sh release"
 branches:
   only:
-    - master
-
+  - master
 deploy:
   provider: releases
-  api_key: 
-    secure: "Hax4j1Cmb0h8G9hpOt+gsayIe33ntu3ZIfMGxltveYP3mQekylMLQIhg6ZLKGysdOalIyMil2j/jylDaispUU0m6+QcsQcXtWFTGV4ZP1P4ml4N9VbwqxWrfLqkC/VmXgJaYxT5I3LwLuTS/DV6Z9wDV6BAQpO0p6BX4jSYs0FwwUMFJ43eScHOsK1aQTzp33TCBJKSYWbtNgT3ax5GVmb1YO44ysUv1OzBmkj3C2q/k/g1mPtKrzvE+Oh+2l2LtGM5F6lbBg895tGYuwEWzvcQFQh0XUqvRYJ4IkXBThxXCdkpqd8VoUEl8YixpjN8+4cSkh3aJi8MUINcoJsu9dOz67+p2DvgmI1Mw5xQ2vPrdVOTD6yYI94h8s6eyEYtuimpiMCsNvxseE5cSULOH64V7PDsw+8LVzqS6npgiWGY8F3yCmOuxxtcnM4TLE7nbVymd42B4r030wfT8Cry2jbAPm2NhzZq/MeQoyu9R4+adXietjit1m5xpqaMlLfmKgP1+iXR0exB4KmQfbtDBhDzSgVYafiMg0iEimh6DdyUIaNH/rfNZx2BA8RUteBz+0i2lB3NQcTvuuXuD/f5T7U8QNsDuKNCJqyCdgrK9ur2uJHvfyOiWBwIlXU9qtqTsP5nphRay++fd7AHFS9OBolqi0TQ+m1SfAabl0nk2lLE="
-  file: "release/CheatDevicePS2-$TRAVIS_TAG.zip"
-  skip_cleanup: true
+  api_key:
+    secure: hKNyRsEcHH+2WCuSA0KwLALshZJQ9NJiRfG8sCv359gAMuQnwqOtxrvc90cALkhm4T8BXRY5zsJhxEm4/IqgPguopsHy9GWkMk3zVw9PzYjJowwda44blKlMC9DjdX9V+tCP1hizX8oVqcZ7gSiSrB55QdF9cyGjqJodBppd54nHXCQtPjACuY0tFMO0GUrlYJ88i4EandoYzQvxzRh4IXeiQOBvgBgf7AnjDVNEi8c6FILK4Ermh0ubscz5mXX7MUobUkFrmJcpbo+qCakpB8bcf7lxU8eTh3YuiawxNm7ad47TIIAw6N9AamYkrP4eKW2ZknivkcFdAOETjm/UOqYIlveJNJJfltM/+nmM88frqFc/5YD+BcQtrW74g+4fIKx3+yjHQy4fOCZvvPeMzIWQAvApxM4wfR8WUsFleEfeGzzInnC69cIJncoixvsrYhAMPAvQd078DjaFWoB1FMhHWp27EXYTdiuo60NiORRVtMVE/pcCmZ/b3tkgfwqcjBy64yxhABBefQxIMEmoqfUfwovLJSC1DHWQyU72fxsXxjPAkNcZJf19CinVscyNpyFeoJSJN0wuStUyh4JnlXLm7WowM/z9UlYT6WfpoPATo0iJqQthNzDh/C01gJSMpbx3NtLpilMFdLKXv65aJdehIBNbXDA8CfTItocmeYU=
+  file: release/CheatDevicePS2-$TRAVIS_TAG.zip
   draft: true
+  skip_cleanup: true
+  on:
+    repo: root670/CheatDevicePS2
