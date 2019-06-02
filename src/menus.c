@@ -336,7 +336,7 @@ void menuSetHelpTickerText(const char *text)
         return;
 
     activeMenu->helpTickerText = text;
-    activeMenu->helpTickerLength = graphicsGetWidth(text) + graphicsGetDisplayWidth();
+    activeMenu->helpTickerLength = graphicsGetWidth(text);
 }
 
 void menuSetTempHelpTickerText(const char *text)
@@ -345,7 +345,7 @@ void menuSetTempHelpTickerText(const char *text)
         return;
 
     tempHelpTickerText = text;
-    tempHelpTickerLength = graphicsGetWidth(text) + graphicsGetDisplayWidth();
+    tempHelpTickerLength = graphicsGetWidth(text);
 }
 
 void menuClearTempHelpTickerText()
@@ -580,9 +580,20 @@ static void drawScrollBar()
     graphicsDrawQuad(graphicsGetDisplayWidth() - 38, 78 + gripPositionOnTrack, 6, gripSize, COLOR_WHITE);
 }
 
+typedef enum tickerState {
+    tickerStateWait,
+    tickerStateMoveLeft,
+    tickerStateMoveRight,
+} tickerState_t;
+
+#define TICKER_WAIT_FRAMES    90
+#define TICKER_START_X        20
+
 static void drawHelpTicker()
 {
-    static int helpTickerX = 0;
+    static int helpTickerX = TICKER_START_X;
+    static int waitFrames = TICKER_WAIT_FRAMES;
+    static tickerState_t state = tickerStateWait;
     static const char *textPrev = NULL;
     const char *text;
     int length;
@@ -608,16 +619,46 @@ static void drawHelpTicker()
     if(text != textPrev)
     {
         // Help ticker text changed
-        helpTickerX = 0;
-        textPrev = text;
+        helpTickerX = TICKER_START_X;
+        waitFrames = TICKER_WAIT_FRAMES;
+        state = tickerStateWait;
+        textPrev = text;  
     }
-    else if (helpTickerX < length)
-        helpTickerX += 2;
-    else
-        helpTickerX = 0;
 
-    graphicsDrawText(graphicsGetDisplayWidth() - helpTickerX, 
-        405, COLOR_WHITE, text);
+    // Update state
+    if(state == tickerStateWait)
+        waitFrames--;
+    else if(state == tickerStateMoveLeft)
+        helpTickerX -= 2;
+    else if(state == tickerStateMoveRight)
+        helpTickerX += 2;
+
+    // Transition to next state
+    if(state == tickerStateWait && waitFrames == 0)
+    {
+        if((length + 2*TICKER_START_X) <= graphicsGetDisplayWidth())
+        {
+            // Text is small enough to fit on the screen, so it doesn't need to
+            // be moved.
+            state == tickerStateWait;
+            waitFrames = TICKER_WAIT_FRAMES;
+        }
+        else if(helpTickerX >= TICKER_START_X)
+            state = tickerStateMoveLeft;
+        else
+            state = tickerStateMoveRight;
+    }
+    else if((state != tickerStateWait) &&
+            ((helpTickerX <= -1 *(length - graphicsGetDisplayWidth() + TICKER_START_X)) ||
+            (helpTickerX >= TICKER_START_X)))
+    {
+        // Text has moved as far to the left or right as we allow. Wait a few
+        // frames before moving it again.
+        state = tickerStateWait;
+        waitFrames = TICKER_WAIT_FRAMES;
+    }
+
+    graphicsDrawText(helpTickerX, 405, COLOR_WHITE, text);
 }
 
 static void drawTitle()
