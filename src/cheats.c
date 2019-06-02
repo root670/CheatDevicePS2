@@ -185,7 +185,7 @@ static void disableAllEnableCodes(cheatsGame_t *game)
 }
 
 // Disable all cheats and deactivate game
-void deactivateGame(cheatsGame_t *game)
+static void deactivateGame(cheatsGame_t *game)
 {
     if(!game)
         return;
@@ -207,6 +207,7 @@ void deactivateGame(cheatsGame_t *game)
 
 // Set the active game. If any cheats were enabled for the previously active
 // game, they will all be disabled.
+static 
 int setActiveGame(cheatsGame_t *game)
 {
     if(game == activeGame)
