@@ -14,20 +14,20 @@ int initSettings();
 // Free allocated strings.
 int killSettings();
 
-// Save setting file with current settings.
-int settingsSave();
+// Save setting file with current settings if any have changed. Optionally pass
+// error and errorLen to get an error message if an error occurs.
+int settingsSave(char *error, int errorLen);
 
 // Get read-only database path string.
 char* settingsGetReadOnlyDatabasePath();
 // Set database path string.
-void settingsSetReadOnlyDatabasePath();
+void settingsSetReadOnlyDatabasePath(const char *path);
 // Get read/write database path string.
 char* settingsGetReadWriteDatabasePath();
 // Set database path string.
-void settingsSetReadWriteDatabasePath();
+void settingsSetReadWriteDatabasePath(const char *path);
 
-// Get string array containing numPaths boot paths.
-char** settingsGetBootPaths(int *numPaths);
+// Load boot menu.
 void settingsLoadBootMenu();
 
 // Rename currently selected boot path.

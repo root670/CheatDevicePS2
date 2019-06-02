@@ -196,14 +196,18 @@ static inline int copyValueMappedCodeToBuffer(char *buffer, u32 addr, u32 val, c
     return index;
 }
 
-int textCheatsSave(const char *path, const cheatsGame_t *games)
+int textCheatsSave(const char *path, const cheatsGame_t *games, char *error, int errorLen)
 {
     if(!path || !games)
         return 0;
 
     FILE *f = fopen(path, "w");
     if(!f)
+    {
+        if(error)
+            snprintf(error, errorLen, "Failed to open \"%s\" for writing.", path);
         return 0;
+    }
 
     graphicsDrawLoadingBar(50, 350, 0.0);
     graphicsDrawTextCentered(310, COLOR_YELLOW, "Saving cheat database...");
@@ -469,9 +473,11 @@ int textCheatsOpenZip(const char *path, cheatsGame_t **gamesAdded, unsigned int 
     return 1;
 }
 
-int textCheatsSaveZip(const char *path, const cheatsGame_t *games)
+int textCheatsSaveZip(const char *path, const cheatsGame_t *games, char *error, int errorLen)
 {
     // TODO: Implement saving text cheats in a ZIP file.
+    if(error)
+        snprintf(error, errorLen, "Saving to zipped TXT is not supported.");
     return 1;
 }
 

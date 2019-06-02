@@ -147,7 +147,7 @@ void startgameExecute(const char *path)
     }
 
     cheatsSaveDatabase();
-    settingsSave();
+    settingsSave(NULL, 0);
     cheatsInstallCodesForEngine();
     killMenus();
     killCheats();

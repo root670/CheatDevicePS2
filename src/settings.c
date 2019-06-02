@@ -20,7 +20,7 @@ typedef struct settings
 static int initialized = 0;
 static settings_t settings;
 static char *diskBootStr = "==Disc==";
-static int settingsChanged = 0;
+static int settingsDirty = 0;
 
 #ifdef _DTL_T10000
 static char *settingsPath = "host:CheatDevicePS2.ini";
@@ -106,13 +106,13 @@ static void migrateOldDatabaseSetting()
         {
             settings.databaseReadOnlyPath = settings.databasePath;
             settings.databasePath = NULL;
-            settingsChanged = 1;
+            settingsDirty = 1;
         }
         else if(ret == 1)
         {
             settings.databaseReadWritePath = settings.databasePath;
             settings.databasePath = NULL;
-            settingsChanged = 1;
+            settingsDirty = 1;
         }
         else
         {
@@ -150,7 +150,7 @@ int initSettings()
         // want to load the same database twice, so only keep it as the
         // read/write database.
         settings.databaseReadOnlyPath = NULL;
-        settingsChanged = 1;
+        settingsDirty = 1;
     }
 
     printf("settings.databaseReadOnlyPath:  %p -> %s\n", settings.databaseReadOnlyPath, settings.databaseReadOnlyPath);
@@ -180,14 +180,20 @@ int killSettings()
     return 1;
 }
 
-int settingsSave()
+int settingsSave(char *error, int errorLen)
 {
-    if(!initialized || !settingsChanged)
+    if(!initialized)
         return 0;
 
+    if(!settingsDirty)
+        return 1;
+
     FILE *iniFile = fopen(settingsPath, "w");
-    if(iniFile < 0)
+    if(!iniFile)
     {
+        if(error)
+            snprintf(error, errorLen, "Failed to open \"%s\" for writing.", settingsPath);
+
         printf("Error saving %s\n", settingsPath);
         return 0;
     }
@@ -224,7 +230,7 @@ void settingsSetReadOnlyDatabasePath(const char *path)
     if(settings.databaseReadOnlyPath)
         free(settings.databaseReadOnlyPath);
     settings.databaseReadOnlyPath = strdup(path);
-    settingsChanged = 1;
+    settingsDirty = 1;
 }
 
 char* settingsGetReadWriteDatabasePath()
@@ -243,9 +249,10 @@ void settingsSetReadWriteDatabasePath(const char *path)
     if(settings.databaseReadWritePath)
         free(settings.databaseReadWritePath);
     settings.databaseReadWritePath = strdup(path);
-    settingsChanged = 1;
+    settingsDirty = 1;
 }
 
+// Get string array containing numPaths boot paths.
 char** settingsGetBootPaths(int *numPaths)
 {
     if(!initialized)
@@ -321,5 +328,5 @@ void settingsRenameBootPath()
     menuRenameActiveItem(newPath);
     menuRemoveAllItems();
     settingsLoadBootMenu();
-    settingsChanged = 1;
+    settingsDirty = 1;
 }

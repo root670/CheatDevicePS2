@@ -34,7 +34,7 @@ typedef struct cheatDatabaseHandler {
     char extension[4]; // file extension
     
     int (*open)(const char *path, cheatsGame_t **gamesAdded, unsigned int *numGamesAdded);
-    int (*save)(const char *path, const cheatsGame_t *games);
+    int (*save)(const char *path, const cheatsGame_t *games, char *error, int errorLen);
 } cheatDatabaseHandler_t;
 
 static cheatDatabaseHandler_t cheatDatabaseHandlers[] = {
@@ -569,13 +569,16 @@ static cheatDatabaseHandler_t *getCheatDatabaseHandler(const char *path)
     return NULL;
 }
 
-// Save cheat database to a chosen format.
-static int promptSaveToFormat()
+// Prompt user to choose a cheat database format that supports writing. Returns
+// 1 if a format was chosen and choice was updated to the chosen handler.
+static int promptSaveToFormat(cheatDatabaseHandler_t **choice)
 {
-    int ret = 1;
     cheatDatabaseHandler_t handlersWithSaveSupport[5];
     int numHandlers = 0;
-    
+
+    if(!choice)
+        return 0;
+
     int i = 0;
     for(i = 0; i < (sizeof(cheatDatabaseHandlers) / sizeof(cheatDatabaseHandler_t)); i++)
     {
@@ -588,28 +591,29 @@ static int promptSaveToFormat()
     items[numHandlers] = "Cancel";
     for(i = 0; i < numHandlers; i++)
         items[i] = handlersWithSaveSupport[i].name;
-    
+
     // Display menu
     int option = displayPromptMenu(items, numHandlers + 1,
         "Save Cheat Database\n"
         "Choose cheat database format");
-    
-    if(option < numHandlers)
-    {
-        cheatDatabaseHandler_t *handler = &handlersWithSaveSupport[option];
-        
-        // Change file extension
-        char *basename = getFileBasename(settingsGetReadWriteDatabasePath());
-        char newPath[100];
-        snprintf(newPath, 100, "%s.%s", basename, handler->extension);
-        free(basename);
-        settingsSetReadWriteDatabasePath(newPath);
-
-        ret = handler->save(newPath, gamesHead);
-    }
 
     free(items);
-    return ret;
+
+    if(option >= numHandlers)
+        return 0;
+
+    cheatDatabaseHandler_t *handler = &handlersWithSaveSupport[option];
+
+    // Change file extension
+    char *basename = getFileBasename(settingsGetReadWriteDatabasePath());
+    char newPath[100];
+    snprintf(newPath, sizeof(newPath), "%s.%s", basename, handler->extension);
+    free(basename);
+    settingsSetReadWriteDatabasePath(newPath);
+
+    *choice = handler;
+
+    return 0;
 }
 
 // CheatDB --> Game --> Cheat --> Code
@@ -685,7 +689,6 @@ int cheatsSaveDatabase()
     if(!path)
     {
         // TODO: Prompt for new location
-        displayError("No read-write save handler is available!!!\nDefaulting to one...");
         path = "CheatDatabase_RW.txt";
         settingsSetReadWriteDatabasePath(path);
     }
@@ -706,10 +709,24 @@ int cheatsSaveDatabase()
     {
         displayError("Current cheat format doesn't support saving and needs to be saved\n"
                      "to a new format. Please choose a format on the next screen.");
-        return promptSaveToFormat();
+        if(!promptSaveToFormat(&handler))
+            return 0;
     }
 
-    return handler->save(path, gamesHead);
+    char errorMsg[256];
+    if(!handler->save(path, gamesHead, errorMsg, sizeof(errorMsg)))
+    {
+        displayError(errorMsg);
+        return 0;
+    }
+
+    if(!settingsSave(errorMsg, sizeof(errorMsg)))
+    {
+        displayError(errorMsg);
+        return 0;
+    }
+
+    return 0;
 }
 
 static void onGameSelected(const menuItem_t *selected)
@@ -773,28 +790,64 @@ static void onDisplayGameContextMenu(const menuItem_t *selected)
     cheatsGame_t *game = selected ? (cheatsGame_t *)selected->extra : NULL;
     if(numGames == 0 || (game && game->readOnly))
     {
-        const char *items[] = {"Add Game", "Cancel"};
-        int ret = displayPromptMenu(items, 2, "Game Options");
+        if(cheatDatabaseDirty)
+        {
+            const char *items[] = {"Add Game", "Save Database", "Cancel"};
+            int ret = displayPromptMenu(items, 3, "Game Options");
 
-        if(ret == 0)
-            displayAddGame();
+            if(ret == 0)
+                displayAddGame();
+            else if(ret == 1)
+                cheatsSaveDatabase();
+        }
+        else
+        {
+            const char *items[] = {"Add Game", "Cancel"};
+            int ret = displayPromptMenu(items, 2, "Game Options");
+
+            if(ret == 0)
+                displayAddGame();
+        }
     }
     else
     {
-        const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
-        int ret = displayPromptMenu(items, 4, "Game Options");
-
-        if(ret == 0)
-            displayAddGame();
-        else if(ret == 1)
-            displayRenameGame();
-        else if(ret == 2)
+        if(cheatDatabaseDirty)
         {
-            const char *items2[] = {"Yes", "No"};
-            int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+            const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Save Database", "Cancel"};
+            int ret = displayPromptMenu(items, 5, "Game Options");
 
-            if(choice == 0)
-                displayDeleteGame();
+            if(ret == 0)
+                displayAddGame();
+            else if(ret == 1)
+                displayRenameGame();
+            else if(ret == 2)
+            {
+                const char *items2[] = {"Yes", "No"};
+                int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+
+                if(choice == 0)
+                    displayDeleteGame();
+            }
+            else if(ret == 3)
+                cheatsSaveDatabase();
+        }
+        else
+        {
+            const char *items[] = {"Add Game", "Rename Game", "Delete Game", "Cancel"};
+            int ret = displayPromptMenu(items, 4, "Game Options");
+
+            if(ret == 0)
+                displayAddGame();
+            else if(ret == 1)
+                displayRenameGame();
+            else if(ret == 2)
+            {
+                const char *items2[] = {"Yes", "No"};
+                int choice = displayPromptMenu(items2, 2, "Are you sure you want to delete this game?");
+
+                if(choice == 0)
+                    displayDeleteGame();
+            }
         }
     }
 }
