@@ -640,7 +640,6 @@ static void drawHelpTicker()
         {
             // Text is small enough to fit on the screen, so it doesn't need to
             // be moved.
-            state == tickerStateWait;
             waitFrames = TICKER_WAIT_FRAMES;
         }
         else if(helpTickerX >= TICKER_START_X)
