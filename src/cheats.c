@@ -117,7 +117,7 @@ static void populateCheatHashTable(int numEntries)
     }
 }
 
-static void findEnableCodes()
+static void tagEnableCodes()
 {
     cheatsGame_t *game = gamesHead;
     while(game)
@@ -144,6 +144,83 @@ static void findEnableCodes()
         }
         game = game->next;
     }
+}
+
+static void enableAllEnableCodes(cheatsGame_t *game)
+{
+    if(!game)
+        return;
+
+    cheatsCheat_t *cheat = game->cheats;
+    while(cheat)
+    {
+        if(cheat->type == CHEAT_ENABLECODE)
+        {
+            cheat->enabled = 1;
+            numEnabledCheats++;
+            numEnabledCodes += cheat->numCodeLines;
+        }
+
+        cheat = cheat->next;
+    }
+}
+
+static void disableAllEnableCodes(cheatsGame_t *game)
+{
+    if(!game)
+        return;
+
+    cheatsCheat_t *cheat = activeGame->cheats;
+    while(cheat)
+    {
+        if(cheat->type == CHEAT_ENABLECODE)
+        {
+            cheat->enabled = 0;
+            numEnabledCheats--;
+            numEnabledCodes -= cheat->numCodeLines;
+        }
+
+        cheat = cheat->next;
+    }
+}
+
+// Disable all cheats and deactivate game
+void deactivateGame(cheatsGame_t *game)
+{
+    if(!game)
+        return;
+
+    cheatsCheat_t *cheat = game->cheats;
+    while(cheat)
+    {
+        cheat->enabled = 0;
+        cheat = cheat->next;
+    }
+
+    if(game == activeGame)
+    {
+        numEnabledCheats = 0;
+        numEnabledCodes = 0;
+        activeGame = NULL;
+    }
+}
+
+// Set the active game. If any cheats were enabled for the previously active
+// game, they will all be disabled.
+int setActiveGame(cheatsGame_t *game)
+{
+    if(game == activeGame)
+        return 0;
+
+    // Disable all active cheats for previous active game
+    deactivateGame(activeGame);
+
+    // Enable enable code for the new game if one exists
+    enableAllEnableCodes(game);
+
+    activeGame = game;
+
+    return 1;
 }
 
 static int displayAddGame()
@@ -237,7 +314,7 @@ static int displayDeleteGame()
     if(!selectedGame || selectedGame->readOnly)
         return 0;
 
-    cheatsDeactivateGame(selectedGame);
+    deactivateGame(selectedGame);
 
     if(selectedGame == gamesHead)
     {
@@ -523,7 +600,7 @@ int cheatsLoadHistory()
     if(lastGameMenu)
     {
         cheatsGame_t *game = (cheatsGame_t *)lastGameMenu->extra;
-        cheatsSetActiveGame(game);
+        setActiveGame(game);
         populateCheatHashTable(game->numCheats);
 
         int i;
@@ -675,7 +752,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
     numGames += numGamesAdded;
 
     populateGameHashTable();
-    findEnableCodes();
+    tagEnableCodes();
 
     return 1;
 }
@@ -747,7 +824,7 @@ static void onCheatSelected(const menuItem_t *selected)
     cheatsCheat_t *cheat = selected ? (cheatsCheat_t *)selected->extra : NULL;
     if(cheat && cheat->type == CHEAT_NORMAL)
     {
-        cheatsSetActiveGame(menuGetActiveExtra());
+        setActiveGame(menuGetActiveExtra());
         cheatsToggleCheat(cheat);
     }
     else if(cheat && cheat->type == CHEAT_VALUE_MAPPED)
@@ -780,7 +857,7 @@ static void onValueMapSelected(const menuItem_t *selected)
     cheatsCheat_t *cheat = menuGetActiveExtra();
     cheatsGame_t *game = (cheatsGame_t *)menuGetExtra(MENU_CHEATS);
     cheat->valueMapChoice = (u32)selected->extra;
-    cheatsSetActiveGame(game);
+    setActiveGame(game);
     cheatsToggleCheat(cheat);
     menuSetActive(MENU_CHEATS);
 }
@@ -1109,44 +1186,6 @@ int cheatsGetNumEnabledCheats()
     return numEnabledCheats;
 }
 
-static void enableAllEnableCodes(cheatsGame_t *game)
-{
-    if(!game)
-        return;
-
-    cheatsCheat_t *cheat = game->cheats;
-    while(cheat)
-    {
-        if(cheat->type == CHEAT_ENABLECODE)
-        {
-            cheat->enabled = 1;
-            numEnabledCheats++;
-            numEnabledCodes += cheat->numCodeLines;
-        }
-
-        cheat = cheat->next;
-    }
-}
-
-static void disableAllEnableCodes(cheatsGame_t *game)
-{
-    if(!game)
-        return;
-
-    cheatsCheat_t *cheat = activeGame->cheats;
-    while(cheat)
-    {
-        if(cheat->type == CHEAT_ENABLECODE)
-        {
-            cheat->enabled = 0;
-            numEnabledCheats--;
-            numEnabledCodes -= cheat->numCodeLines;
-        }
-
-        cheat = cheat->next;
-    }
-}
-
 int cheatsToggleCheat(cheatsCheat_t *cheat)
 {
     if(!cheat || cheat->type == CHEAT_HEADER)
@@ -1207,42 +1246,6 @@ void cheatsDrawStats(const menuItem_t *selected)
 int cheatsIsActiveGame(const cheatsGame_t *game)
 {
     return game == activeGame;
-}
-
-void cheatsDeactivateGame(cheatsGame_t *game)
-{
-    if(!game)
-        return;
-
-    cheatsCheat_t *cheat = game->cheats;
-    while(cheat)
-    {
-        cheat->enabled = 0;
-        cheat = cheat->next;
-    }
-
-    if(game == activeGame)
-    {
-        numEnabledCheats = 0;
-        numEnabledCodes = 0;
-        activeGame = NULL;
-    }
-}
-
-int cheatsSetActiveGame(cheatsGame_t *game)
-{
-    if(game == activeGame)
-        return 0;
-
-    // Disable all active cheats for previous active game
-    cheatsDeactivateGame(activeGame);
-
-    // Enable enable code for the new game if one exists
-    enableAllEnableCodes(game);
-
-    activeGame = game;
-
-    return 1;
 }
 
 char* cheatsGetActiveGameTitle()

@@ -107,10 +107,7 @@ int cheatsLoadHistory();
 
 // Create a menu with game titles.
 int cheatsLoadGameMenu();
-/* Create a menu with cheat titles. Each entry will have a pointer to
-   it's associated cheatsCheat_t object for toggling cheats from the menu.
-   Game object is returned so the menu manager can associate the created menu
-   with a game. */
+// Create a menu with cheat titles
 void cheatsLoadCheatMenu(cheatsGame_t* game);
 // Create a menu with a cheat's code lines
 cheatsCheat_t* cheatsLoadCodeMenu(cheatsCheat_t *cheat, cheatsGame_t *game);
@@ -135,11 +132,6 @@ void cheatsDrawStats(const menuItem_t *selected);
 int cheatsToggleCheat(cheatsCheat_t *cheat);
 // Check if a game is the active game.
 int cheatsIsActiveGame(const cheatsGame_t *game);
-// Disable all cheats and deactivate game
-void cheatsDeactivateGame(cheatsGame_t *game);
-// Set the active game. If any cheats were enabled for the previously active
-// game, they will all be disabled.
-int cheatsSetActiveGame(cheatsGame_t *game);
 // Get title for the active game
 char* cheatsGetActiveGameTitle();
 // Setup up the cheat engine and load active cheats
