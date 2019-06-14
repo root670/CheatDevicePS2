@@ -570,12 +570,17 @@ static int displayDeleteCodeLine()
 
     u64 *dst = (u64 *)menuGetActiveItemExtra();
     u64 *src = dst + 1;
-    size_t length = (game->codeLines + game->codeLinesUsed - src) * sizeof(u64);
-    memmove(dst, src, length);
+    u64 *end = game->codeLines + game->codeLinesUsed;
+    if(end != dst)
+    {
+        size_t length = (end - src) * sizeof(u64);
+        memmove(dst, src, length);
+    }
 
     cheat->numCodeLines--;
     game->codeLinesUsed--;
-    menuRemoveActiveItem();
+
+    cheatsLoadCodeMenu(cheat, game);
     cheatDatabaseDirty = 1;
 
     return 0;
