@@ -24,5 +24,8 @@ all: $(EE_BIN)
 	ee-strip -s -d -R .mdebug.eabi64 -R .reginfo -R .comment $(EE_BIN)
 	rm -f *.o *.s
 
+clean:
+	rm -f *.o *.s *.elf
+
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
