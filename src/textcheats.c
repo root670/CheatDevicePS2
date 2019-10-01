@@ -579,8 +579,7 @@ static inline int getToken(const unsigned char *line, const int len)
 
     if(UNLIKELY(len > 3 &&
        ((g_ctx.lastToken == TOKEN_MAP_START) || 
-        (g_ctx.lastToken == TOKEN_MAP_ENTRY) ||
-        (g_ctx.lastToken == 0))))
+        (g_ctx.lastToken == TOKEN_MAP_ENTRY))))
     {
         c = line;
         while(isxdigit(*c))
@@ -605,8 +604,6 @@ static inline int getToken(const unsigned char *line, const int len)
 
         if(numTokens == 17)
             return TOKEN_CODE;
-        else
-            return TOKEN_CHEAT;
     }
 
     if((line[0] == '/' && line[1] == '/') || line[0] == '#')
