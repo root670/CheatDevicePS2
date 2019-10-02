@@ -416,6 +416,41 @@ type_7:
 	sh	$t5, 0($a0)
 	b	next
 	sb	$t5, 0($a0)
+type_8:
+	/*
+	 * "8-bit / 16-bit constant serial write"
+	 *
+	 * 8-bit write
+	 * 8-aaaaaaa nnnnssss
+	 * 000000vv 000000ii
+	 *
+	 * 16-bit write
+	 * 8-aaaaaaa nnnnssss
+	 * 1000vvvv 0000iiii
+	 *
+	 * Starting with address @a, this code type will write the value
+	 * @v to @n addresses. In each cycle, the address is incremented by
+	 * @s or @s * 2 and the value is incremented by @i.
+	 */
+	lw	$a2, 8($t2)			/* $a2: @v (including write type marker) */
+	lhu	$a3, 12($t2)		/* $a3: @i */
+	srl	$t5, $a1, 16		/* $a1: nnnnssss; $t5: @n (@n: number of addresses) */
+	andi	$a1, 0xffff		/* $a1: 0000ssss (@s: offset in bytes / half-words) */
+	srl	$t6, $a2, 28		/* $t6: write type (zero for 8-bit, non-zero for 16-bit) */
+	bnezl	$t6, 2f
+	sll	$a1, 1				/* convert the offset from half-words to bytes, as $t6 is non-zero */
+1:
+	beqzl	$t6, 3f
+	sb	$a2, 0($a0)
+2:
+	sh	$a2, 0($a0)
+3:
+	addu	$a2, $a3
+	addiu	$t5, -1
+	bgtz	$t5, 1b
+	addu	$a0, $a1
+	b	next
+	addiu	$t4, 1
 type_c:
 	/*
 	 * "32-bit do all following codes if equal to"
@@ -546,7 +581,7 @@ type_tab:
 	.word	type_5
 	.word	type_6
 	.word	type_7
-	.word	0 /* TODO */
+	.word	type_8
 	.word	0 /* type 9 is a hook code */
 	.word	0 /* TODO */
 	.word	0 /* TODO */
