@@ -20,6 +20,7 @@ int extractZIP(gameSave_t *save, device_t dst)
     char dstName[100];
     u8 *data;
     float progress = 0.0;
+    char *ptr;
     
     if(!save || !(dst & (MC_SLOT_1|MC_SLOT_2)))
         return 0;
@@ -43,7 +44,9 @@ int extractZIP(gameSave_t *save, device_t dst)
 
     strcpy(dirNameTemp, fileName);
 
-    dirNameTemp[(unsigned int)(strstr(dirNameTemp, "/") - dirNameTemp)] = 0;
+    ptr = strstr(dirNameTemp, "/");
+    if (ptr)
+        dirNameTemp[(unsigned int)(ptr - dirNameTemp)] = 0;
 
     printf("Directory name: %s\n", dirNameTemp);
 
@@ -76,7 +79,8 @@ int extractZIP(gameSave_t *save, device_t dst)
         unzReadCurrentFile(zf, data, fileInfo.uncompressed_size);
         unzCloseCurrentFile(zf);
         
-        snprintf(dstName, 100, "%s/%s", dirName, strstr(fileName, "/") + 1);
+        ptr = strstr(fileName, "/");
+        snprintf(dstName, 100, "%s/%s", dirName, (ptr) ? ptr + 1 : fileName);
 
         printf("Writing %s...", dstName);
 

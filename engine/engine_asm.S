@@ -732,15 +732,16 @@ HookSetupThread:
 	 */
 	lw	$t1, numhooks
 	nop
-	bgtz	$t1, 1f
+	bgtz	$t1, 4f
 	nop
 	
 	/* find a place to hook */
 	jal	AutoHooker
 	nop
+4:
+	la	$t3, hooklist
 1:
 	/* hook only if opcodes are equal */
-	la	$t3, hooklist
 	lw	$v0, 0($t3)
 	beqz	$v0, 2f
 	lw	$v1, 4($t3)
