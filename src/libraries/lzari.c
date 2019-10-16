@@ -464,11 +464,9 @@ int unlzari(unsigned char *in, int insz, unsigned char *out, int outsz)
     outfile = out;
     outfilel = out + outsz;
 
-    textsize = (xgetc(infile));
-    textsize |= (xgetc(infile) << 8);
-    textsize |= (xgetc(infile) << 16);
-    textsize |= (xgetc(infile) << 24);
-    if (textsize == 0) return(-1);
+	textsize = outsz;
+    if (textsize == 0)
+		return 0;
 
 	StartDecode();  StartModel();
 	for (i = 0; i < N - F; i++) text_buf[i] = ' ';
