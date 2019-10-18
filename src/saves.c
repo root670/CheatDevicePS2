@@ -12,6 +12,7 @@
 #include "saveformats/cbs.h"
 #include "saveformats/psu.h"
 #include "saveformats/zip.h"
+#include "saveformats/max.h"
 
 static device_t currentDevice;
 static int mc1Free, mc2Free;
@@ -25,6 +26,7 @@ const char *flashDriveDevice = "mass:";
 static saveHandler_t PSUHandler = {"EMS Adapter (.psu)", "psu", NULL, createPSU, extractPSU};
 static saveHandler_t CBSHandler = {"CodeBreaker (.cbs)", "cbs", isCBSFile, createCBS, extractCBS};
 static saveHandler_t ZIPHandler = {"Zip (.zip)", "zip", NULL, createZIP, extractZIP};
+static saveHandler_t MAXHandler = {"Action Replay Max (.max)", "max", isMAXFile, createMAX, extractMAX};
 
 char *savesGetDevicePath(char *str, device_t dev)
 {
@@ -104,6 +106,8 @@ static saveHandler_t *getSaveHandler(const char *path)
         handler = &CBSHandler;
     else if(strcasecmp(extension, ZIPHandler.extention) == 0)
         handler = &ZIPHandler;
+    else if(strcasecmp(extension, MAXHandler.extention) == 0)
+        handler = &MAXHandler;
     else
         return NULL; // Unsupported extension
 

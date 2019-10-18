@@ -37,6 +37,7 @@ OBJS += src/saveformats/util.o
 OBJS += src/saveformats/cbs.o
 OBJS += src/saveformats/psu.o
 OBJS += src/saveformats/zip.o
+OBJS += src/saveformats/max.o
 
 # IRX Modules
 IRX_OBJS += resources/usbd_irx.o

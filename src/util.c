@@ -880,6 +880,16 @@ char* getFileBasename(const char *filename)
     return ret;
 }
 
+// int directoryExists(const char *path)
+// {
+//     if(!path)
+//         return NULL;
+
+//     fio_stat_t myStat;
+//     fioGetstat(dirPath, &myStat);
+//     return 
+// }
+
 const char *getNthString(const char *str, int n)
 {
     if(!str)

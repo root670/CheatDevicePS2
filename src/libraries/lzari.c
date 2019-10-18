@@ -449,7 +449,7 @@ int unlzari(unsigned char *in, int insz, unsigned char *out, int outsz)
         return -1;
 
     // Reset decompressor state
-    low = 0;
+    low = 0; 
     high = Q4;
     value = 0;
     codesize = 0;
@@ -464,7 +464,10 @@ int unlzari(unsigned char *in, int insz, unsigned char *out, int outsz)
     outfile = out;
     outfilel = out + outsz;
 
-	textsize = outsz;
+	textsize  = (xgetc(infile));
+    textsize |= (xgetc(infile) << 8);
+    textsize |= (xgetc(infile) << 16);
+    textsize |= (xgetc(infile) << 24);
     if (textsize == 0)
 		return 0;
 
