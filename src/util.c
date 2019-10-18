@@ -258,10 +258,7 @@ void handlePad()
 
     else if(currentMenu == MENU_SAVES)
     {
-        if(pad_pressed & PAD_CROSS)
-            menuToggleItem();
-        
-        else if(pad_pressed & PAD_CIRCLE)
+        if(pad_pressed & PAD_CIRCLE)
         {
             menuRemoveAllItems();
             menuSetActive(MENU_SAVE_DEVICES);

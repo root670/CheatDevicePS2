@@ -505,25 +505,6 @@ int menuGoToPreviousHeader()
     return 0;
 }
 
-void menuToggleItem()
-{
-    void *extra;
-    char *text;
-    menuItemType_t type;
-
-    if(activeMenu->numItems > 0)
-    {
-        extra = activeMenu->items[activeMenu->currentItem]->extra;
-        text = activeMenu->items[activeMenu->currentItem]->text;
-        type = activeMenu->items[activeMenu->currentItem]->type;
-
-        if(activeMenu->identifier == MENU_SAVES && type != MENU_ITEM_HEADER)
-        {
-            savesCopySavePrompt((gameSave_t *) extra);
-        }
-    }
-}
-
 int menuProcessInputCallbacks(u32 padPressed)
 {
     if(!activeMenu)

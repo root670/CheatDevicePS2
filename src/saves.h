@@ -45,7 +45,4 @@ int savesGetAvailableDevices();
 // Convert absolute path to use specific device
 char *savesGetDevicePath(char *str, device_t dev);
 
-// Prompt user for destination device, then copy the save.
-int savesCopySavePrompt(gameSave_t *save);
-
 #endif

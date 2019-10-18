@@ -88,7 +88,6 @@ int menuSetActiveItem(menuItem_t *item);
 int menuRenameActiveItem(const char *str);
 const char *menuGetActiveItemText();
 void *menuGetActiveItemExtra();
-void menuToggleItem();
 
 // Movement
 int menuUp();
