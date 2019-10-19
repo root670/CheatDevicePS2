@@ -32,6 +32,10 @@ static const char *MEMORY_CARD_1_NAME   = "Memory Card (Slot 1)";
 static const char *MEMORY_CARD_2_NAME   = "Memory Card (Slot 2)";
 static const char *FLASH_DRIVE_NAME     = "Flash Drive";
 
+static const char *SYSTEM_SAVE_NAME_US = "BADATA-SYSTEM";
+static const char *SYSTEM_SAVE_NAME_EU = "BEDATA-SYSTEM";
+static const char *SYSTEM_SAVE_NAME_JP = "BIDATA-SYSTEM";
+
 static saveHandler_t s_PSUHandler = {
     "EMS Adapter (.psu)", "psu", NULL, createPSU, extractPSU
 };
@@ -242,88 +246,92 @@ gameSave_t *savesGetSaves(device_t dev)
         int i;
         for(i = 0; i < ret; i++)
         {
-            if(mcDir[i].AttrFile & MC_ATTR_SUBDIR)
+            if(!(mcDir[i].AttrFile & MC_ATTR_SUBDIR))
+                continue; // Only check subdirectories
+
+            if (strcmp(mcDir[i].EntryName, SYSTEM_SAVE_NAME_US) == 0 ||
+                strcmp(mcDir[i].EntryName, SYSTEM_SAVE_NAME_EU) == 0 ||
+                strcmp(mcDir[i].EntryName, SYSTEM_SAVE_NAME_JP) == 0
+            )
+                continue; // Ignore "Your System Configuration" save
+
+            char *path = savesGetDevicePath(mcDir[i].EntryName, dev);
+            strncpy(save->path, path, 64);
+            free(path);
+            
+            snprintf(iconSysPath, 64, "%s/icon.sys", save->path);
+    
+            fd = fioOpen(iconSysPath, O_RDONLY);
+            if(!fd)
+                continue; // invalid save
+
+            fioRead(fd, &iconSys, sizeof(mcIcon));
+            fioClose(fd);
+            
+            // Attempt crude Shift-JIS -> ASCII conversion...
+            char ascii[100];
+            char c;
+            int asciiOffset = 0;
+            unsigned char *jp = (unsigned char *)iconSys.title;
+            int j;
+            
+            for(j = 0; j < 100; j++)
             {
-                char *path = savesGetDevicePath(mcDir[i].EntryName, dev);
-                strncpy(save->path, path, 64);
-                free(path);
+                if(j > 0 && j == iconSys.nlOffset/2)
+                    ascii[asciiOffset++] = ' ';
                 
-                snprintf(iconSysPath, 64, "%s/icon.sys", save->path);
-        
-                fd = fioOpen(iconSysPath, O_RDONLY);
-                if(fd)
+                if(*jp == 0x82)
                 {
-                    fioRead(fd, &iconSys, sizeof(mcIcon));
-                    fioClose(fd);
-                    
-                    // Attempt crude Shift-JIS -> ASCII conversion...
-                    char ascii[100];
-                    char c;
-                    int asciiOffset = 0;
-                    unsigned char *jp = (unsigned char *)iconSys.title;
-                    int j;
-                    
-                    for(j = 0; j < 100; j++)
+                    jp++;
+                    if(*jp == 0x3F) // spaces
+                        c = ' ';
+                    else if(*jp >= 0x4F && *jp <= 0x58) // 0-9
+                        c = *jp - 0x1F;
+                    else if(*jp >= 0x60 && *jp <= 0x79) // A-Z
+                        c = *jp - 0x1F;
+                    else if(*jp >= 80 && *jp <= 0xA0) // a-z
+                        c = *jp - 0x20;
+                    else
+                        c = '?';
+                }
+                else if(*jp == 0x81)
+                {
+                    jp++;
+                    if(*jp == 0)
                     {
-                        if(j > 0 && j == iconSys.nlOffset/2)
-                            ascii[asciiOffset++] = ' ';
-                        
-                        if(*jp == 0x82)
-                        {
-                            jp++;
-                            if(*jp == 0x3F) // spaces
-                                c = ' ';
-                            else if(*jp >= 0x4F && *jp <= 0x58) // 0-9
-                                c = *jp - 0x1F;
-                            else if(*jp >= 0x60 && *jp <= 0x79) // A-Z
-                                c = *jp - 0x1F;
-                            else if(*jp >= 80 && *jp <= 0xA0) // a-z
-                                c = *jp - 0x20;
-                            else
-                                c = '?';
-                        }
-                        else if(*jp == 0x81)
-                        {
-                            jp++;
-                            if(*jp == 0)
-                            {
-                                ascii[asciiOffset] = '\0';
-                                break;
-                            }
-                            
-                            if(*jp >= 0x40 && *jp <= 0xAC)
-                                c = SJIS_REPLACEMENT_LUT[*jp - 0x40];
-                            else
-                                c = '?';
-                        }
-                        else
-                            c = '?';
-                        
-                        ascii[asciiOffset++] = c;
-                        jp++;
-                        
-                        if(*jp == 0)
-                        {
-                            ascii[asciiOffset] = '\0';
-                            break;
-                        }
+                        ascii[asciiOffset] = '\0';
+                        break;
                     }
                     
-                    strncpy(save->name, ascii, 100);
-                    rtrim(save->name);
+                    if(*jp >= 0x40 && *jp <= 0xAC)
+                        c = SJIS_REPLACEMENT_LUT[*jp - 0x40];
+                    else
+                        c = '?';
                 }
                 else
-                    continue; // invalid save
+                    c = '?';
                 
-                if(i != ret - 1)
+                ascii[asciiOffset++] = c;
+                jp++;
+                
+                if(*jp == 0)
                 {
-                    gameSave_t *next = calloc(1, sizeof(gameSave_t));
-                    save->next = next;
-                    save = next;
+                    ascii[asciiOffset] = '\0';
+                    break;
                 }
-                else
-                    save->next = NULL;
             }
+
+            strncpy(save->name, ascii, 100);
+            rtrim(save->name);
+
+            if(i != ret - 1)
+            {
+                gameSave_t *next = calloc(1, sizeof(gameSave_t));
+                save->next = next;
+                save = next;
+            }
+            else
+                save->next = NULL;
         }
     }
     
