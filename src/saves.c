@@ -172,16 +172,12 @@ static saveHandler_t *promptSaveHandler()
 gameSave_t *savesGetSaves(device_t dev)
 {
     sceMcTblGetDir mcDir[64] __attribute__((aligned(64)));
-    gameSave_t *saves;
-    gameSave_t *save;
+    gameSave_t *saves = NULL;
+    gameSave_t *save = NULL;
     saveHandler_t *handler;
     mcIcon iconSys;
     int ret, fd;
     char iconSysPath[64];
-    int first = 1;
-    
-    saves = calloc(1, sizeof(gameSave_t));
-    save = saves;
     
     if(dev == FLASH_DRIVE)
     {
@@ -189,10 +185,7 @@ gameSave_t *savesGetSaves(device_t dev)
         int fs = fioDopen(flashDriveDevice);
         
         if(!fs)
-        {
-            free(saves);
             return NULL;
-        }
         
         while(fioDread(fs, &record) > 0)
         {
@@ -205,8 +198,13 @@ gameSave_t *savesGetSaves(device_t dev)
                 printf("Ignoring file \"%s\"\n", record.name);
                 continue;
             }
-            
-            if(!first)
+
+            if(!saves)
+            {
+                saves = calloc(1, sizeof(gameSave_t));
+                save = saves;
+            }
+            else
             {
                 gameSave_t *next = calloc(1, sizeof(gameSave_t));
                 save->next = next;
@@ -218,15 +216,6 @@ gameSave_t *savesGetSaves(device_t dev)
             strncpy(save->name, record.name, 100);
             rtrim(save->name);
             snprintf(save->path, 64, "%s%s", flashDriveDevice, record.name);
-            
-            first = 0;
-        }
-        
-        if(first) // Didn't find any saves
-        {
-            free(saves);
-            fioDclose(fs);
-            return NULL;
         }
         
         fioDclose(fs);
@@ -236,12 +225,6 @@ gameSave_t *savesGetSaves(device_t dev)
     {
         mcGetDir((dev == MC_SLOT_1) ? 0 : 1, 0, "/*", 0, 54, mcDir);
         mcSync(0, NULL, &ret);
-        
-        if(ret == 0)
-        {
-            free(saves);
-            return NULL;
-        }
         
         int i;
         for(i = 0; i < ret; i++)
@@ -256,14 +239,27 @@ gameSave_t *savesGetSaves(device_t dev)
                 continue; // Ignore "Your System Configuration" save
 
             char *path = savesGetDevicePath(mcDir[i].EntryName, dev);
-            strncpy(save->path, path, 64);
+            snprintf(iconSysPath, 64, "%s/icon.sys", path);
             free(path);
-            
-            snprintf(iconSysPath, 64, "%s/icon.sys", save->path);
     
             fd = fioOpen(iconSysPath, O_RDONLY);
             if(!fd)
                 continue; // invalid save
+
+            if(!saves)
+            {
+                saves = calloc(1, sizeof(gameSave_t));
+                save = saves;
+            }
+            else
+            {
+                gameSave_t *next = calloc(1, sizeof(gameSave_t));
+                save->next = next;
+                save = next;
+                next->next = NULL;
+            }
+
+            strncpy(save->path, path, 64);
 
             fioRead(fd, &iconSys, sizeof(mcIcon));
             fioClose(fd);
@@ -323,15 +319,6 @@ gameSave_t *savesGetSaves(device_t dev)
 
             strncpy(save->name, ascii, 100);
             rtrim(save->name);
-
-            if(i != ret - 1)
-            {
-                gameSave_t *next = calloc(1, sizeof(gameSave_t));
-                save->next = next;
-                save = next;
-            }
-            else
-                save->next = NULL;
         }
     }
     
