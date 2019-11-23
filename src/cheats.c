@@ -809,6 +809,8 @@ int cheatsSaveDatabase()
         return 0;
     }
 
+    cheatDatabaseDirty = 0;
+
     return 0;
 }
 
