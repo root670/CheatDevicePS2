@@ -119,6 +119,8 @@ cheatsGame_t* cheatsFindGame(const char *title);
 
 // Get number of games in the game list
 int cheatsGetNumGames();
+// Get total number of cheats available from all games
+int cheatsGetTotalNumCheats();
 // Get number of cheats in the cheat list 
 int cheatsGetNumCheats();
 // Get number of enabled cheats in the cheat list

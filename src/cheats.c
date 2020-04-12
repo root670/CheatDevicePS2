@@ -22,6 +22,7 @@ static hashTable_t *gameMenuHashes = NULL; // game title -> menuItem_t*
 static hashTable_t *cheatHashes = NULL; // code lines -> cheatsGame_t*
 static FILE *historyFile;
 static int numGames = 0;
+static int totalNumCheats = 0;
 static int numEnabledCheats = 0;
 static int numEnabledCodes = 0;
 static u64 lastSelectedCode = 0;
@@ -146,6 +147,23 @@ static void tagEnableCodes()
     }
 }
 
+static void updateTotalNumCheats()
+{
+    totalNumCheats = 0;
+    cheatsGame_t *game = gamesHead;
+    while(game)
+    {
+        cheatsCheat_t *cheat = game->cheats;
+        while(cheat)
+        {
+            if(cheat->type != CHEAT_HEADER)
+                totalNumCheats++;
+            cheat = cheat->next;
+        }
+        game = game->next;
+    }
+}
+
 static void enableAllEnableCodes(cheatsGame_t *game)
 {
     if(!game)
@@ -207,8 +225,7 @@ static void deactivateGame(cheatsGame_t *game)
 
 // Set the active game. If any cheats were enabled for the previously active
 // game, they will all be disabled.
-static 
-int setActiveGame(cheatsGame_t *game)
+static int setActiveGame(cheatsGame_t *game)
 {
     if(game == activeGame)
         return 0;
@@ -398,6 +415,7 @@ static int displayAddCheat(cheatsGame_t *game)
     menuSetActiveItem(item);
     
     cheatDatabaseDirty = 1;
+    updateTotalNumCheats();
 
     return 1;
 }
@@ -436,7 +454,7 @@ static int displayDeleteCheat()
     if(selectedCheat->enabled)
         cheatsToggleCheat(selectedCheat);
 
-    if(selectedCheat->type == CHEAT_NORMAL)
+    if(selectedCheat->type != CHEAT_HEADER)
         selectedGame->numCheats--;
 
     if(selectedCheat == selectedGame->cheats)
@@ -472,6 +490,7 @@ static int displayDeleteCheat()
     objectPoolRelease(OBJECTPOOLTYPE_CHEAT, selectedCheat);
     menuRemoveActiveItem();
     cheatDatabaseDirty = 1;
+    updateTotalNumCheats();
 
     return 1;
 }
@@ -759,6 +778,7 @@ int cheatsOpenDatabase(const char* path, int readOnly)
 
     populateGameHashTable();
     tagEnableCodes();
+    updateTotalNumCheats();
 
     return 1;
 }
@@ -1163,6 +1183,11 @@ cheatsGame_t* cheatsFindGame(const char *name)
 int cheatsGetNumGames()
 {
     return numGames;
+}
+
+int cheatsGetTotalNumCheats()
+{
+    return totalNumCheats;
 }
 
 int cheatsGetNumCodeLines()

@@ -852,9 +852,11 @@ void graphicsDrawAboutPage()
         "Compiled " __DATE__ " " __TIME__ "\n"
         "\n"
         "Total Games: %d\n"
+        "Total Cheats: %d\n"
         "Read-Only Database: %s\n"
         "Read/Write Database: %s",
         cheatsGetNumGames(),
+        cheatsGetTotalNumCheats(),
         readOnlyPath ? readOnlyPath : "(none)",
         readWritePath ? readWritePath : "(none)"
     );
