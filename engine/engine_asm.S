@@ -344,33 +344,56 @@ type_6:
 	 *
 	 * 8-bit write
 	 * 6-aaaaaaa 000000vv
-	 * 00000000 iiiiiiii
+	 * 0000nnnn iiiiiiii
+	 * pppppppp pppppppp	# 1st. extra pointer line, required if @n > 1
+	 * ........ ........
+	 * pppppppp pppppppp	# N-th. extra pointer line, required if @n > ((N << 1) - 1)
 	 *
 	 * 16-bit write
 	 * 6-aaaaaaa 0000vvvv
-	 * 00010000 iiiiiiii
+	 * 0001nnnn iiiiiiii
+	 * pppppppp pppppppp
+	 * ........ ........
+	 * pppppppp pppppppp
 	 *
 	 * 32-bit write
 	 * 6-aaaaaaa vvvvvvvv
-	 * 00020000 iiiiiiii
+	 * 0002nnnn iiiiiiii
+	 * pppppppp pppppppp
+	 * ........ ........
+	 * pppppppp pppppppp
 	 *
-	 * Loads 32-bit base address from address @a, adds offset @i to it, and
-	 * constantly writes the value @v to the final address.
+	 * Loads 32-bit base address from address @a and adds offset @i to it
+	 * to get either the final address (normal pointer write, where @n == 1,
+	 * @n being the number of times to point) or a new pointer location
+	 * (multi-level pointer write, where @n > 1), in the multi-level pointer
+	 * write case, continue by loading 32-bit base address from the pointer
+	 * location computed at the previous iteration and adding offset @p
+	 * to it, keep doing this until all (@n - 1) offsets @p have been
+	 * processed, and constantly writes the value @v to the final address.
 	 */
-	lw	$t5, 0($a0)
+	lhu	$a2, 10($t2)	/* $a2: write type (0 for 8 bit, 1 for 16 bit, 2 for 32 bit) */
+	lhu	$t6, 8($t2)	/* $t6: number of times to point (@n) */
+	andi	$a2, 0xf
+	srl	$t7, $t6, 1	/* $t7: number of extra pointer lines = (@n >> 1) */
 	li	$at, 0x3ffffffc
-	and	$t5, $at
-	beqz	$t5, 1f
-	lhu	$a2, 10($t2)
-	lw	$a3, 12($t2)
-	addu	$t5, $a3
-	beqzl	$a2, 1f
-	sb	$a1, 0($t5)
-	addiu	$a2, -1
-	beqzl	$a2, 1f
-	sh	$a1, 0($t5)
-	sw	$a1, 0($t5)
 1:
+	lw	$t5, 0($a0)	/* $t5: base address, $a0: pointer location */
+	lw	$a3, 12($t2)	/* $a3: pointer offset */
+	and	$t5, $at
+	beqz	$t5, 2f		/* stop execution if base address is zero */
+	addu	$a0, $t5, $a3	/* adds pointer offset to the base address */
+	addiu	$t6, -1		/* decrement @n */
+	bgtz	$t6, 1b		/* if @n > 0, continue with the next pointer offset */
+	addiu	$t2, 4
+	beqzl	$a2, 2f
+	sb	$a1, 0($a0)
+	addiu	$a2, -1
+	beqzl	$a2, 2f
+	sh	$a1, 0($a0)
+	sw	$a1, 0($a0)
+2:
+	addu	$t4, $t7
 	b	next
 	addiu	$t4, 1
 type_7:
