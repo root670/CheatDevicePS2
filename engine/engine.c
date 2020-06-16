@@ -146,13 +146,40 @@ int register_callback(void *func)
     return 0;
 }
 
+#define SENTINEL_VALUE  0x5AFEC0DE
+/* These values should hang around if IGR in OPL is activated */
+extern u32 Uninitialized;
+static u32 *pOldSetupThread = &Uninitialized;
+static u32 *pSentinel = &Uninitialized + 1;
+
+void InstallHook()
+{
+    *pOldSetupThread = GetSyscallHandler(__NR_SetupThread);
+    SetSyscall(__NR_SetupThread, KSEG0(HookSetupThread));
+    *pSentinel = SENTINEL_VALUE;
+}
+
+void RemoveHook()
+{
+    SetSyscall(__NR_SetupThread, *pOldSetupThread);
+}
+
 int __attribute__((section(".init"))) _init(void)
 {
 #ifdef _HOOK_9
     /* hook syscall */
-    OldSetupThread = GetSyscallHandler(__NR_SetupThread);
-    j_SetupThread = MAKE_J(OldSetupThread);
-    SetSyscall(__NR_SetupThread, KSEG0(HookSetupThread));
+    if(*pSentinel == SENTINEL_VALUE && *pOldSetupThread)
+    {
+        /* When the engine is installed it hooks SetupThread and keeps the
+         * address to the original callback in an uninitialized area that should
+         * be retained if IGR is activated in OPL. The sentinel value signals
+         * that the engine has already been installed, so we need to temporarily
+         * restore the original SetupThread callback before "installing" it
+         * again.
+         */
+        RemoveHook();
+    }
+    InstallHook();
 #endif
     return 0;
 }
@@ -160,8 +187,7 @@ int __attribute__((section(".init"))) _init(void)
 int __attribute__((section(".fini"))) _fini(void)
 {
 #ifdef _HOOK_9
-    /* unhook syscall */
-    SetSyscall(__NR_SetupThread, OldSetupThread);
+    RemoveHook();
 #endif
     return 0;
 }

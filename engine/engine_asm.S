@@ -57,6 +57,7 @@
 	.globl	eh_backup
 	.globl	CodeHandler
 	.globl	BootCodeHandler
+	.globl	Uninitialized
 
 #ifdef _HOOK_9
 	.globl	HookSetupThread
@@ -798,8 +799,8 @@ HookSetupThread:
 	addiu	$sp, 0x10
 
 	/* jump to original SetupThread() */
-j_SetupThread:
-	j	0
+	lw	$t1, Uninitialized
+	j	$t1
 	nop
 	.end	HookSetupThread
 #endif
@@ -859,6 +860,9 @@ numcodes:
 	.word	0
 codelist:
 	.space	(MAX_CODES*8)
+
+Uninitialized:
+	.space /* Anything after this address should be retained when activating IGR in OPL. */
 
 	.set	pop
 
