@@ -272,6 +272,11 @@ void handlePad()
         else if(pad_rapid & PAD_L1)
             menuUpRepeat(10);
 
+        if(pad_pressed & PAD_R2)
+            menuGoToBottom();
+        else if(pad_pressed & PAD_L2)
+            menuGoToTop();
+
         if(pad_pressed & PAD_CIRCLE)
         {
             menuSetActive(MENU_CHEATS);
