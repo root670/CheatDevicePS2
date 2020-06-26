@@ -144,7 +144,7 @@ int initGraphics()
         // Clear the screen right away to prevent the old framebuffer from being dumped to screen
         gsKit_set_test(gsGlobal, GS_ZTEST_OFF);
         gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);
-        gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+        gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x80,0x00));
         gsKit_sync_flip( gsGlobal );
 
         font.Width = STB_SOMEFONT_BITMAP_WIDTH;
