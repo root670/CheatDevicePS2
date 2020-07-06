@@ -626,7 +626,7 @@ static inline int readGameTitleLine(const char *line, int len)
     {
         // No game with this title exists, so create a new one
         thisGame = objectPoolAllocate(OBJECTPOOLTYPE_GAME);
-        if(!g_ctx.game)
+        if(!g_ctx.gamesHead)
         {
             // First game added
             g_ctx.gamesHead = thisGame;
