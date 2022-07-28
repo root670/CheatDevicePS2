@@ -3,7 +3,12 @@
 # by root670
 #
 
-DTL_T10000 = 0
+DTL_T10000 ?= 0
+USE_HOMEBREW_IRX ?= 1
+
+ifeq ($(DTL_T10000),1)
+	USE_HOMEBREW_IRX = 1
+endif
 
 EE_BIN = cheatdevice.elf
 
@@ -43,7 +48,7 @@ OBJS += src/saveformats/max.o
 IRX_OBJS += resources/usbd_irx.o
 IRX_OBJS += resources/usbhdfsd_irx.o
 IRX_OBJS += resources/iomanX_irx.o
-ifeq ($(DTL_T10000),1)
+ifeq ($(USE_HOMEBREW_IRX),1)
 	IRX_OBJS += resources/sio2man_irx.o
 	IRX_OBJS += resources/mcman_irx.o
 	IRX_OBJS += resources/mcserv_irx.o
@@ -81,6 +86,9 @@ OBJS += bootstrap/bootstrap_elf.o
 
 ifeq ($(DTL_T10000),1)
 	EE_CFLAGS += -D_DTL_T10000 -g
+endif
+
+ifeq ($(USE_HOMEBREW_IRX),1)
 	EE_LIBS += -lpadx
 else
 	EE_LIBS += -lpad
@@ -105,7 +113,7 @@ modules:
 	@bin2o $(PS2SDK)/iop/irx/iomanX.irx resources/iomanX_irx.o _iomanX_irx
 	@bin2o $(PS2SDK)/iop/irx/usbd.irx resources/usbd_irx.o _usbd_irx
 	@bin2o $(PS2SDK)/iop/irx/usbhdfsd.irx resources/usbhdfsd_irx.o _usbhdfsd_irx
-ifeq ($(DTL_T10000),1)
+ifeq ($(USE_HOMEBREW_IRX),1)
 	@bin2o $(PS2SDK)/iop/irx/freesio2.irx resources/sio2man_irx.o _sio2man_irx
 	@bin2o $(PS2SDK)/iop/irx/mcman.irx resources/mcman_irx.o _mcman_irx
 	@bin2o $(PS2SDK)/iop/irx/mcserv.irx resources/mcserv_irx.o _mcserv_irx
@@ -145,7 +153,10 @@ endif
 	@bin2o bootstrap/bootstrap.elf bootstrap/bootstrap_elf.o _bootstrap_elf
 
 version:
-	@./version.sh > src/version.h
+	@echo -n '#define GIT_VERSION "'> src/version.h
+	@git describe | tr -d '\n'>> src/version.h
+	@echo '"'>> src/version.h
+
 
 main: $(EE_BIN)
 	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o
