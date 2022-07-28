@@ -5,6 +5,11 @@
 
 DTL_T10000 ?= 0
 USE_HOMEBREW_IRX ?= 1
+
+ifeq ($(DTL_T10000),1)
+	USE_HOMEBREW_IRX = 1
+endif
+
 EE_BIN = cheatdevice.elf
 
 # For minizip
@@ -81,6 +86,7 @@ OBJS += bootstrap/bootstrap_elf.o
 
 ifeq ($(DTL_T10000),1)
 	EE_CFLAGS += -D_DTL_T10000 -g
+endif
 
 ifeq ($(USE_HOMEBREW_IRX),1)
 	EE_LIBS += -lpadx
