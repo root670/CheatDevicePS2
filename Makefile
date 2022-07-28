@@ -145,7 +145,10 @@ endif
 	@bin2o bootstrap/bootstrap.elf bootstrap/bootstrap_elf.o _bootstrap_elf
 
 version:
-	@./version.sh > src/version.h
+	@echo -n '#define GIT_VERSION "'> src/version.h
+	@git describe | tr -d '\n'>> src/version.h
+	@echo '"'>> src/version.h
+
 
 main: $(EE_BIN)
 	rm -rf src/*.o src/libraries/*.o src/libraries/minizip/*.o src/saveformats/*.o
