@@ -4,7 +4,7 @@
 #
 
 DTL_T10000 ?= 0
-USE_HOMEBREW_IRX ?= 0
+USE_HOMEBREW_IRX ?= 1
 EE_BIN = cheatdevice.elf
 
 # For minizip
