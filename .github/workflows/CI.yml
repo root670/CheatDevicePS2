@@ -1,0 +1,45 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    paths:  
+      - '**Makefile'
+      - '**CheatDatabase.txt'
+      - '**CheatDevicePS2.ini'
+      - '.github/workflows/*.yml'
+      - 'bootstrap/*'
+      - 'engine/*'
+      - 'resources/*'
+      - 'src/*'
+  pull_request:
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ps2dev/ps2dev:v1.0
+    steps:
+    - name: Install dependencies
+      run: |
+        apk add build-base git zip p7zip
+        
+    - uses: actions/checkout@v2
+    - run: |
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+        git fetch --prune --unshallow
+        
+    - name: Compile
+      run: |
+        make clean all USE_HOMEBREW_IRX=1
+        
+    - name: Upload artifacts
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: ELFS
+        path: |
+            cheatdevice.elf
+        
+    - name: Get short SHA
+      id: slug
+      run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
