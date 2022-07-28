@@ -3,8 +3,8 @@
 # by root670
 #
 
-DTL_T10000 = 0
-
+DTL_T10000 ?= 0
+USE_HOMEBREW_IRX ?= 0
 EE_BIN = cheatdevice.elf
 
 # For minizip
@@ -43,7 +43,7 @@ OBJS += src/saveformats/max.o
 IRX_OBJS += resources/usbd_irx.o
 IRX_OBJS += resources/usbhdfsd_irx.o
 IRX_OBJS += resources/iomanX_irx.o
-ifeq ($(DTL_T10000),1)
+ifeq ($(USE_HOMEBREW_IRX),1)
 	IRX_OBJS += resources/sio2man_irx.o
 	IRX_OBJS += resources/mcman_irx.o
 	IRX_OBJS += resources/mcserv_irx.o
@@ -81,6 +81,8 @@ OBJS += bootstrap/bootstrap_elf.o
 
 ifeq ($(DTL_T10000),1)
 	EE_CFLAGS += -D_DTL_T10000 -g
+
+ifeq ($(USE_HOMEBREW_IRX),1)
 	EE_LIBS += -lpadx
 else
 	EE_LIBS += -lpad
